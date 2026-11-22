@@ -1,0 +1,32 @@
+# Python
+.venv/
+env/
+venv/
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+
+# Telegram credentials, sessions, and databases
+*.session
+*.session-journal
+*.sqlite
+*.sqlite3
+*.db
+.env
+*.key
+*.pem
+credentials.json
+
+# tgsherlock local data
+tgsherlock_data/
+local_data/
+
+# OS and IDE
+.DS_Store
+Thumbs.db
+.agent-cache/
+.vscode/
+.idea/
