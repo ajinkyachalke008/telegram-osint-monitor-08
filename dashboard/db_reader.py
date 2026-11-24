@@ -12,12 +12,13 @@ for ingesting raw Telegram messages into `data/osint_monitor.db`. It is NEVER
 accessed directly for dashboard queries, graph analytics, or evidence seals.
 """
 import json
+import os
 import sqlite3
 import shutil
 from pathlib import Path
 from typing import List, Dict, Any, Optional
 
-from core.db import Database, DEFAULT_DB_PATH
+from core.db import Database
 from addons.extractors import extract_all_entities
 from addons.scorer import RuleScorer
 from addons.evidence import build_evidence_record, normalize_utc_timestamp
@@ -30,7 +31,7 @@ def load_unified_posts(db: Optional[Database] = None, limit: int = 500) -> List[
     """
     Read posts directly from the single unified OSINT monitor SQLite DB (data/osint_monitor.db).
     """
-    target_db = db or Database(DEFAULT_DB_PATH)
+    target_db = db or Database()
     posts = []
     with target_db.get_connection() as conn:
         rows = conn.execute(
@@ -96,4 +97,7 @@ def load_dashboard_data(
     db_posts = load_unified_posts(db=db, limit=limit)
     if db_posts:
         return db_posts
-    return load_synthetic_demo_posts()
+    # Operational mode (DEMO_MODE!=1) must contain zero simulated or hardcoded output
+    if os.environ.get("DEMO_MODE") == "1":
+        return load_synthetic_demo_posts()
+    return []

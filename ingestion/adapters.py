@@ -131,7 +131,7 @@ class TGQPreviewAdapter:
         if not clean_name:
             return []
 
-        cmd = [self.executable, "preview", clean_name]
+        cmd = [self.executable, "preview", "--limit", str(limit), "--pages", "1", clean_name]
         try:
             proc = subprocess.run(cmd, capture_output=True, text=True, timeout=25)
             posts = []
