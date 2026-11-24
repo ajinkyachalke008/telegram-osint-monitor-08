@@ -330,3 +330,37 @@ def test_pdf_export_section_63_evidence_package():
     assert pdf_bytes.startswith(b"%PDF-")
     assert len(pdf_bytes) > 2000
 
+
+def test_tgq_preview_message_id_extraction_real_format():
+    """Verify TGQPreviewAdapter correctly parses message_id from real tgq JSON lines."""
+    from ingestion.adapters import TGQPreviewAdapter
+    real_sample_line = (
+        '{"channel_id": null, "channel_username": "telegram", "message_id": 400, '
+        '"date": "2025-08-18T13:34:04+00:00", "text": "Profile Ratings feature update.", '
+        '"views": 2740000, "source_url": "https://t.me/telegram/400", "has_media": true}'
+    )
+    post = TGQPreviewAdapter.parse_tgq_json_line(real_sample_line, default_channel="telegram")
+    assert post is not None
+    assert post.message_id == "400", f"Expected message_id '400', got '{post.message_id}'"
+    assert post.channel_id == "telegram"
+    assert post.timestamp_utc == "2025-08-18T13:34:04+00:00"
+    assert "Profile Ratings" in post.raw_text
+    assert post.ingestion_source == "LIVE"
+
+
+def test_tgq_preview_message_id_fallbacks():
+    """Verify TGQPreviewAdapter falls back to 'id', 'msg_id', or source_url when message_id key varies."""
+    from ingestion.adapters import TGQPreviewAdapter
+    # Test 'id' key
+    p1 = TGQPreviewAdapter.parse_tgq_json_line({"id": 501, "channel_username": "news_hub", "text": "News"})
+    assert p1.message_id == "501"
+
+    # Test 'msg_id' key
+    p2 = TGQPreviewAdapter.parse_tgq_json_line({"msg_id": 602, "channel_username": "news_hub", "text": "News"})
+    assert p2.message_id == "602"
+
+    # Test source_url extraction
+    p3 = TGQPreviewAdapter.parse_tgq_json_line({"source_url": "https://t.me/news_hub/703", "text": "News"})
+    assert p3.message_id == "703"
+
+
