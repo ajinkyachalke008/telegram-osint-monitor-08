@@ -14,6 +14,7 @@ import pandas as pd
 from core.db import Database
 from core.models import now_utc_iso
 from dashboard.provenance_banner import render_provenance_banner
+from dashboard.demo_sidebar import render_demo_maintenance_sidebar
 
 st.set_page_config(page_title="Live Alerts | TGSherlock", page_icon="🚨", layout="wide")
 
@@ -67,12 +68,15 @@ category_filter = st.sidebar.selectbox(
 )
 auto_refresh = st.sidebar.checkbox("⚡ Auto-refresh feed (every 5s)", value=True)
 
+# Gated Reset Demo State & Scripted Post Injection: ONLY visible when DEMO_MODE=1
+render_demo_maintenance_sidebar(db)
+
 
 @st.fragment(run_every=5 if auto_refresh else None)
 def render_live_feed(r_filter, s_filter, c_filter):
     with db.get_connection() as conn:
         query = """
-        SELECT a.*, p.channel_id, p.platform, p.message_id, p.timestamp_utc, p.raw_text, p.ingestion_source,
+        SELECT a.*, p.channel_id, p.platform, p.message_id, p.timestamp_utc, p.raw_text, p.normalized_text, p.ingestion_source,
                e.evidence_id, e.current_hash, e.block_height
         FROM alerts a
         JOIN posts p ON a.post_uid = p.post_uid
@@ -99,12 +103,36 @@ def render_live_feed(r_filter, s_filter, c_filter):
     last_count = st.session_state.get("last_seen_alert_count", None)
     if last_count is not None and current_count > last_count:
         new_diff = current_count - last_count
-        st.toast(f"🚨 New threat alert received! (+{new_diff} new)", icon="⚠️")
+        if new_diff == 1:
+            st.toast("🚨 New threat alert received! (+1 new)", icon="⚠️")
+        else:
+            st.toast(f"🚨 New threat alerts received! (+{new_diff} new)", icon="⚠️")
     st.session_state["last_seen_alert_count"] = current_count
+
+    # Group identical ad text across channels into one alert card
+    grouped_cards = []
+    seen_groups = {}
+    for a in alerts:
+        n_text = (a.get("normalized_text") or a.get("raw_text") or "").strip().lower()
+        cat = a.get("category", "")
+        group_key = (n_text, cat)
+        if group_key not in seen_groups:
+            entry = {
+                "primary": a,
+                "channels": [a["channel_id"]],
+                "all_alerts": [a]
+            }
+            seen_groups[group_key] = entry
+            grouped_cards.append(entry)
+        else:
+            entry = seen_groups[group_key]
+            if a["channel_id"] not in entry["channels"]:
+                entry["channels"].append(a["channel_id"])
+            entry["all_alerts"].append(a)
 
     col_meta1, col_meta2 = st.columns([2, 1])
     with col_meta1:
-        st.markdown(f"**Found {len(alerts)} alerts matching active filters.** &nbsp; *(Auto-refresh active: checks every 5s)*")
+        st.markdown(f"**Found {len(alerts)} alerts ({len(grouped_cards)} deduplicated cards) matching active filters.** &nbsp; *(Auto-refresh active: checks every 5s)*")
     with col_meta2:
         if alerts:
             df_export = pd.DataFrame([{
@@ -123,13 +151,15 @@ def render_live_feed(r_filter, s_filter, c_filter):
 
     st.divider()
 
-    if not alerts:
+    if not grouped_cards:
         st.info("No alerts found for the selected criteria.")
         return
 
-    for alert in alerts:
+    for card in grouped_cards:
+        alert = card["primary"]
         card_class = "threat-card-high" if alert["risk_level"] == "High" else "threat-card-med" if alert["risk_level"] == "Medium" else "threat-card-low"
         post_uid = alert["post_uid"]
+        other_channels = [ch for ch in card["channels"] if ch != alert["channel_id"]]
 
         # Fetch identifiers linked to this post
         idents = db.get_post_identifiers(post_uid)
@@ -152,6 +182,33 @@ def render_live_feed(r_filter, s_filter, c_filter):
                 </div>
             </div>
             """, unsafe_allow_html=True)
+
+            # Cross-channel indicator for duplicate ads across multiple channels
+            if other_channels:
+                num_other = len(other_channels)
+                channel_links = []
+                for ch in other_channels:
+                    ch_clean = str(ch).strip()
+                    if ch_clean.startswith("http://") or ch_clean.startswith("https://"):
+                        ch_url = ch_clean
+                        ch_label = ch_clean.split("/")[-1]
+                    elif ch_clean.startswith("t.me/"):
+                        ch_url = f"https://{ch_clean}"
+                        ch_label = ch_clean
+                    elif ch_clean.startswith("@"):
+                        ch_url = f"https://t.me/{ch_clean[1:]}"
+                        ch_label = ch_clean
+                    else:
+                        ch_url = f"https://t.me/{ch_clean}"
+                        ch_label = f"@{ch_clean}"
+                    channel_links.append(f'<a href="{ch_url}" target="_blank" style="color:#00ADB5; text-decoration:underline; font-weight:bold;">{html.escape(ch_label)}</a>')
+
+                also_posted_html = f"""
+                <div style="margin-top:6px; margin-bottom:8px; font-size:13px; color:#FFE082; background-color:#2A2315; padding:6px 10px; border-radius:5px; border-left:3px solid #FFAA00;">
+                    🔁 <b>Also posted in {num_other} channel{'s' if num_other > 1 else ''}:</b> {' • '.join(channel_links)}
+                </div>
+                """
+                st.markdown(also_posted_html, unsafe_allow_html=True)
 
             # Identifiers row
             if idents:
@@ -189,14 +246,15 @@ def render_live_feed(r_filter, s_filter, c_filter):
                     st.write("")
                     st.write("")
                     if st.button("Save Verdict", key=f"btn_{alert['alert_id']}"):
-                        db.update_alert_status(alert["alert_id"], new_status, analyst_notes)
-                        db.log_audit("alert_status_change", {
-                            "alert_id": alert["alert_id"],
-                            "old_status": alert["status"],
-                            "new_status": new_status,
-                            "notes": analyst_notes
-                        })
-                        st.success(f"Status updated to '{new_status}'")
+                        for a_rec in card["all_alerts"]:
+                            db.update_alert_status(a_rec["alert_id"], new_status, analyst_notes)
+                            db.log_audit("alert_status_change", {
+                                "alert_id": a_rec["alert_id"],
+                                "old_status": a_rec["status"],
+                                "new_status": new_status,
+                                "notes": analyst_notes
+                            })
+                        st.success(f"Status updated to '{new_status}' (applied to {len(card['all_alerts'])} alert{'s' if len(card['all_alerts']) > 1 else ''})")
                         st.rerun()
 
             st.write("")

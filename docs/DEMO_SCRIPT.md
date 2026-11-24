@@ -19,8 +19,10 @@ This script provides an exact, minute-by-minute walkthrough designed for hackath
 - **What to Observe:**
   - Notice the **Data Provenance Banner** at the top (`VERIFIED-SYNTHETIC` active stream, `LIVE` web previews, `IMPORTED` dumps, `UNVERIFIED` candidate feeds).
   - Observe the top 5 KPI cards: Total Posts, Actionable Threats (High), Extracted Identifiers, Cross-Channel Syndicates, Sealed Evidence Blocks.
-  - Inspect the **Ledger Chain-Head Hash** box showing the latest SHA-256 digest (`Block #12`).
-  - Point out the **"Reset Demo State"** button in the left sidebar (allows judges to wipe and reseed the demonstration instantly).
+  - Inspect the **Ledger Chain-Head Hash** box showing the latest SHA-256 digest and runtime block height.
+  - Point out the **Demo Maintenance (`DEMO_MODE=1`)** controls in the left sidebar:
+    - **"💉 Inject scripted demo post"**: Ingests one fixed mule recruitment post through the entire OSINT pipeline on demand.
+    - **"🚨 Wipe & Reseed Demo Database"**: Confirms and reseeds the demonstration database instantly.
 - **Talking Points:**
   > *"TGSherlock is a dedicated OSINT engine for detecting illicit Indian cybercrime trades—specifically mule bank accounts, unlicensed weapons, fake KYC credentials, and contraband. We operate exclusively on public broadcast channels with zero channel joining, and every post is cryptographically sealed for judicial admissibility."*
 
@@ -28,18 +30,33 @@ This script provides an exact, minute-by-minute walkthrough designed for hackath
 
 ### ⏱️ Minute 0:45 – 1:30 | Step 1: Live Threat Alerts (`1_🚨_Live_Alerts.py`)
 - **Where to Click:** In the sidebar or 6-Step Tour on Home, click **"1_🚨_Live_Alerts"**.
-- **What to Observe:**
-  - The page displays incoming alerts ranked by risk level (`[HIGH]` in neon red, `[MEDIUM]` in gold).
-  - Observe the auto-refresh fragment: every 5 seconds, the background streaming replay worker injects incoming threat posts from the live stream. When the stream injects the coordinated mule recruitment post, an alert notification toast pops up: `🚨 New threat alert received! (+1 new)`.
-  - Look at the top newly arrived threat card from `Public Deals Hub (Mule & SIM)` or `t.me/delhi_classifieds_demo`:
-    - Extracted Payment Handle: `mule.syndicate@ybl 🚨(2+ Chans)` (highlighted with cross-channel syndicate pill badge).
-    - Extracted Phone: `+919000011111`
-    - Recruiter Username: `@fast_cash_hub`
-    - Notice the channel's own handle is excluded from seller identifiers.
+- **What to Click:** In the left sidebar under **Demo Maintenance (`DEMO_MODE=1`)**, click the button:
+  👉 **"💉 Inject scripted demo post"**
+- **What Happens:** The system immediately runs the fixed target post:
+  > *"Fresh ICICI current account and ATM card available for rent. High limit load, zero dispute. Commission 15% daily. Ping @fast_cash_hub or UPI mule.syndicate@ybl or Call +919000011111."*
+  through the full pipeline:
+  1. Text Normalization
+  2. Entity & Payment Extraction (channel handle excluded from seller identifiers)
+  3. Classification & Threat Risk Scoring (`bank_account` / `High`)
+  4. Post Insertion & Identifier Linking (linking `mule.syndicate@ybl`)
+  5. SHA-256 Chained Evidence Block Generation
+  6. Actionable Alert Generation & Audit Logging
+- **Notification Toast:**
+  - Observe the notification toast: `🚨 Scripted demo post injected! Sealed at Block #<N>` (where `<N>` is the dynamic block height read at run time from the evidence record).
+  - When background streaming replay adds posts, multi-alert toasts fire showing `(+1 new)` or `(+N new)`.
+- **What to Observe on the Alert Feed:**
+  - The newly injected threat card appears at the top:
+    - **Risk & Category:** `[HIGH]` in neon red, `bank_account`, Threat Score: `8.5+/10`.
+    - **Extracted Payment Handle:** `UPI: mule.syndicate@ybl 🚨(2+ Chans)` (highlighted with cross-channel syndicate pill badge).
+    - **Extracted Phone:** `Phone: +919000011111`
+    - **Recruiter Username:** `Username: @fast_cash_hub`
+    - **Channel Handle Separation:** The channel's own handle (`delhi_classifieds_demo`) is excluded from seller identifiers.
+    - **Multi-Channel Ad Detection:** For identical ad copy posted across multiple channels, notice the deduplicated card indicator: `🔁 Also posted in N other channels: <links>`.
+    - **Runtime Evidence Block:** Note the dynamically assigned evidence block displayed on the card: `🔒 Evidence Block #<N>` (read directly from the runtime evidence record, e.g. `Block #34`).
 - **What to Click:** Expand **"⚙️ Triage & Analyst Action for Alert"**:
   - Change status from `new` to `confirmed`.
   - Enter Analyst Note: `"Verified mule recruiter mule.syndicate@ybl operating synchronously across public channels."`
-  - Click **"Save Verdict"** -> page updates and writes an immutable audit record.
+  - Click **"Save Verdict"** -> page updates and writes an immutable audit record across all linked channel posts.
 - **Talking Points:**
   > *"Live alerts stream directly into analyst triage cards. The system extracts financial payment handles (UPI, IFSC, crypto) and phone numbers, normalizing Devanagari numerals. When an actor appears in multiple channels, the system automatically flags them with a cross-channel syndicate badge."*
 
@@ -47,13 +64,14 @@ This script provides an exact, minute-by-minute walkthrough designed for hackath
 
 ### ⏱️ Minute 1:30 – 2:15 | Step 2: Evidence Seal & Section 63 BSA 2023 Dossier (`2_🔍_Alert_Detail.py`)
 - **Where to Click:** In the sidebar, click **"2_🔍_Alert_Detail"**.
-- **What to Select:** In the dropdown, select the streamed alert containing the payment identifier `mule.syndicate@ybl`.
+- **What to Select:** In the dropdown, select the injected alert containing the payment identifier `mule.syndicate@ybl`.
 - **What to Observe:**
-  - **Left Column:** Shows the raw post text, metadata, and the **Financial Ad Analysis** flagging `MULE RECRUITMENT PATTERN DETECTED` with character offsets.
+  - **Left Column:** Shows the raw post text, metadata, and the **Financial Ad Analysis** flagging `MULE RECRUITMENT PATTERN DETECTED` with exact character offsets.
   - **Image OCR Capability Status:** Honestly shows `OCR DISABLED` because the host environment does not have the external Google Tesseract binary installed. Highlight that we never fake OCR outputs.
   - **Right Column:** Shows RFC-8785 Canonical JSON, Previous Hash, and Current Hash.
+  - **Runtime Block Height:** Note the block number displayed in the verification box (read at run time from the evidence record, matching the block height assigned on injection).
 - **What to Click:** Click **"🛡️ Verify Cryptographic Seal Live"**:
-  - Green banner appears: `✅ EVIDENCE VERIFIED: SHA-256 seal matches exactly. Block #1 is tamper-evident and chained to parent.`
+  - Green banner appears: `✅ EVIDENCE VERIFIED: SHA-256 seal matches exactly. Block #<N> is tamper-evident and chained to parent.` (where `<N>` is confirmed at run time).
 - **What to Click:** Click **"📥 Export Section 63 BSA 2023 Evidence Package (PDF)"**:
   - Open or view the generated PDF. Point out the statutory notice:
     > *"Evidence package prepared to support a Section 63 BSA 2023 certificate (must be signed by the responsible person and an expert). Not legal advice."*

@@ -324,18 +324,19 @@ class Database:
             if dup:
                 return False
 
-            # Check if an identical alert already exists for the same normalized text and category
-            cur_post = conn.execute("SELECT normalized_text FROM posts WHERE post_uid = ?", (alert.post_uid,)).fetchone()
+            # Check if an identical alert already exists for the same channel, normalized text and category
+            cur_post = conn.execute("SELECT channel_id, normalized_text FROM posts WHERE post_uid = ?", (alert.post_uid,)).fetchone()
             if cur_post:
                 norm_text = cur_post["normalized_text"]
+                channel_id = cur_post["channel_id"]
                 existing_content = conn.execute(
                     """
                     SELECT a.alert_id FROM alerts a
                     JOIN posts p ON a.post_uid = p.post_uid
-                    WHERE p.normalized_text = ? AND a.category = ?
+                    WHERE p.channel_id = ? AND p.normalized_text = ? AND a.category = ?
                     LIMIT 1
                     """,
-                    (norm_text, alert.category)
+                    (channel_id, norm_text, alert.category)
                 ).fetchone()
                 if existing_content:
                     return False

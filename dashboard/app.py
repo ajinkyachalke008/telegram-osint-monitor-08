@@ -18,6 +18,7 @@ import plotly.graph_objects as go
 from core.db import Database
 from core.models import now_utc_iso
 from dashboard.provenance_banner import render_provenance_banner
+from dashboard.demo_sidebar import render_demo_maintenance_sidebar
 from scripts.generate_demo_data import seed_demo_database
 
 # Page configuration
@@ -58,22 +59,8 @@ db = Database()
 st.sidebar.title("🛡️ TGSherlock OSINT")
 st.sidebar.caption("Law Enforcement Intelligence Engine")
 
-# Gated Reset Demo State: ONLY visible when DEMO_MODE=1 and confirmed
-if os.environ.get("DEMO_MODE") == "1":
-    st.sidebar.divider()
-    st.sidebar.markdown("🛠️ **Demo Maintenance (`DEMO_MODE=1`)**")
-    confirm_reset = st.sidebar.checkbox("Confirm database reset & reseed", key="confirm_demo_reset")
-    if confirm_reset:
-        if st.sidebar.button("🚨 Wipe & Reseed Demo Database", use_container_width=True):
-            seed_demo_database(reset=True)
-            db.log_audit("demo_reset_executed", {
-                "confirmed": True,
-                "actor": "evaluator_ui",
-                "env_demo_mode": "1",
-                "timestamp": now_utc_iso()
-            })
-            st.toast("✅ Demo reset successfully! Baseline records and evidence chain reseeded.", icon="🔄")
-            st.rerun()
+# Gated Reset Demo State & Scripted Post Injection: ONLY visible when DEMO_MODE=1
+render_demo_maintenance_sidebar(db)
 
 st.title("🛡️ TGSherlock OSINT Threat Monitor")
 st.caption("Telegram & Multi-Platform Illegal Trade Intelligence Engine | Real-Time Detection & Link Analysis")

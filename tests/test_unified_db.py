@@ -111,3 +111,101 @@ def test_evidence_hash_chain_storage(temp_db):
     assert latest is not None
     assert latest["evidence_id"] == "EV-TEST-1"
     assert latest["block_height"] == 1
+
+
+def test_alert_dedup_per_channel(temp_db):
+    """Test that alert deduplication is keyed on (channel, normalized_text, category)."""
+    # 1. Post in Channel A
+    p1 = PostRecord(
+        platform="telegram",
+        channel_id="ch_a",
+        message_id="101",
+        timestamp_utc="2026-11-24T12:00:00Z",
+        raw_text="Fresh ICICI bank account for rent commission 10%",
+        normalized_text="fresh icici bank account for rent commission 10%",
+        category="bank_account",
+        risk_level="High",
+        threat_score=8.5
+    )
+    temp_db.insert_post(p1)
+
+    a1 = AlertRecord(
+        alert_id="ALT-001",
+        post_uid=p1.post_uid,
+        category="bank_account",
+        risk_level="High",
+        threat_score=8.5,
+        matched_terms=["icici", "rent", "bank account"]
+    )
+    # First alert in Channel A -> True (created)
+    assert temp_db.create_alert(a1) is True
+
+    # Duplicate post_uid -> False
+    assert temp_db.create_alert(a1) is False
+
+    # 2. Second post in Channel A with identical text and category -> False (deduped within channel)
+    p2 = PostRecord(
+        platform="telegram",
+        channel_id="ch_a",
+        message_id="102",
+        timestamp_utc="2026-11-24T12:05:00Z",
+        raw_text="Fresh ICICI bank account for rent commission 10%",
+        normalized_text="fresh icici bank account for rent commission 10%",
+        category="bank_account",
+        risk_level="High",
+        threat_score=8.5
+    )
+    temp_db.insert_post(p2)
+    a2 = AlertRecord(
+        alert_id="ALT-002",
+        post_uid=p2.post_uid,
+        category="bank_account",
+        risk_level="High",
+        threat_score=8.5,
+        matched_terms=["icici", "rent", "bank account"]
+    )
+    assert temp_db.create_alert(a2) is False
+
+    # 3. Third post in Channel B with IDENTICAL text and category -> True (different channel)
+    p3 = PostRecord(
+        platform="telegram",
+        channel_id="ch_b",
+        message_id="201",
+        timestamp_utc="2026-11-24T12:10:00Z",
+        raw_text="Fresh ICICI bank account for rent commission 10%",
+        normalized_text="fresh icici bank account for rent commission 10%",
+        category="bank_account",
+        risk_level="High",
+        threat_score=8.5
+    )
+    temp_db.insert_post(p3)
+    a3 = AlertRecord(
+        alert_id="ALT-003",
+        post_uid=p3.post_uid,
+        category="bank_account",
+        risk_level="High",
+        threat_score=8.5,
+        matched_terms=["icici", "rent", "bank account"]
+    )
+    assert temp_db.create_alert(a3) is True
+
+
+def test_inject_scripted_demo_post(temp_db):
+    """Test that inject_scripted_demo_post executes full pipeline end-to-end."""
+    from ingestion.demo_injector import inject_scripted_demo_post
+    res = inject_scripted_demo_post(temp_db)
+    assert res["alert_id"].startswith("ALT-")
+    assert res["block_height"] >= 1
+    assert len(res["current_hash"]) == 64
+    assert res["category"] == "bank_account"
+    assert res["risk_level"] in ("High", "Medium")
+    # Verify post and alert exist in DB
+    with temp_db.get_connection() as conn:
+        post_row = conn.execute("SELECT * FROM posts WHERE post_uid = ?", (res["post_uid"],)).fetchone()
+        assert post_row is not None
+        assert "mule.syndicate@ybl" in post_row["raw_text"]
+        alert_row = conn.execute("SELECT * FROM alerts WHERE alert_id = ?", (res["alert_id"],)).fetchone()
+        assert alert_row is not None
+        ident_row = conn.execute("SELECT * FROM identifiers WHERE identifier_id = 'upi:mule.syndicate@ybl'").fetchone()
+        assert ident_row is not None
+

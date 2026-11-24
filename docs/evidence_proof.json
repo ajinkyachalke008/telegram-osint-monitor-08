@@ -1,7 +1,7 @@
 {
-  "verified_at_utc": "2026-11-24T10:24:03Z",
+  "verified_at_utc": "2026-11-24T10:44:41Z",
   "database_path": "C:\\Users\\AJINKYA CHALKE\\Desktop\\rajasthan hackthon ps2\\data\\osint_monitor.db",
-  "total_blocks": 12,
+  "total_blocks": 34,
   "verification_status": "SUCCESS (100% Cryptographic Match)",
   "genesis_block": {
     "block_height": 1,
@@ -9,8 +9,8 @@
     "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000"
   },
   "chain_head": {
-    "block_height": 12,
-    "hash": "defda30edad88b7ccbb37753fe73bed50d890294b7e67c67d59761ee4be3d075"
+    "block_height": 34,
+    "hash": "f64b57c191edc71e8bacfcf56cd955459310c77da08d2e6b12fdadb2c76abf16"
   },
   "flow_proof_target": {
     "target_identifier": "mule.syndicate@ybl",
@@ -20,10 +20,12 @@
     "stored_hash": "0182e38f75429c119ee1902d922f83da0b0c6f6bc66f880c56375086c486d9d9",
     "recomputed_hash": "0182e38f75429c119ee1902d922f83da0b0c6f6bc66f880c56375086c486d9d9",
     "verification": "TAMPER-EVIDENT VALID (100% CRYPTOGRAPHIC MATCH)",
-    "chain_head_block": 12,
-    "chain_head_hash": "defda30edad88b7ccbb37753fe73bed50d890294b7e67c67d59761ee4be3d075",
-    "cross_channel_count": 3,
+    "chain_head_block": 34,
+    "chain_head_hash": "f64b57c191edc71e8bacfcf56cd955459310c77da08d2e6b12fdadb2c76abf16",
+    "cross_channel_count": 5,
     "linked_channels": [
+      "Crypto P2P Cashout Network",
+      "Mewat Financial Trade Exchange",
       "t.me/delhi_classifieds_demo",
       "t.me/mule_accounts_market",
       "t.me/mumbai_trade_network"
@@ -101,6 +103,138 @@
       "hash": "defda30edad88b7ccbb37753fe73bed50d890294b7e67c67d59761ee4be3d075",
       "prev_hash": "1869feb6b537051d9482ddfa85dcae5b31128e643beac5c11dc2ace4b72525b5",
       "post_uid": "telegram_t.me/gujarat_merchants_sim_9301"
+    },
+    {
+      "block_height": 13,
+      "hash": "dcd8695e88c457c92ebe82ea7a741565364f5313e6823524deadf1a660786e39",
+      "prev_hash": "defda30edad88b7ccbb37753fe73bed50d890294b7e67c67d59761ee4be3d075",
+      "post_uid": "telegram_Public Deals Hub (Mule & SIM)_stream_1_101_59698"
+    },
+    {
+      "block_height": 14,
+      "hash": "7548446ca4836ca161944ea37b3af3390bd03095f09ee565d03b22035b0f99d4",
+      "prev_hash": "dcd8695e88c457c92ebe82ea7a741565364f5313e6823524deadf1a660786e39",
+      "post_uid": "telegram_Dark Deals All India_stream_1_102_64856"
+    },
+    {
+      "block_height": 15,
+      "hash": "eb66d3850f16ef4032744ed272f5e78b1e78569383f386f2543a35e235c561d8",
+      "prev_hash": "7548446ca4836ca161944ea37b3af3390bd03095f09ee565d03b22035b0f99d4",
+      "post_uid": "telegram_Crypto P2P Cashout Network_stream_1_103_70049"
+    },
+    {
+      "block_height": 16,
+      "hash": "f4c923e45ae16e3562a545cf68befc8d56b2ce020e3556f0240278e1f819926a",
+      "prev_hash": "eb66d3850f16ef4032744ed272f5e78b1e78569383f386f2543a35e235c561d8",
+      "post_uid": "telegram_t.me/delhi_classifieds_demo_stream_1_104_75208"
+    },
+    {
+      "block_height": 17,
+      "hash": "5d93fd8e2a1a92fec7d3237a4a88f2644b1be496debb4862daae3ed9554a0862",
+      "prev_hash": "f4c923e45ae16e3562a545cf68befc8d56b2ce020e3556f0240278e1f819926a",
+      "post_uid": "telegram_t.me/mumbai_trade_network_stream_1_105_80317"
+    },
+    {
+      "block_height": 18,
+      "hash": "dc2cd77a6ab0d81aa8c30c44a854fe436cd5d7d951a966d7665671d116acfcd0",
+      "prev_hash": "5d93fd8e2a1a92fec7d3237a4a88f2644b1be496debb4862daae3ed9554a0862",
+      "post_uid": "telegram_t.me/mule_accounts_market_stream_1_106_85419"
+    },
+    {
+      "block_height": 19,
+      "hash": "e974df00c1f4b97dbd82a1b82b4079bf8de541ebbaf7e9a7c67b280d17b97eb3",
+      "prev_hash": "dc2cd77a6ab0d81aa8c30c44a854fe436cd5d7d951a966d7665671d116acfcd0",
+      "post_uid": "telegram_t.me/mumbai_trade_network_stream_1_107_90491"
+    },
+    {
+      "block_height": 20,
+      "hash": "64a7c5205c11a1f47211cfd514dc3ab9de52f003b1592eb38fb05720696af7c9",
+      "prev_hash": "e974df00c1f4b97dbd82a1b82b4079bf8de541ebbaf7e9a7c67b280d17b97eb3",
+      "post_uid": "telegram_Public Deals Hub (Mule & SIM)_stream_1_108_95565"
+    },
+    {
+      "block_height": 21,
+      "hash": "c40bcc8e95e23bc4ac06c4b88fd921aedaa9d01f671f61feb59a58229587a658",
+      "prev_hash": "64a7c5205c11a1f47211cfd514dc3ab9de52f003b1592eb38fb05720696af7c9",
+      "post_uid": "telegram_Public Deals Hub (Mule & SIM)_stream_1_109_631"
+    },
+    {
+      "block_height": 22,
+      "hash": "9b2160733e5d5d4d35d9e8ce3f2fe1d1f860ab5d2276a37893dab9bb18122522",
+      "prev_hash": "c40bcc8e95e23bc4ac06c4b88fd921aedaa9d01f671f61feb59a58229587a658",
+      "post_uid": "telegram_Dark Deals All India_stream_1_110_5734"
+    },
+    {
+      "block_height": 23,
+      "hash": "541823815f074a3b024559f97da05d69b90017df1aa47cb603005fd58c568183",
+      "prev_hash": "9b2160733e5d5d4d35d9e8ce3f2fe1d1f860ab5d2276a37893dab9bb18122522",
+      "post_uid": "telegram_Crypto P2P Cashout Network_stream_1_111_10805"
+    },
+    {
+      "block_height": 24,
+      "hash": "a14cf24c551048c9b8641999304c6a36963e88cb3410930ec24a7d2d773ce7ae",
+      "prev_hash": "541823815f074a3b024559f97da05d69b90017df1aa47cb603005fd58c568183",
+      "post_uid": "telegram_Mewat Financial Trade Exchange_stream_1_112_15879"
+    },
+    {
+      "block_height": 25,
+      "hash": "910ad5e754d8e07f73a830ced62b21acbc101b315dfb82ce34015df16f8e8766",
+      "prev_hash": "a14cf24c551048c9b8641999304c6a36963e88cb3410930ec24a7d2d773ce7ae",
+      "post_uid": "telegram_Public Deals Hub (Mule & SIM)_stream_1_113_20953"
+    },
+    {
+      "block_height": 26,
+      "hash": "662ed2d129da92a0884cff12b3a82d770f5413210d66a6787e7cbbf684f53d85",
+      "prev_hash": "910ad5e754d8e07f73a830ced62b21acbc101b315dfb82ce34015df16f8e8766",
+      "post_uid": "telegram_t.me/delhi_classifieds_demo_stream_1_114_26054"
+    },
+    {
+      "block_height": 27,
+      "hash": "d4794a824a69384b158382744cf9065b5c8f7f5c28cef922b4143294c61c48ca",
+      "prev_hash": "662ed2d129da92a0884cff12b3a82d770f5413210d66a6787e7cbbf684f53d85",
+      "post_uid": "telegram_Dark Deals All India_stream_1_115_31126"
+    },
+    {
+      "block_height": 28,
+      "hash": "c37f3e1ee6335bf3e863caf637a814669f297f7a5658d9e3413f02c9f8cd2d23",
+      "prev_hash": "d4794a824a69384b158382744cf9065b5c8f7f5c28cef922b4143294c61c48ca",
+      "post_uid": "telegram_Crypto P2P Cashout Network_stream_1_116_36174"
+    },
+    {
+      "block_height": 29,
+      "hash": "fcdd847de53def5487be97fa079ebb0202fa1db5de73662e828b56dabf80b79f",
+      "prev_hash": "c37f3e1ee6335bf3e863caf637a814669f297f7a5658d9e3413f02c9f8cd2d23",
+      "post_uid": "telegram_Public Deals Hub (Mule & SIM)_stream_1_117_41274"
+    },
+    {
+      "block_height": 30,
+      "hash": "b14973b213c255e470e1a259dbe39f4bcdea186e5dd53128524dfb01ca898cff",
+      "prev_hash": "fcdd847de53def5487be97fa079ebb0202fa1db5de73662e828b56dabf80b79f",
+      "post_uid": "telegram_Mewat Financial Trade Exchange_stream_1_118_46393"
+    },
+    {
+      "block_height": 31,
+      "hash": "f2ca51c6608b653442426ca2da85dc80eb89c77f613048e516527138b7e53be5",
+      "prev_hash": "b14973b213c255e470e1a259dbe39f4bcdea186e5dd53128524dfb01ca898cff",
+      "post_uid": "telegram_Dark Deals All India_stream_1_119_51466"
+    },
+    {
+      "block_height": 32,
+      "hash": "01e64d0d52fc317cf9d8c15efe40edc6ad03a3f85e95da01a63d209a537d8258",
+      "prev_hash": "f2ca51c6608b653442426ca2da85dc80eb89c77f613048e516527138b7e53be5",
+      "post_uid": "telegram_t.me/delhi_classifieds_demo_stream_1_120_56560"
+    },
+    {
+      "block_height": 33,
+      "hash": "b056ce9cd546e7306e6f031d6b1392cec41f0e842fbc90988758717bc1d9c70b",
+      "prev_hash": "01e64d0d52fc317cf9d8c15efe40edc6ad03a3f85e95da01a63d209a537d8258",
+      "post_uid": "telegram_Bulk SIM & OTP Bypass_stream_1_121_61648"
+    },
+    {
+      "block_height": 34,
+      "hash": "f64b57c191edc71e8bacfcf56cd955459310c77da08d2e6b12fdadb2c76abf16",
+      "prev_hash": "b056ce9cd546e7306e6f031d6b1392cec41f0e842fbc90988758717bc1d9c70b",
+      "post_uid": "telegram_Bulk SIM & OTP Bypass_stream_1_122_66724"
     }
   ]
 }

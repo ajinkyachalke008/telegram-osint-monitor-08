@@ -122,10 +122,14 @@ def main():
         page.screenshot(path=str(t0_path), full_page=True)
         print(f"      📸 Captured t=0s screenshot: {t0_path.name}")
 
+        with db.get_connection() as conn:
+            initial_alerts_count = conn.execute("SELECT COUNT(*) FROM alerts").fetchone()[0]
+        print(f"      [t=0s Database State]: {initial_alerts_count} total alerts in SQLite DB.")
+
         # Check initial alerts on page
         t0_text = page.inner_text("body")
         for line in t0_text.splitlines():
-            if "Found" in line and "alerts matching" in line:
+            if "Found" in line and "alerts" in line and "matching" in line:
                 print(f"      [t=0s Page State]: {line.strip()}")
                 break
 
@@ -148,8 +152,8 @@ def main():
                 except Empty:
                     break
 
-            # Check for toast notification in DOM
-            toasts = page.locator(".stToast, [data-testid='stToast'], div:has-text('New threat alert received')").all()
+            # Check for toast notification in DOM (both singular and plural)
+            toasts = page.locator(".stToast, [data-testid='stToast'], div:has-text('New threat alert')").all()
             for t in toasts:
                 try:
                     t_text = t.inner_text()
@@ -165,10 +169,12 @@ def main():
                 t60_path = SCREENSHOT_DIR / "live_alerts_t60.png"
                 page.screenshot(path=str(t60_path), full_page=True)
                 print(f"[{elapsed:04.1f}s] 📸 Captured t=60s screenshot: {t60_path.name}")
+                with db.get_connection() as conn:
+                    t60_alerts_count = conn.execute("SELECT COUNT(*) FROM alerts").fetchone()[0]
                 t60_text = page.inner_text("body")
                 for line in t60_text.splitlines():
-                    if "Found" in line and "alerts matching" in line:
-                        print(f"[{elapsed:04.1f}s Page State]: {line.strip()}")
+                    if "Found" in line and "alerts" in line and "matching" in line:
+                        print(f"[{elapsed:04.1f}s Page State]: {line.strip()} (DB alerts: {t60_alerts_count})")
                         break
                 t60_captured = True
 
@@ -188,11 +194,19 @@ def main():
     except Exception:
         pass
 
+    with db.get_connection() as conn:
+        final_alerts_count = conn.execute("SELECT COUNT(*) FROM alerts").fetchone()[0]
+
     print("=" * 76)
     print(" 90-SECOND DEMO SURVEILLANCE SUMMARY")
     print("=" * 76)
     print(f"Total Replay Worker Log Lines: {len(replay_lines)}")
+    print(f"Alerts in DB at t=0s:          {initial_alerts_count}")
+    print(f"Alerts in DB at t=60s:         {t60_alerts_count}")
+    print(f"Alerts in DB at t=90s:         {final_alerts_count}")
+    print(f"Net New Alerts Created:        {final_alerts_count - initial_alerts_count}")
     print(f"Toast Notification Fired:     {'YES 🔔' if toast_fired else 'NO ❌'}")
+    print(f"Total Unique Toasts Caught:   {len(toast_messages)}")
     if toast_messages:
         print(f"Captured Toast Messages:     {toast_messages}")
     print(f"Screenshot at t=0s:           {SCREENSHOT_DIR / 'live_alerts_t0.png'}")
