@@ -175,9 +175,16 @@ categories:
     weight_multiplier: 1.2
     default_weight: 3.0
     slang_en:
+      - current account
+      - savings account
+      - fresh account
       - current account for rent
       - current account rent
       - savings account for sale
+      - bank account for rent
+      - rent bank account
+      - sell bank account
+      - rent account
       - corporate bank account
       - bank mule
       - ready bank kit
@@ -229,6 +236,9 @@ categories:
     weight_multiplier: 1.0
     default_weight: 2.5
     slang_en:
+      - atm card
+      - debit card
+      - atm debit card
       - atm card with pin
       - debit card for sale
       - cloned debit card
@@ -310,10 +320,11 @@ categories:
     default_weight: 3.5
     slang_en:
       - full net banking kit
+      - netbanking kit
+      - net banking kit
       - internet banking kit with sim
       - corporate net banking
       - complete bank kit with cheque book
-      - net banking kit
       - corporate login credentials
       - full kit account
     slang_hinglish:
