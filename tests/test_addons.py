@@ -91,9 +91,10 @@ def test_username_and_tme_links():
 def test_location_extraction():
     text = "Delivery available across Mumbai, Jaipur, and Mewat within 24 hours."
     locs = extract_locations(text)
-    assert "Mumbai" in locs
-    assert "Jaipur" in locs
-    assert "Mewat" in locs
+    names = [l["name"] if isinstance(l, dict) else l for l in locs]
+    assert "Mumbai" in names
+    assert "Jaipur" in names
+    assert "Mewat" in names
 
 
 # ---------------------------------------------------------------------------
