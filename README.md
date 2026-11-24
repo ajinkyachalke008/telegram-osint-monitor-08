@@ -1,4 +1,4 @@
-# 🛡️ TGSherlock OSINT Threat Intelligence Platform
+# 🛡️ telegram-osint-monitor-08: OSINT Threat Intelligence Platform
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
@@ -7,13 +7,13 @@
 
 An air-gapped open-source intelligence (OSINT) and law-enforcement analytical platform designed to monitor **public Telegram channels** for illicit Indian cybercrime trades—specifically mule bank accounts, unlicensed firearms, forged documents, fake KYC SIM cards, and narcotics.
 
-TGSherlock correlates seller payment handles across disparate channels, clusters coordinated ad campaigns, and generates cryptographically sealed evidence packages prepared to support Section 63 Bharatiya Sakshya Adhiniyam, 2023 (BSA 2023) certificates.
+telegram-osint-monitor-08 correlates seller payment handles across disparate channels, clusters coordinated ad campaigns, and generates cryptographically sealed evidence packages prepared to support Section 63 Bharatiya Sakshya Adhiniyam, 2023 (BSA 2023) certificates.
 
 ---
 
 ## ⚡ 5-Minute Setup on a Fresh Machine
 
-Follow these step-by-step instructions to get TGSherlock running from scratch in under 5 minutes:
+Follow these step-by-step instructions to get telegram-osint-monitor-08 running from scratch in under 5 minutes:
 
 ### 1. Prerequisites
 - **Python 3.10 to 3.15** installed on your system ([Download Python](https://www.python.org/downloads/))
@@ -22,8 +22,8 @@ Follow these step-by-step instructions to get TGSherlock running from scratch in
 
 ### 2. Clone Repository
 ```bash
-git clone https://github.com/your-org/tgsherlock.git
-cd tgsherlock
+git clone https://github.com/ajinkyachalke008/telegram-osint-monitor-08.git
+cd telegram-osint-monitor-08
 ```
 
 ### 3. Create & Activate Virtual Environment
@@ -135,13 +135,13 @@ Follow this sequential path through the web interface (`http://localhost:8501`):
 
 ## 📡 Data Provenance Classification Standards
 
-Every feature and dataset in TGSherlock is strictly tagged with one of four provenance levels:
+Every feature and dataset in telegram-osint-monitor-08 is strictly tagged with one of four provenance levels:
 
 | Provenance Label | Scope & Operational Boundary | Air-Gap & Compliance Rule |
 | :--- | :--- | :--- |
 | **`VERIFIED-SYNTHETIC`** | Automated synthetic benchmark records (450 held-out test rows, demo seed datasets) | Validated against regex extractors, classifier pipeline, and SHA-256 ledger. |
 | **`IMPORTED`** | Offline investigator imports (CSV, JSON, sample police cybercell batches) | Read-only ingest; raw records preserved with cryptographic sealing. |
-| **`UNVERIFIED`** | Telegram Web Preview Poller, TGSherlock Daemon Intake, and Discovery Snowball Watchlist | Air-gap unverified; requires external live connection or active user session. |
+| **`UNVERIFIED`** | Telegram Web Preview Poller, telegram-osint-monitor-08 Daemon Intake, and Discovery Snowball Watchlist | Air-gap unverified; requires external live connection or active user session. |
 | **`LIVE`** | Unauthenticated Telegram web previews or daemon sessions *only when live verified on host* | Strict public broadcast feeds only; zero channel joining or infiltration. |
 
 ---

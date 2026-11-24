@@ -12,7 +12,7 @@ import pandas as pd
 
 from core.db import Database
 
-st.set_page_config(page_title="Responsible Use & Audit | TGSherlock", page_icon="⚖️", layout="wide")
+st.set_page_config(page_title="Responsible Use & Audit | telegram-osint-monitor-08", page_icon="⚖️", layout="wide")
 
 from dashboard.provenance_banner import render_provenance_banner
 render_provenance_banner(page_title="Responsible Use & Audit", active_stream="VERIFIED-SYNTHETIC")

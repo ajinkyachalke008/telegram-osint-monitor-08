@@ -1,6 +1,6 @@
 # System Limitations, Operational Boundaries & Legal Disclosures
 
-This document details the intentional design limitations, data boundaries, and technical caveats of the TGSherlock OSINT Threat Intelligence Platform.
+This document details the intentional design limitations, data boundaries, and technical caveats of the telegram-osint-monitor-08 Threat Intelligence Platform.
 
 ---
 
@@ -14,7 +14,7 @@ This document details the intentional design limitations, data boundaries, and t
 
 ## 2. Unproven Live Operational Components
 - **Public Web Previews (`t.me/s/*`):** The zero-authentication scraper relies on Telegram's public web preview endpoint. In live continuous production, this endpoint is subject to Telegram rate-limiting, IP-based Cloudflare challenges, and network-level blocking.
-- **External Client Daemons:** The TGSherlock daemon database (`~/.local/share/tgsherlock/accounts/*/tgsherlock.db`) is an upstream client intake feed. In air-gapped or fresh test environments where no Telegram account is signed in, this feed produces zero posts, and the system relies on replay and imported streams.
+- **External Client Daemons:** The upstream daemon database (`~/.local/share/tgsherlock/accounts/*/tgsherlock.db` or external Telegram client) is an upstream client intake feed. In air-gapped or fresh test environments where no Telegram account is signed in, this feed produces zero posts, and the system relies on replay and imported streams.
 - **No Direct Message (DM) Attribution:** The system captures public broadcast posts only. Discussions that transition into private 1-on-1 chats ("DM for price", "Ping secret chat") cannot be monitored or verified by this system.
 
 ---

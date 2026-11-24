@@ -25,7 +25,7 @@ from discovery.finder import (
     extract_forward_origins,
 )
 
-st.set_page_config(page_title="Channel Discovery | TGSherlock", page_icon="🔭", layout="wide")
+st.set_page_config(page_title="Channel Discovery | telegram-osint-monitor-08", page_icon="🔭", layout="wide")
 
 from dashboard.provenance_banner import render_provenance_banner
 render_provenance_banner(page_title="Channel Discovery", active_stream="UNVERIFIED")

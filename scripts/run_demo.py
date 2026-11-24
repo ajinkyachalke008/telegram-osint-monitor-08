@@ -1,4 +1,4 @@
-"""One-Command Demonstration Launcher for TGSherlock OSINT Monitor.
+"""One-Command Demonstration Launcher for telegram-osint-monitor-08 OSINT Monitor.
 
 Performs:
 1. Database reset (data/osint_monitor.db) & initial baseline demo data seeding
@@ -26,7 +26,7 @@ from scripts.generate_demo_data import seed_demo_database
 
 def main():
     print("=" * 76)
-    print("       🛡️  TGSherlock OSINT Threat Intelligence - 1-Command Demo")
+    print("       🛡️  telegram-osint-monitor-08 Threat Intelligence - 1-Command Demo")
     print("=" * 76)
     print(f"Project Root: {PROJECT_ROOT}")
     print(f"Database:     {DEFAULT_DB_PATH}")
@@ -83,13 +83,13 @@ def main():
     print("=" * 76 + "\n")
 
     def handle_exit(sig, frame):
-        print("\n[TGSherlock] Shutting down demo processes...")
+        print("\n[telegram-osint-monitor-08] Shutting down demo processes...")
         try:
             replay_proc.terminate()
             dashboard_proc.terminate()
         except Exception:
             pass
-        print("[TGSherlock] Demo shutdown complete.")
+        print("[telegram-osint-monitor-08] Demo shutdown complete.")
         sys.exit(0)
 
     signal.signal(signal.SIGINT, handle_exit)

@@ -2,7 +2,7 @@
 from pathlib import Path
 import streamlit as st
 
-st.set_page_config(page_title="Model Metrics | TGSherlock", page_icon="📈", layout="wide")
+st.set_page_config(page_title="Model Metrics | telegram-osint-monitor-08", page_icon="📈", layout="wide")
 
 from dashboard.provenance_banner import render_provenance_banner
 render_provenance_banner(page_title="Model Metrics", active_stream="VERIFIED-SYNTHETIC")

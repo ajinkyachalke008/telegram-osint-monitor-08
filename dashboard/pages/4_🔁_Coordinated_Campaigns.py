@@ -12,7 +12,7 @@ import pandas as pd
 from core.db import Database
 from dashboard.similarity import find_text_ad_clusters
 
-st.set_page_config(page_title="Coordinated Campaigns | TGSherlock", page_icon="🔁", layout="wide")
+st.set_page_config(page_title="Coordinated Campaigns | telegram-osint-monitor-08", page_icon="🔁", layout="wide")
 
 from dashboard.provenance_banner import render_provenance_banner
 render_provenance_banner(page_title="Coordinated Campaigns", active_stream="VERIFIED-SYNTHETIC")

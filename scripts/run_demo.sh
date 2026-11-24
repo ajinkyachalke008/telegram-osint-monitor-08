@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# Portable Shell One-Click Demo Runner for TGSherlock OSINT Monitor
+# Portable Shell One-Click Demo Runner for telegram-osint-monitor-08 OSINT Monitor
 set -e
 
 echo "=========================================================="
-echo " 🛡️ TGSherlock OSINT Threat Intelligence System "
+echo " 🛡️ telegram-osint-monitor-08 Threat Intelligence System "
 echo "=========================================================="
 
 VENV_PY="./.venv/bin/python"

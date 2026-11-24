@@ -36,8 +36,8 @@ def render_provenance_banner(page_title: str = "", active_stream: str = None):
 
     active_badges_str = " &nbsp; ".join(badges_html)
 
-    # Air-gap unverified status for Telegram Web Preview Poller and TGSherlock Ingestion
-    unverified_badge = '<span style="background-color:#546E7A; color:#ECEFF1; padding:2px 7px; border-radius:4px; font-size:11px;">UNVERIFIED: Telegram Web Preview Poller &amp; TGSherlock Ingestion (air-gap unverified)</span>'
+    # Air-gap unverified status for Telegram Web Preview Poller and telegram-osint-monitor-08 Ingestion
+    unverified_badge = '<span style="background-color:#546E7A; color:#ECEFF1; padding:2px 7px; border-radius:4px; font-size:11px;">UNVERIFIED: Telegram Web Preview Poller &amp; telegram-osint-monitor-08 Ingestion (air-gap unverified)</span>'
 
     st.markdown(f"""
     <div style="background-color: #162032; border-left: 5px solid #00ADB5; padding: 10px 14px; border-radius: 6px; margin-bottom: 15px; font-size: 13px; color: #ECEFF1;">

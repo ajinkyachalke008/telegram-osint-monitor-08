@@ -1,4 +1,4 @@
-# TGSherlock Core & Analytical Suite Dependencies
+# telegram-osint-monitor-08 Core & Analytical Suite Dependencies
 pyyaml>=6.0
 pytest>=8.0
 streamlit>=1.30.0

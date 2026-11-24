@@ -19,7 +19,7 @@ from dashboard.graph import (
     generate_seller_profile,
 )
 
-st.set_page_config(page_title="Entity Graph | TGSherlock", page_icon="🕸️", layout="wide")
+st.set_page_config(page_title="Entity Graph | telegram-osint-monitor-08", page_icon="🕸️", layout="wide")
 
 from dashboard.provenance_banner import render_provenance_banner
 render_provenance_banner(page_title="Entity Graph", active_stream="VERIFIED-SYNTHETIC")

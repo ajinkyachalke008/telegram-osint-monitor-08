@@ -13,7 +13,7 @@ import plotly.express as px
 from core.db import Database
 from addons.extractors import extract_locations
 
-st.set_page_config(page_title="Geographic Map | TGSherlock", page_icon="🗺️", layout="wide")
+st.set_page_config(page_title="Geographic Map | telegram-osint-monitor-08", page_icon="🗺️", layout="wide")
 
 from dashboard.provenance_banner import render_provenance_banner
 render_provenance_banner(page_title="Geographic Map", active_stream="VERIFIED-SYNTHETIC")

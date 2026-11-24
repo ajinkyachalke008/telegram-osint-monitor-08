@@ -1,4 +1,4 @@
-# TGSherlock OSINT Threat Intelligence - 4-Minute Demonstration Script
+# telegram-osint-monitor-08 OSINT Threat Intelligence - 4-Minute Demonstration Script
 
 This script provides an exact, minute-by-minute walkthrough designed for hackathon judges and law enforcement evaluators.
 
@@ -24,7 +24,7 @@ This script provides an exact, minute-by-minute walkthrough designed for hackath
     - **"💉 Inject scripted demo post"**: Ingests one fixed mule recruitment post through the entire OSINT pipeline on demand.
     - **"🚨 Wipe & Reseed Demo Database"**: Confirms and reseeds the demonstration database instantly.
 - **Talking Points:**
-  > *"TGSherlock is a dedicated OSINT engine for detecting illicit Indian cybercrime trades—specifically mule bank accounts, unlicensed weapons, fake KYC credentials, and contraband. We operate exclusively on public broadcast channels with zero channel joining, and every post is cryptographically sealed for judicial admissibility."*
+  > *"telegram-osint-monitor-08 is a dedicated OSINT engine for detecting illicit Indian cybercrime trades—specifically mule bank accounts, unlicensed weapons, fake KYC credentials, and contraband. We operate exclusively on public broadcast channels with zero channel joining, and every post is cryptographically sealed for judicial admissibility."*
 
 ---
 
@@ -94,7 +94,7 @@ This script provides an exact, minute-by-minute walkthrough designed for hackath
 - **What to Observe:**
   - MinHash Jaccard similarity groups near-duplicate marketing templates broadcast simultaneously across different channels.
 - **Talking Points:**
-  > *"Criminal syndicates rarely restrict operations to a single channel. By correlating extracted payment handles and running MinHash clustering on ad copy, TGSherlock links disparate channels into a single unified syndicate dossier."*
+  > *"Criminal syndicates rarely restrict operations to a single channel. By correlating extracted payment handles and running MinHash clustering on ad copy, telegram-osint-monitor-08 links disparate channels into a single unified syndicate dossier."*
 
 ---
 
@@ -125,4 +125,4 @@ This script provides an exact, minute-by-minute walkthrough designed for hackath
   - Explicit disclosure: Embeddings are not claimed to be better unless verified on human-written data.
   - Points out that `data/test_human_written.jsonl` contains 40 placeholder rows ready for judge/user verification.
 - **Conclusion:**
-  > *"TGSherlock combines strict legal compliance, zero channel infiltration, and cryptographic chain-of-custody to deliver actionable cybercrime intelligence for Indian law enforcement."*
+  > *"telegram-osint-monitor-08 combines strict legal compliance, zero channel infiltration, and cryptographic chain-of-custody to deliver actionable cybercrime intelligence for Indian law enforcement."*

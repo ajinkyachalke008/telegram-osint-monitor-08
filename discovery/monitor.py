@@ -3,7 +3,7 @@
 Periodically inspects top-ranked channels from watchlist.csv using `tgq preview`.
 Requires NO user account, joins, or session credentials.
 Surfaces near-live high-risk alerts and recommends the top critical channels
-for the analyst to monitor inside TGSherlock Live Monitor.
+for the analyst to monitor inside telegram-osint-monitor-08 Live Monitor.
 """
 import csv
 import logging

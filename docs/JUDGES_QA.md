@@ -1,4 +1,4 @@
-# Judges Q&A Brief: TGSherlock OSINT Threat Intelligence System
+# Judges Q&A Brief: telegram-osint-monitor-08 Threat Intelligence System
 
 ### Problem Statement
 **Telegram & Social Media Illegal Trade Monitor (Drugs, Arms, Bank Accounts & ATM Cards for Sale)**
@@ -78,5 +78,5 @@
 > - The UI and documentation strictly enforce a 4-tier provenance labeling standard:
 >   - `VERIFIED-SYNTHETIC`: Features validated via reproducible automated tests against synthetic benchmarks.
 >   - `IMPORTED`: Investigator-provided external CSV/JSON dumps.
->   - `UNVERIFIED`: Feeds and components not actively verified with live data in this environment (e.g. Telegram Web Preview Poller, TGSherlock daemon intake, private groups requiring manual investigator review).
+>   - `UNVERIFIED`: Feeds and components not actively verified with live data in this environment (e.g. Telegram Web Preview Poller, telegram-osint-monitor-08 daemon intake, private groups requiring manual investigator review).
 >   - `LIVE`: Features tested and verified against real live Telegram broadcast channels only when confirmed on host.

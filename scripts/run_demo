@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# TGSherlock 1-Command Demo Launcher for Bash / POSIX / Git Bash
+# telegram-osint-monitor-08 1-Command Demo Launcher for Bash / POSIX / Git Bash
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 cd "$ROOT_DIR" || exit 1

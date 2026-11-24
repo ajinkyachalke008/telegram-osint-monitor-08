@@ -1,5 +1,5 @@
 @echo off
-REM TGSherlock 1-Command Demo Launcher for Windows CMD
+REM telegram-osint-monitor-08 1-Command Demo Launcher for Windows CMD
 setlocal
 cd /d "%~dp0\.."
 if exist ".venv\Scripts\python.exe" (

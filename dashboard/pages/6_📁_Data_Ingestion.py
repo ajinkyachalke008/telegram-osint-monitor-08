@@ -15,7 +15,7 @@ from core.db import Database
 from ingestion.adapters import CSVJSONImporter
 from ingestion.worker import PipelineWorker
 
-st.set_page_config(page_title="Data Ingestion | TGSherlock", page_icon="📁", layout="wide")
+st.set_page_config(page_title="Data Ingestion | telegram-osint-monitor-08", page_icon="📁", layout="wide")
 
 from dashboard.provenance_banner import render_provenance_banner
 render_provenance_banner(page_title="Data Ingestion", active_stream="IMPORTED")

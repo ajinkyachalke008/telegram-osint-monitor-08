@@ -17,7 +17,7 @@ from addons.pdf_exporter import generate_evidence_pdf
 from addons.ocr_extractor import OCRExtractor
 from dashboard.provenance_banner import render_provenance_banner
 
-st.set_page_config(page_title="Alert Detail & Hash Ledger | TGSherlock", page_icon="🔍", layout="wide")
+st.set_page_config(page_title="Alert Detail & Hash Ledger | telegram-osint-monitor-08", page_icon="🔍", layout="wide")
 
 # Standard Provenance Banner
 render_provenance_banner(page_title="Alert Detail", active_stream="VERIFIED-SYNTHETIC")

@@ -98,7 +98,7 @@ def generate_evidence_pdf(
     elements = []
 
     # Title & Header
-    elements.append(Paragraph("🛡️ TGSherlock OSINT Threat Intelligence", header_style))
+    elements.append(Paragraph("🛡️ telegram-osint-monitor-08 Threat Intelligence", header_style))
     elements.append(Paragraph("FORENSIC EVIDENCE PACKAGE // SECTION 63 BSA 2023 SUPPORTING DOSSIER", sub_header_style))
     elements.append(Spacer(1, 10))
     elements.append(HRFlowable(width="100%", thickness=1.5, color=colors.HexColor("#00ADB5"), spaceAfter=14))

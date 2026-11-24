@@ -1,4 +1,4 @@
-# TGSherlock 1-Command Demo Launcher for PowerShell
+# telegram-osint-monitor-08 1-Command Demo Launcher for PowerShell
 $ErrorActionPreference = "Stop"
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 Set-Location (Join-Path $ScriptDir "..")

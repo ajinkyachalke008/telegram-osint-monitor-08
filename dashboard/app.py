@@ -23,7 +23,7 @@ from scripts.generate_demo_data import seed_demo_database
 
 # Page configuration
 st.set_page_config(
-    page_title="TGSherlock OSINT Threat Intelligence",
+    page_title="telegram-osint-monitor-08 | Threat Intelligence",
     page_icon="🛡️",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -56,13 +56,13 @@ render_provenance_banner(page_title="Executive Overview")
 db = Database()
 
 # Sidebar Actions
-st.sidebar.title("🛡️ TGSherlock OSINT")
+st.sidebar.title("🛡️ telegram-osint-monitor-08")
 st.sidebar.caption("Law Enforcement Intelligence Engine")
 
 # Gated Reset Demo State & Scripted Post Injection: ONLY visible when DEMO_MODE=1
 render_demo_maintenance_sidebar(db)
 
-st.title("🛡️ TGSherlock OSINT Threat Monitor")
+st.title("🛡️ telegram-osint-monitor-08 Threat Monitor")
 st.caption("Telegram & Multi-Platform Illegal Trade Intelligence Engine | Real-Time Detection & Link Analysis")
 
 # Load summary metrics
@@ -164,7 +164,7 @@ with pcol3:
     live_c = prov_counts.get("LIVE", 0)
     st.markdown(f'<span class="badge-live">LIVE TELEGRAM</span> &nbsp; <b>{live_c}</b> posts ingested from real live Telegram.', unsafe_allow_html=True)
 with pcol4:
-    st.markdown(f'<span class="badge-unverified">UNVERIFIED FEEDS</span> &nbsp; Telegram Web Preview Poller &amp; TGSherlock Daemon Intake (air-gap unverified).', unsafe_allow_html=True)
+    st.markdown(f'<span class="badge-unverified">UNVERIFIED FEEDS</span> &nbsp; Telegram Web Preview Poller &amp; telegram-osint-monitor-08 Daemon Intake (air-gap unverified).', unsafe_allow_html=True)
 
 st.write("")
 

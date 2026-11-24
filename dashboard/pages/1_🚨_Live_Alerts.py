@@ -16,7 +16,7 @@ from core.models import now_utc_iso
 from dashboard.provenance_banner import render_provenance_banner
 from dashboard.demo_sidebar import render_demo_maintenance_sidebar
 
-st.set_page_config(page_title="Live Alerts | TGSherlock", page_icon="🚨", layout="wide")
+st.set_page_config(page_title="Live Alerts | telegram-osint-monitor-08", page_icon="🚨", layout="wide")
 
 st.markdown("""
 <style>
