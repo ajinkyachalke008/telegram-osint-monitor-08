@@ -151,6 +151,6 @@ with col_right:
             file_name=f"evidence_package_{alert['alert_id']}.pdf",
             mime="application/pdf",
             use_container_width=True,
-            help="Evidence package prepared to support a Section 63 BSA 2023 certificate (must be signed by the responsible person and an expert). Not legal advice."
+            help="Evidence package to support a Section 63 BSA certificate (signed by the person in charge and an expert). Not legal advice."
         )
-        st.caption("⚖️ *Evidence package prepared to support a Section 63 BSA 2023 certificate (must be signed by the responsible person and an expert). Not legal advice.*")
+        st.caption("⚖️ *Evidence package to support a Section 63 BSA certificate (signed by the person in charge and an expert). Not legal advice.*")

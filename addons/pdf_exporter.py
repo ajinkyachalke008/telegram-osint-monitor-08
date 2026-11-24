@@ -258,8 +258,8 @@ def generate_evidence_pdf(
     elements.append(HRFlowable(width="100%", thickness=0.8, color=colors.HexColor("#CBD5E0"), spaceAfter=8))
     elements.append(Paragraph(
         "<b>STATUTORY NOTICE &amp; LEGAL CERTIFICATION:</b><br/>"
-        "• <b>Section 63 BSA 2023 Notice:</b> Section 63 requires a certificate (signed by the responsible person and an expert) with a hash value; anchoring the chain head outside the DB is recommended practice, not a statutory requirement; consult legal counsel.<br/>"
-        "• <b>Chain of Custody:</b> Evidence hashes were cryptographically computed using RFC-8785 deterministic JSON formatting linked sequentially to the tamper-evident hash ledger.<br/>"
+        "• <b>Section 63 BSA Certificate Status:</b> Evidence package to support a Section 63 BSA certificate (signed by the person in charge and an expert). Not legal advice.<br/>"
+        "• <b>Chain Verification:</b> Chain verification detects changes only when run, and cannot detect a fully rebuilt chain unless the chain-head hash is stored elsewhere.<br/>"
         "• <b>Public Broadcast Feeds Only:</b> Monitoring is restricted strictly to public broadcast feeds. The system never infiltrates private groups, posts messages, reacts, sends DMs, or enumerates member lists.<br/>"
         "• <b>Leads, Not Courtroom Proof:</b> Algorithmic detections constitute investigative intelligence leads for certified human analysts, not automated convictions.",
         legal_style

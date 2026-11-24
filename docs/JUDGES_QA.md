@@ -53,8 +53,9 @@
 > 1. **RFC-8785 Canonical JSON:** Dictionary keys, Unicode characters, and floats are deterministically serialized so the exact hash can be re-derived independently by any forensics lab worldwide.
 > 2. **Cryptographic Hash Chain:** Each post's canonical hash is chained to the preceding block's hash:
 >    $$\text{Block Hash} = \text{SHA256}(\text{Canonical JSON} \parallel \text{Previous Hash})$$
-> 3. **Block Height Indexing:** Tampering with any historical post immediately invalidates all subsequent block hashes, providing undeniable mathematical proof of evidence integrity.
-> 4. **CLI Verifier:** Sworn examiners can execute `python addons/verify_evidence.py` to independently audit the SQLite ledger in seconds.
+> 3. **Block Height Indexing:** Chain verification detects changes only when run, and cannot detect a fully rebuilt chain unless the chain-head hash is stored elsewhere.
+> 4. **CLI Verifier:** Authorised personnel can execute `python addons/verify_evidence.py` to independently audit the SQLite ledger in seconds.
+> 5. **Statutory Admissibility Notice:** Evidence package to support a Section 63 BSA certificate (signed by the person in charge and an expert). Not legal advice.
 
 ---
 

@@ -34,8 +34,8 @@ This document details the intentional design limitations, data boundaries, and t
 ---
 
 ## 5. Evidence Hash Chain & Section 63 BSA 2023 Statutory Requirements
-- **Local Ledger Tamper-Evidence:** The internal SQLite hash chain (`evidence` table) computes RFC-8785 canonical JSON and SHA-256 digests chained sequentially (`prev_hash`). This guarantees internal chronological consistency and detects post-hoc database tampering.
-- **Section 63 BSA 2023 Certification:** Section 63 requires a certificate (signed by the responsible person and an expert) with a hash value; anchoring the chain head outside the DB is recommended practice, not a statutory requirement; consult legal counsel.
+- **Local Ledger Verification:** Chain verification detects changes only when run, and cannot detect a fully rebuilt chain unless the chain-head hash is stored elsewhere.
+- **Section 63 BSA Certificate Status:** Evidence package to support a Section 63 BSA certificate (signed by the person in charge and an expert). Not legal advice.
 
 ---
 

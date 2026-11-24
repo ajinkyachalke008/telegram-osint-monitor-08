@@ -101,7 +101,7 @@ with col5:
 st.markdown(f"""
 <div class="chain-box">
     <b>🔒 EVIDENCE LEDGER CHAIN-HEAD HASH:</b> <code>{chain_head_hash}</code> &nbsp;(Block #{chain_head_block} | Sealed: {chain_head_ts})<br/>
-    <span style="color:#A0AEC0; font-size:12px;">RFC-8785 canonical JSON hashed with SHA-256. Section 63 BSA 2023 certificate requires signature and hash; anchoring outside DB is recommended practice; consult legal counsel.</span>
+    <span style="color:#A0AEC0; font-size:12px;">RFC-8785 canonical JSON hashed with SHA-256. Evidence package to support a Section 63 BSA certificate (signed by the person in charge and an expert). Not legal advice.</span>
 </div>
 """, unsafe_allow_html=True)
 
