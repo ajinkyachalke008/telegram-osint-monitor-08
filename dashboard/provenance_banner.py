@@ -36,16 +36,29 @@ def render_provenance_banner(page_title: str = "", active_stream: str = None):
 
     active_badges_str = " &nbsp; ".join(badges_html)
 
+    # Check if any synthetic data is present in the database (Row Provenance Derivation)
+    synthetic_count = sum(
+        count for src, count in prov_counts.items()
+        if src and any(k in str(src).upper() for k in ("SYNTHETIC", "SIMULAT", "DEMO", "MOCK"))
+    )
+
+    if synthetic_count > 0:
+        st.markdown(f"""
+        <div style="background-color: rgba(229, 9, 20, 0.16); border: 2px dashed #E50914; color: #FFCDD2; padding: 10px 16px; border-radius: 6px; margin-bottom: 14px; text-align: center; font-weight: bold; font-size: 13.5px; letter-spacing: 0.08em;">
+            ⚠️ SIMULATED DATA — NOT REAL CRIMINAL EVIDENCE (DERIVED FROM DATABASE PROVENANCE: {synthetic_count} SYNTHETIC RECORDS PRESENT IN {db.db_path.name}) ⚠️
+        </div>
+        """, unsafe_allow_html=True)
+
     # Air-gap unverified status for Telegram Web Preview Poller and telegram-osint-monitor-08 Ingestion
     unverified_badge = '<span style="background-color:#546E7A; color:#ECEFF1; padding:2px 7px; border-radius:4px; font-size:11px;">UNVERIFIED: Telegram Web Preview Poller &amp; telegram-osint-monitor-08 Ingestion (air-gap unverified)</span>'
 
     st.markdown(f"""
     <div style="background-color: #162032; border-left: 5px solid #00ADB5; padding: 10px 14px; border-radius: 6px; margin-bottom: 15px; font-size: 13px; color: #ECEFF1;">
-        <b>📡 DATA PROVENANCE NOTICE (DERIVED FROM SQLITE DB):</b><br/>
+        <b>📡 DATA PROVENANCE NOTICE (DATABASE: <code>{db.db_path.name}</code>):</b><br/>
         <b>Active Database Feeds:</b> {active_badges_str}
         &nbsp;|&nbsp; 
         {unverified_badge}
         <br/>
-        <span style="color:#A0AEC0; font-size:12px;">Public broadcast feeds only • Zero channel joining • Leads, not courtroom proof • Consult legal counsel for Section 63 BSA certificate.</span>
+        <span style="color:#A0AEC0; font-size:12px;">Public broadcast feeds only • Zero channel joining • Evidence package to support a Section 63 BSA certificate (signed by the person in charge and an expert). Not legal advice.</span>
     </div>
     """, unsafe_allow_html=True)

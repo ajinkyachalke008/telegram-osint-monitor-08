@@ -34,6 +34,8 @@ def inject_scripted_demo_post(db: Optional[Database] = None) -> Dict[str, Any]:
         Dict with post_uid, alert_id, block_height, current_hash, category, risk_level, channel_id.
     """
     db = db or Database()
+    if db.is_operational or db.db_path.name == "operational.db":
+        raise PermissionError("FATAL: Injection of scripted demo posts is strictly prohibited on operational.db!")
     scorer = RuleScorer()
     
     timestamp_utc = now_utc_iso()

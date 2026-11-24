@@ -5,10 +5,11 @@ Supports idempotent ingestion, cryptographic evidence hash chaining,
 channel metrics, entity graph edge tracking, and audit logging.
 """
 import json
+import os
 import sqlite3
 import threading
 from pathlib import Path
-from typing import List, Dict, Any, Optional, Tuple
+from typing import List, Dict, Any, Optional, Tuple, Union
 
 from core.models import (
     ChannelRecord,
@@ -19,17 +20,42 @@ from core.models import (
     now_utc_iso,
 )
 
-DEFAULT_DB_PATH = Path(__file__).parent.parent / "data" / "osint_monitor.db"
+def get_default_db_path() -> Path:
+    """Return operational.db by default, or demo.db when DEMO_MODE=1."""
+    data_dir = Path(__file__).parent.parent / "data"
+    if os.environ.get("DEMO_MODE", "0") in ("1", "true", "True"):
+        return data_dir / "demo.db"
+    return data_dir / "operational.db"
+
+
+DEFAULT_DB_PATH = get_default_db_path()
 SCHEMA_PATH = Path(__file__).parent.parent / "data" / "schema.sql"
 GENESIS_HASH = "0" * 64
 
 
 class Database:
-    def __init__(self, db_path: Optional[Path] = None):
-        self.db_path = db_path or DEFAULT_DB_PATH
+    def __init__(self, db_path: Optional[Union[Path, str]] = None):
+        if db_path is None:
+            self.db_path = get_default_db_path()
+        elif isinstance(db_path, str):
+            self.db_path = Path(db_path)
+        else:
+            self.db_path = db_path
+        self.is_operational = self.db_path.name == "operational.db"
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         self._lock = threading.Lock()
         self._init_db()
+
+    def wipe_all_data(self):
+        """Wipes data tables. Strictly prohibited on operational.db; permitted on demo.db only when DEMO_MODE=1."""
+        if self.is_operational or self.db_path.name == "operational.db":
+            raise PermissionError("FATAL: Database reset/wipe is strictly prohibited on operational.db!")
+        if self.db_path.name == "demo.db" and os.environ.get("DEMO_MODE") != "1":
+            raise PermissionError("FATAL: Database reset on demo.db is only permitted when DEMO_MODE=1!")
+        with self._lock, self.get_connection() as conn:
+            for tbl in ["alerts", "evidence", "post_identifiers", "identifiers", "entities_edges", "posts", "channels", "feedback"]:
+                conn.execute(f"DELETE FROM {tbl}")
+            conn.commit()
 
     def get_connection(self) -> sqlite3.Connection:
         """Create a thread-safe connection with Row factory and WAL enabled."""
@@ -53,7 +79,11 @@ class Database:
         self._init_db()
 
     def reset_db(self):
-        """Wipe all database tables and recreate clean schema."""
+        """Wipe all database tables and recreate clean schema. Strictly prohibited on operational.db!"""
+        if self.is_operational or self.db_path.name == "operational.db":
+            raise PermissionError("FATAL: Database reset/wipe is strictly prohibited on operational.db!")
+        if self.db_path.name == "demo.db" and os.environ.get("DEMO_MODE") != "1":
+            raise PermissionError("FATAL: Database reset on demo.db is only permitted when DEMO_MODE=1!")
         with self._lock, self.get_connection() as conn:
             conn.execute("PRAGMA foreign_keys = OFF")
             tables = ["alerts", "post_identifiers", "evidence", "identifiers", "posts", "edges", "channels", "audit_log"]

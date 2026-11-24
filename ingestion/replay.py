@@ -48,6 +48,8 @@ def run_replay(speed_delay: float = 1.0, loop: bool = False, db: Optional[Databa
     delay: sleep in seconds between simulated posts.
     """
     database = db or Database()
+    if database.is_operational or database.db_path.name == "operational.db":
+        raise PermissionError("FATAL: Replaying synthetic demo data is strictly prohibited on operational.db!")
     scorer = RuleScorer()
     seed_synthetic_channels(database)
 

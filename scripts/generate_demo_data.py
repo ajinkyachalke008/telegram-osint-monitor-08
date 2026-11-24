@@ -237,14 +237,18 @@ def seed_demo_database(db: Optional[Any] = None, reset: bool = True):
     """Seed or reset the unified SQLite database with baseline demo records & evidence chain."""
     from core.db import Database, DEFAULT_DB_PATH
     from core.models import PostRecord, ChannelRecord, now_utc_iso
-    from ingestion.worker import IngestionWorker
+    from ingestion.worker import PipelineWorker
 
     database = db or Database(DEFAULT_DB_PATH)
+    if database.db_path.name == "operational.db":
+        raise PermissionError("FATAL: Database seeding or reset is strictly prohibited on operational.db!")
     if reset:
-        database.reset_db()
+        if os.environ.get("DEMO_MODE") != "1":
+            raise PermissionError("FATAL: Database reset is only permitted when DEMO_MODE=1!")
+        database.wipe_all_data()
 
     records = generate_demo_dataset()
-    worker = IngestionWorker(db=database)
+    worker = PipelineWorker(db=database)
 
     # Register channels
     seen_channels = set()

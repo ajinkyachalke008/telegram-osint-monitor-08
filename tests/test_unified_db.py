@@ -209,3 +209,37 @@ def test_inject_scripted_demo_post(temp_db):
         ident_row = conn.execute("SELECT * FROM identifiers WHERE identifier_id = 'upi:mule.syndicate@ybl'").fetchone()
         assert ident_row is not None
 
+
+def test_operational_db_protected_from_reset_and_injection(tmp_path):
+    """Operational DB must be strictly protected against reset, wipe, and synthetic injection."""
+    from ingestion.demo_injector import inject_scripted_demo_post
+    from scripts.generate_demo_data import seed_demo_database
+
+    op_db = Database(tmp_path / "operational.db")
+    with pytest.raises(PermissionError, match="strictly prohibited on operational.db"):
+        op_db.reset_db()
+
+    with pytest.raises(PermissionError, match="strictly prohibited on operational.db"):
+        op_db.wipe_all_data()
+
+    with pytest.raises(PermissionError, match="strictly prohibited on operational.db"):
+        inject_scripted_demo_post(op_db)
+
+    with pytest.raises(PermissionError, match="strictly prohibited on operational.db"):
+        seed_demo_database(db=op_db, reset=True)
+
+
+def test_default_db_path_selection(monkeypatch):
+    """Verify DEFAULT_DB_PATH routes to demo.db when DEMO_MODE=1, else operational.db."""
+    from core.db import get_default_db_path
+
+    monkeypatch.delenv("DEMO_MODE", raising=False)
+    assert get_default_db_path().name == "operational.db"
+
+    monkeypatch.setenv("DEMO_MODE", "0")
+    assert get_default_db_path().name == "operational.db"
+
+    monkeypatch.setenv("DEMO_MODE", "1")
+    assert get_default_db_path().name == "demo.db"
+
+
