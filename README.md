@@ -1,159 +1,164 @@
-# TGSherlock OSINT Threat Intelligence & Cross-Channel Attribution Engine
+# 🛡️ TGSherlock OSINT Threat Intelligence Platform
 
-An open-source intelligence (OSINT) and law-enforcement analytical platform designed to monitor **public Telegram channels** for illicit sales (narcotics, unlicensed firearms, forged documents, mule bank accounts, cloned ATM cards, and fake KYC SIM cards), attribute seller identifiers across disparate channels, detect coordinated spam/ad campaigns, and produce forensically verifiable evidence packages.
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Streamlit](https://img.shields.io/badge/Streamlit-1.40+-FF4B4B.svg)](https://streamlit.io/)
+[![RFC-8785](https://img.shields.io/badge/Evidence-RFC--8785%20SHA--256-green.svg)](https://datatracker.ietf.org/doc/html/rfc8785)
 
----
+An air-gapped open-source intelligence (OSINT) and law-enforcement analytical platform designed to monitor **public Telegram channels** for illicit Indian cybercrime trades—specifically mule bank accounts, unlicensed firearms, forged documents, fake KYC SIM cards, and narcotics.
 
-## Architecture Diagram
-
-```text
-                               +--------------------------------------------+
-                               |     Public Telegram Network (Broadcast)    |
-                               +--------------------------------------------+
-                                      |                              |
-               [Direct Live WebSocket / MTProto]        [Zero-Auth Web Preview t.me/s/]
-                                      |                              |
-                                      v                              v
-                      +-------------------------------+  +-----------------------------+
-                      |     TGSherlock Base Core      |  |    tgq-cli Discovery Engine  |
-                      |  (Local Web Panel :8765)      |  | (Snowball Expansion d <= 2) |
-                      +-------------------------------+  +-----------------------------+
-                                      |                              |
-                                      v                              v
-                         ~/.local/share/tgsherlock/             watchlist.csv
-                              (SQLite Database)                      |
-                                      |                              |
-                                      +--------------+---------------+
-                                                     |
-                                                     v
-                                      +-------------------------------+
-                                      |     addons/ Detection Suite   |
-                                      +-------------------------------+
-                                      | • extractors.py (UPI, Phone,  |
-                                      |   IFSC, Crypto, Devanagari)   |
-                                      | • lexicon.yaml (Slang Rules)  |
-                                      | • scorer.py (Weighted Risk)   |
-                                      | • evidence.py (RFC-8785 Hash) |
-                                      | • importer.py (Multi-Platform)|
-                                      +-------------------------------+
-                                                     |
-                                                     v
-                                      +-------------------------------+
-                                      | dashboard/ Streamlit Platform |
-                                      +-------------------------------+
-                                      | • Threat Radar & Alerts       |
-                                      | • NetworkX + Plotly Link Graph|
-                                      | • MinHash / pHash Ad Clusters |
-                                      | • Forensics & Evidence Export |
-                                      +-------------------------------+
-```
+TGSherlock correlates seller payment handles across disparate channels, clusters coordinated ad campaigns, and generates cryptographically sealed evidence packages prepared to support Section 63 Bharatiya Sakshya Adhiniyam, 2023 (BSA 2023) certificates.
 
 ---
 
-## Core Capabilities
+## ⚡ 5-Minute Setup on a Fresh Machine
 
-1. **Multi-Lingual Illicit Slang Scorer (`addons/lexicon.yaml`, `scorer.py`):**
-   - 7 primary threat categories: `drugs`, `arms`, `fake_documents`, `bank_account`, `atm_card`, `sim_card`, `net_banking_kit`.
-   - Multi-lingual terminology covering English, Hinglish, Marathi, coded words (`c0ke`, `420`, `315 piece`), and emoji indicators (`🍁`, `🔫`, `🪪`, `💳`, `🏦`).
-   - Risk scoring with transparent explainability tags (`High`, `Medium`, `Low`).
-
-2. **Specialized Financial & Contact Extractors (`addons/extractors.py`):**
-   - **UPI IDs:** Pattern matching validated against an authoritative registry of real NPCI and bank PSP handles (`@okaxis`, `@ybl`, `@paytm`, `@oksbi`, etc.), strictly rejecting email domains (`gmail.com`, `yahoo.com`, `proton.me`).
-   - **Indian Phone Numbers:** Formats for `+91`, 10-digit mobiles, and native **Devanagari numeral** normalization (`०१२३४५६७८९` → `0123456789`).
-   - **Financial Codes & Wallets:** IFSC validation, Crypto wallets (BTC, ETH/EVM, TRX/TRC20, Solana), and `@usernames`.
-
-3. **Forensic Chain of Custody (`addons/evidence.py`):**
-   - Formulates RFC-8785 canonical JSON from `(channel, message_id, timestamp_utc, text)`.
-   - Generates deterministic SHA-256 evidence digests and media hashes for tamper-proof judicial reporting.
-
-4. **Link Analysis & Cross-Channel Attribution (`dashboard/graph.py`):**
-   - Constructs interactive bipartite entity networks linking posts, channels, and identifiers.
-   - Automatically detects and highlights cross-channel syndicates (actors operating in $\ge 2$ distinct channels).
-
-5. **Coordinated Campaign & Repeated-Ad Detection (`dashboard/similarity.py`):**
-   - **MinHash (datasketch):** Groups templated marketing copy and mule-recruitment spam broadcasted across disparate channels.
-   - **Perceptual Hash (imagehash pHash):** Identifies near-duplicate promotional flyers, rate cards, and payment QR posters.
-
-6. **Channel Discovery & Snowball Expansion (`discovery/finder.py`):**
-   - Uses `tgq-cli` to inspect public web previews (`t.me/s/`) without requiring an active account or credentials.
-   - Performs snowball expansion (depth $\le 2$) via forward origins (`fwd_from`) to map out criminal affiliate networks and generate ranked `watchlist.csv`.
-
----
-
-## Quickstart & Run Instructions (Windows PowerShell)
+Follow these step-by-step instructions to get TGSherlock running from scratch in under 5 minutes:
 
 ### 1. Prerequisites
-- Python 3.11+ (Python 3.15 installed)
-- PowerShell 5.1+
+- **Python 3.10 to 3.15** installed on your system ([Download Python](https://www.python.org/downloads/))
+- **Git** installed ([Download Git](https://git-scm.com/))
+- *(Optional)* [Google Tesseract OCR](https://github.com/UB-Mannheim/tesseract/wiki) for multilingual image extraction (English, Hindi, Marathi). If not installed, the platform honestly marks image OCR as `OCR DISABLED` with zero fake fallbacks.
 
-### 2. Environment Setup
+### 2. Clone Repository
+```bash
+git clone https://github.com/your-org/tgsherlock.git
+cd tgsherlock
+```
+
+### 3. Create & Activate Virtual Environment
+**On Windows (PowerShell):**
 ```powershell
-# Create and activate virtual environment
 python -m venv .venv
-
-# Install dependencies (already installed in workspace)
-.\.venv\Scripts\python.exe -m pip install -e tgsherlock
-.\.venv\Scripts\python.exe -m pip install pyyaml pytest streamlit networkx plotly datasketch imagehash pillow pandas tgq-cli
+.\.venv\Scripts\Activate.ps1
 ```
 
-### 3. Start TGSherlock Core Server
-Runs the local base monitoring panel:
-```powershell
-.\.venv\Scripts\python.exe -m tgsherlock --no-browser --port 8765
-```
-Access at: `http://127.0.0.1:8765`
-
-### 4. Launch the Streamlit OSINT Analytics Dashboard
-Launches the full link analysis, threat radar, and graph dashboard:
-```powershell
-.\.venv\Scripts\streamlit.exe run dashboard/app.py
-```
-Access at: `http://localhost:8501`
-
-### 5. Run Automated Channel Discovery (Snowball Expansion)
-Discovers public illicit channels and generates a ranked `watchlist.csv`:
-```powershell
-.\.venv\Scripts\python.exe discovery/finder.py
+**On Linux / macOS (Bash):**
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
 ```
 
-### 6. Run the Verification Test Suite
-Execute the full 23-test unit test suite covering extractors, scorer, evidence hashing, graph construction, and discovery:
-```powershell
-.\.venv\Scripts\python.exe -m pytest tests/ -v
+### 4. Install Dependencies
+```bash
+pip install -r requirements.txt
+pip install -e tgsherlock
 ```
+
+### 5. Launch One-Command Demo
+Run the automated launcher:
+```bash
+python scripts/run_demo.py
+```
+*(On Windows, you can also simply run `scripts\run_demo.bat` or `.\scripts\run_demo.ps1`; on Linux/macOS run `./scripts/run_demo`)*
+
+**What this command does automatically:**
+1. Resets and initializes the SQLite database at `data/osint_monitor.db`
+2. Seeds baseline demonstration records with RFC-8785 SHA-256 evidence blocks
+3. Spawns a background streaming replay worker injecting simulated posts every ~5s
+4. Spawns the Streamlit OSINT Dashboard on `http://localhost:8501`
+5. Automatically opens your default web browser to the dashboard
 
 ---
 
-## 3-Minute Hackathon Demo Script (Pitch & Presentation)
+## 🧪 Verification & Testing Commands
 
-### [0:00 - 0:45] The Problem & The Solution
-> *"Judges, cyber-enabled financial fraud in India is fueled by an underground ecosystem on Telegram: mule bank accounts for rent, fake KYC SIM cards, forged Aadhar biometric bypasses, and illicit arms. Because these channels are fragmented, criminals believe they are anonymous. Today, we present our OSINT Threat Intelligence & Cross-Channel Attribution Engine. We monitor strictly public broadcast channels, ingest seller identifiers, and link their operations across the entire network."*
+To verify system integrity and evidentiary proofs:
 
-### [0:45 - 1:30] Live Threat Radar & Identifier Extraction
-- Open **Tab 1: Live Threat Alerts & Evidence** (`http://localhost:8501`).
-- Point out the metrics: Flagged posts, High-risk alerts, Cross-channel syndicates, and Coordinated ad campaigns.
-- Show an alert card (e.g. Current account mule recruitment):
-  > *"Notice how our engine extracts verified UPI IDs like `demo.seller@ybl` while cleanly rejecting email domains like `gmail.com`. It also decodes Devanagari numerals in Marathi and Hindi WhatsApp numbers, scores the post as HIGH RISK based on multi-lingual slang, and creates an immutable SHA-256 evidence digest for law enforcement evidence submission."*
+### 1. Run Complete Test Suite (61+ Tests)
+```bash
+python -m pytest -v
+```
+Verifies UPI extraction, Devanagari digit normalization, RFC-8785 canonical JSON hashing, channel-handle exclusion, PDF generation, and the zero-retraining lexicon feedback loop.
 
-### [1:30 - 2:15] Cross-Channel Attribution Network Graph
-- Switch to **Tab 2: Entity Link Analysis (Graph)**.
-- Point out the interactive Plotly network:
-  > *"Here is the crown jewel of our system: Cross-Channel Attribution. Individual posts appear disconnected on Telegram. But when we map the graph, the red alert node immediately reveals that `demo.seller@ybl` and phone `+91 90000 00000` are operating simultaneously across 'Public Deals Hub', 'Dark Deals All India', and 'Crypto P2P Cashout Network'. In one click, an investigator can see the entire syndicate hierarchy."*
+### 2. Verify Single Post End-to-End Forensic Trace
+```bash
+python scripts/verify_flow_proof.py
+```
+Follows post `telegram_t.me/delhi_classifieds_demo_1001` containing `mule.syndicate@ybl` through:
+- Ingestion & Text Normalization
+- Category & Risk Scoring (`bank_account` / `High`)
+- Extracted Identifiers (Channel handle excluded)
+- RFC-8785 SHA-256 Seal Validation (Block #1)
+- Multi-Channel Link Graph proving the UPI operates across **3 public channels**
 
-### [2:15 - 2:45] Coordinated Campaigns & Repeated Ads
-- Switch to **Tab 3: Coordinated Campaigns**.
-- Show the MinHash cluster:
-  > *"Criminal syndicates use automated bots to blast templated ads across dozens of channels. Using MinHash LSH text similarity and pHash image duplicate grouping, our system clusters coordinated campaigns instantly, proving that multiple disparate channels belong to a single threat actor ring."*
-
-### [2:45 - 3:00] Discovery & Admissible Evidence Export
-- Switch to **Tab 4: Evidence Chain of Custody & Export**.
-- Demonstrate the **Tamper Verification** button and one-click **Download Forensic JSON (RFC-8785)** / **HTML Dossier**.
-  > *"Every flagged record is cryptographically verifiable and ready for court presentation. Combined with our `tgq-cli` snowball channel discovery, we provide law enforcement with an end-to-end, privacy-compliant intelligence pipeline. Thank you!"*
+### 3. Run Streamlit Page Verification (AppTest)
+```bash
+python scripts/verify_streamlit_pages.py
+```
+Validates that all 10 dashboard pages initialize with 0 runtime exceptions.
 
 ---
 
-## Safety & Compliance
-- **Public Channels Only:** Operates exclusively on publicly accessible broadcast channels and public web previews (`t.me/s/`). Never enumerates private groups or initiates contact.
-- **Credential Hygiene:** API ID, hash, and Telegram session files are strictly isolated and ignored in `.gitignore`.
-- **Demo Data:** All synthetic test data utilizes RFC-compliant demo placeholders (e.g. `demo.seller@ybl`, `90000 00000`).
-- **No Model Training:** Uses rule-based scoring and statistical similarity algorithms; does not fine-tune or train models on Telegram data.
+## 🧭 System Architecture & Demonstration Tour
+
+```text
+[Public Telegram Broadcast Feeds / CSV-JSON Ingest / Demo Replay Stream]
+                               │
+                               ▼
+    1. Text Normalization (NFKC, Homoglyphs, Leetspeak, Devanagari Digits)
+                               │
+                               ▼
+    2. Hybrid Classifier (TF-IDF Default / MiniLM Embeddings + Hard-Negative Calibrator)
+                               │
+                               ▼
+    3. Financial-Ad Detector (Mule Recruitment Intent, Instruments, Text Offsets)
+                               │
+                               ▼
+    4. Actionable Extractor (UPI, Phones, Base58Check Wallets, IFSC, Usernames)
+       *Strict Guard: Channel handle is never treated as a seller identifier*
+                               │
+                               ▼
+    5. Evidence Chain Ledger (RFC-8785 Canonical JSON + Sequential SHA-256 Hashing)
+                               │
+                               ▼
+    6. Multi-Relational Graph & Link Analysis (NetworkX Cross-Channel Bipartite Graph)
+                               │
+                               ▼
+    7. Multi-Page Streamlit Intelligence Dashboard (Triage, Dossiers, Section 63 BSA PDF)
+```
+
+### Guided 6-Step Demonstration Workflow
+Follow this sequential path through the web interface (`http://localhost:8501`):
+1. **`1_🚨_Live_Alerts`:** Live streaming feed auto-refreshing every 5s with new-alert toasts, risk badges, and analyst triage.
+2. **`2_🔍_Alert_Detail`:** Cryptographic ledger inspection, live hash seal verification, and Section 63 BSA 2023 evidence package export.
+3. **`3_🕸️_Entity_Graph`:** Interactive bipartite network graph showing how `mule.syndicate@ybl` links 3 distinct public broadcast channels.
+4. **`4_🔁_Coordinated_Campaigns`:** MinHash Jaccard clustering identifying copy-pasted ad marketing templates.
+5. **`5_🗺️_Geographic_Map`:** Spatial threat map analyzing extracted regional cybercrime hotspots (Mewat, Jamtara, Delhi, Mumbai).
+6. **`8_⚖️_Responsible_Use_and_Audit` & `9_🔭_Channel_Discovery`:** Analyst lexicon feedback loop (weight adjustment without ML retraining) and snowball discovery of public feeds.
+
+---
+
+## 📡 Data Provenance Classification Standards
+
+Every feature and dataset in TGSherlock is strictly tagged with one of four provenance levels:
+
+| Provenance Label | Scope & Operational Boundary | Air-Gap & Compliance Rule |
+| :--- | :--- | :--- |
+| **`VERIFIED-SYNTHETIC`** | Automated synthetic benchmark records (450 held-out test rows, demo seed datasets) | Validated against regex extractors, classifier pipeline, and SHA-256 ledger. |
+| **`IMPORTED`** | Offline investigator imports (CSV, JSON, sample police cybercell batches) | Read-only ingest; raw records preserved with cryptographic sealing. |
+| **`UNVERIFIED`** | Telegram Web Preview Poller, TGSherlock Daemon Intake, and Discovery Snowball Watchlist | Air-gap unverified; requires external live connection or active user session. |
+| **`LIVE`** | Unauthenticated Telegram web previews or daemon sessions *only when live verified on host* | Strict public broadcast feeds only; zero channel joining or infiltration. |
+
+---
+
+## ⚖️ Legal & Compliance Disclosures
+
+1. **Section 63 Bharatiya Sakshya Adhiniyam, 2023 (BSA 2023):**
+   Section 63 requires a certificate (signed by the responsible person and an expert) with a hash value; anchoring the chain head outside the DB is recommended practice, not a statutory requirement; consult legal counsel.
+2. **Public Broadcast Feeds Only:**
+   The system never infiltrates private channels, private groups, or encrypted 1-on-1 chats. Zero interactive behavior (no posting, reactions, DMs, or member enumeration).
+3. **Investigative Leads, Not Courtroom Proof:**
+   Algorithmic classifications and link graphs represent investigative intelligence leads to assist sworn cybercell officers, not autonomous courtroom proof.
+4. **Zero Retraining on Telegram Data:**
+   In compliance with Telegram API terms, zero models were trained on collected posts. The analyst feedback loop modifies rule weights in YAML only.
+
+---
+
+## 📚 Essential Documentation
+
+- [**docs/DEMO_SCRIPT.md**](docs/DEMO_SCRIPT.md): Complete 4-minute evaluation script with exact clicks and talking points.
+- [**docs/LIMITATIONS.md**](docs/LIMITATIONS.md): Intentional design boundaries, synthetic metrics, and external anchor requirements.
+- [**docs/METRICS.md**](docs/METRICS.md): Side-by-side performance comparison of Model A (TF-IDF) vs Model B (MiniLM-L12).
+- [**docs/TRACEABILITY.md**](docs/TRACEABILITY.md): Verification matrix mapping technical components to requirements R1 through R5.
+- [**docs/JUDGES_QA.md**](docs/JUDGES_QA.md): Comprehensive answers to frequently asked technical and legal evaluation questions.

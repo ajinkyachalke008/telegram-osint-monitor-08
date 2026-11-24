@@ -28,6 +28,7 @@ PAGES = [
     ("06_data_ingestion.png", "http://localhost:8501/Data_Ingestion"),
     ("07_model_metrics.png", "http://localhost:8501/Model_Metrics"),
     ("08_responsible_use_and_audit.png", "http://localhost:8501/Responsible_Use_and_Audit"),
+    ("09_channel_discovery.png", "http://localhost:8501/Channel_Discovery"),
 ]
 
 def main():

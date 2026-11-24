@@ -6,17 +6,24 @@ Generates realistic, completely fake demonstration datasets:
 - Coordinated ad copy (for MinHash clustering)
 - Sample PIL flyer images for image duplicate clustering
 - JSON and CSV output under sample_data/
+- Seed helper to populate or reset data/osint_monitor.db with evidence chain
 """
 import os
+import sys
 import json
 import csv
 import random
 from pathlib import Path
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 
 from PIL import Image, ImageDraw, ImageFont
 
-SAMPLE_DATA_DIR = Path(__file__).resolve().parent.parent / "sample_data"
+# Ensure project root in sys.path
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+SAMPLE_DATA_DIR = PROJECT_ROOT / "sample_data"
 SAMPLE_IMAGES_DIR = SAMPLE_DATA_DIR / "demo_images"
 
 
@@ -80,7 +87,7 @@ def generate_demo_dataset():
         "text": template_ad_1.format(user=SHARED_USER_1, upi=SHARED_UPI_1, phone=SHARED_PHONE_1),
         "image_path": img1,
         "category": "bank_account",
-        "provenance": "SIMULATED"
+        "provenance": "VERIFIED-SYNTHETIC"
     })
     records.append({
         "platform": "telegram",
@@ -90,7 +97,7 @@ def generate_demo_dataset():
         "text": template_ad_1.format(user=SHARED_USER_1, upi=SHARED_UPI_1, phone=SHARED_PHONE_1),
         "image_path": img2, # duplicate image
         "category": "bank_account",
-        "provenance": "SIMULATED"
+        "provenance": "VERIFIED-SYNTHETIC"
     })
     records.append({
         "platform": "telegram",
@@ -100,7 +107,7 @@ def generate_demo_dataset():
         "text": f"Rent your idle HDFC or Axis bank khata. Earn daily commission of 10,000 INR. Contact {SHARED_USER_1} or UPI {SHARED_UPI_1}.",
         "image_path": None,
         "category": "bank_account",
-        "provenance": "SIMULATED"
+        "provenance": "VERIFIED-SYNTHETIC"
     })
 
     # 2. Cross-Channel Crypto Cashout Syndicate (Channels 2 and 6)
@@ -112,7 +119,7 @@ def generate_demo_dataset():
         "text": f"Corporate net banking kit with ATM and SIM available for crypto P2P load. USDT TRC20 deposit to {SHARED_WALLET_1}. WhatsApp {SHARED_PHONE_1}.",
         "image_path": None,
         "category": "net_banking_kit",
-        "provenance": "SIMULATED"
+        "provenance": "VERIFIED-SYNTHETIC"
     })
     records.append({
         "platform": "telegram",
@@ -122,7 +129,7 @@ def generate_demo_dataset():
         "text": f"High limit corporate accounts in Axis Bank ready to swipe. Instant payout to TRC20 {SHARED_WALLET_1}. Contact @crypto_dealer_demo.",
         "image_path": None,
         "category": "bank_account",
-        "provenance": "SIMULATED"
+        "provenance": "VERIFIED-SYNTHETIC"
     })
 
     # 3. Arms & Contraband Ads with Shared Contact (Channels 5 and 7)
@@ -134,7 +141,7 @@ def generate_demo_dataset():
         "text": f"Country made pistol 315 bore available with 10 cartridges. Safe parcel delivery in Jaipur. Advance via UPI {SHARED_UPI_2}. Ping 90000 22222.",
         "image_path": None,
         "category": "arms",
-        "provenance": "SIMULATED"
+        "provenance": "VERIFIED-SYNTHETIC"
     })
     records.append({
         "platform": "telegram",
@@ -144,7 +151,7 @@ def generate_demo_dataset():
         "text": f"32 bore revolver with brass bullets for security. Hand-to-hand deal or courier. Pay token via UPI {SHARED_UPI_2} or Call {SHARED_PHONE_2}.",
         "image_path": None,
         "category": "arms",
-        "provenance": "SIMULATED"
+        "provenance": "VERIFIED-SYNTHETIC"
     })
 
     # 4. Drugs / Narcotics Ad (Channel 4)
@@ -156,7 +163,7 @@ def generate_demo_dataset():
         "text": "Fresh charas and mdma pills available in Mumbai. Pure maal, door delivery in 2 hours. WhatsApp 90000 44444. Demo payment demo.drug@ybl.",
         "image_path": img3,
         "category": "drugs",
-        "provenance": "SIMULATED"
+        "provenance": "VERIFIED-SYNTHETIC"
     })
 
     # 5. Fake Documents (Channel 8)
@@ -168,7 +175,7 @@ def generate_demo_dataset():
         "text": "Urgent fake Aadhaar and forged PAN card in 24 hours. Scannable QR code and online verification bypass. Ping @doc_maker_demo.",
         "image_path": None,
         "category": "fake_documents",
-        "provenance": "SIMULATED"
+        "provenance": "VERIFIED-SYNTHETIC"
     })
 
     # 6. SIM Cards (Channel 9)
@@ -180,7 +187,7 @@ def generate_demo_dataset():
         "text": "Pre-activated Airtel and Jio SIM cards without Aadhaar. Ready to use for WhatsApp and Telegram. DM @sim_vendor_demo.",
         "image_path": None,
         "category": "sim_card",
-        "provenance": "SIMULATED"
+        "provenance": "VERIFIED-SYNTHETIC"
     })
 
     # 7. Benign Hard Negative Bank Advisory (Channel 10)
@@ -192,7 +199,7 @@ def generate_demo_dataset():
         "text": "SECURITY ALERT: HDFC Bank never asks for your OTP, Netbanking password, UPI PIN, or CVV. Beware of fraudsters offering fake loans or account rentals.",
         "image_path": None,
         "category": "benign",
-        "provenance": "SIMULATED"
+        "provenance": "VERIFIED-SYNTHETIC"
     })
 
     # 8. Benign Hard Negative Pharmacy (Channel 11)
@@ -204,7 +211,7 @@ def generate_demo_dataset():
         "text": "Apollo Pharmacy Health Notice: Paracetamol and cough syrup require a licensed doctor prescription. Visit our counter in Pune.",
         "image_path": None,
         "category": "benign",
-        "provenance": "SIMULATED"
+        "provenance": "VERIFIED-SYNTHETIC"
     })
 
     # Write JSON
@@ -226,5 +233,50 @@ def generate_demo_dataset():
     return records
 
 
+def seed_demo_database(db: Optional[Any] = None, reset: bool = True):
+    """Seed or reset the unified SQLite database with baseline demo records & evidence chain."""
+    from core.db import Database, DEFAULT_DB_PATH
+    from core.models import PostRecord, ChannelRecord, now_utc_iso
+    from ingestion.worker import IngestionWorker
+
+    database = db or Database(DEFAULT_DB_PATH)
+    if reset:
+        database.reset_db()
+
+    records = generate_demo_dataset()
+    worker = IngestionWorker(db=database)
+
+    # Register channels
+    seen_channels = set()
+    for r in records:
+        ch = r["source"]
+        if ch not in seen_channels:
+            database.upsert_channel(ChannelRecord(
+                channel_id=ch,
+                username=ch.replace("t.me/", ""),
+                title=ch.replace("t.me/", "").replace("_", " ").title(),
+                subscribers=1500,
+                risk_level="High"
+            ))
+            seen_channels.add(ch)
+
+    # Ingest records through pipeline worker
+    for r in records:
+        post = PostRecord(
+            platform=r.get("platform", "telegram"),
+            channel_id=r.get("source", "demo_channel"),
+            message_id=str(r.get("post_id", "demo_0")),
+            timestamp_utc=r.get("timestamp", now_utc_iso()),
+            raw_text=r.get("text", ""),
+            ingestion_source=r.get("provenance", "VERIFIED-SYNTHETIC")
+        )
+        worker.process_and_persist_post(post)
+
+    database.log_audit("demo_seed_reset", {"records_seeded": len(records), "channels": len(seen_channels)})
+    print(f"[OK] Database seeded: {len(records)} posts, {len(seen_channels)} channels.")
+    return len(records)
+
+
 if __name__ == "__main__":
     generate_demo_dataset()
+    seed_demo_database(reset=True)

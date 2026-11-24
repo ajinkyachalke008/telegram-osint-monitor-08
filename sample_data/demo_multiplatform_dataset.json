@@ -7,7 +7,7 @@
     "text": "Fresh ICICI current account and ATM card available for rent. High limit load, zero dispute. Commission 15% daily. Ping @fast_cash_hub or UPI mule.syndicate@ybl or Call 90000 11111.",
     "image_path": "C:\\Users\\AJINKYA CHALKE\\Desktop\\rajasthan hackthon ps2\\sample_data\\demo_images\\ad_flyer_1.png",
     "category": "bank_account",
-    "provenance": "SIMULATED"
+    "provenance": "VERIFIED-SYNTHETIC"
   },
   {
     "platform": "telegram",
@@ -17,7 +17,7 @@
     "text": "Fresh ICICI current account and ATM card available for rent. High limit load, zero dispute. Commission 15% daily. Ping @fast_cash_hub or UPI mule.syndicate@ybl or Call 90000 11111.",
     "image_path": "C:\\Users\\AJINKYA CHALKE\\Desktop\\rajasthan hackthon ps2\\sample_data\\demo_images\\ad_flyer_2.png",
     "category": "bank_account",
-    "provenance": "SIMULATED"
+    "provenance": "VERIFIED-SYNTHETIC"
   },
   {
     "platform": "telegram",
@@ -27,7 +27,7 @@
     "text": "Rent your idle HDFC or Axis bank khata. Earn daily commission of 10,000 INR. Contact @fast_cash_hub or UPI mule.syndicate@ybl.",
     "image_path": null,
     "category": "bank_account",
-    "provenance": "SIMULATED"
+    "provenance": "VERIFIED-SYNTHETIC"
   },
   {
     "platform": "telegram",
@@ -37,7 +37,7 @@
     "text": "Corporate net banking kit with ATM and SIM available for crypto P2P load. USDT TRC20 deposit to TYDzsYUEHG1AwueRyNng69nsT5Dn3URPUS. WhatsApp 90000 11111.",
     "image_path": null,
     "category": "net_banking_kit",
-    "provenance": "SIMULATED"
+    "provenance": "VERIFIED-SYNTHETIC"
   },
   {
     "platform": "telegram",
@@ -47,7 +47,7 @@
     "text": "High limit corporate accounts in Axis Bank ready to swipe. Instant payout to TRC20 TYDzsYUEHG1AwueRyNng69nsT5Dn3URPUS. Contact @crypto_dealer_demo.",
     "image_path": null,
     "category": "bank_account",
-    "provenance": "SIMULATED"
+    "provenance": "VERIFIED-SYNTHETIC"
   },
   {
     "platform": "telegram",
@@ -57,7 +57,7 @@
     "text": "Country made pistol 315 bore available with 10 cartridges. Safe parcel delivery in Jaipur. Advance via UPI escrow.demo@okhdfcbank. Ping 90000 22222.",
     "image_path": null,
     "category": "arms",
-    "provenance": "SIMULATED"
+    "provenance": "VERIFIED-SYNTHETIC"
   },
   {
     "platform": "telegram",
@@ -67,7 +67,7 @@
     "text": "32 bore revolver with brass bullets for security. Hand-to-hand deal or courier. Pay token via UPI escrow.demo@okhdfcbank or Call 90000 22222.",
     "image_path": null,
     "category": "arms",
-    "provenance": "SIMULATED"
+    "provenance": "VERIFIED-SYNTHETIC"
   },
   {
     "platform": "telegram",
@@ -77,7 +77,7 @@
     "text": "Fresh charas and mdma pills available in Mumbai. Pure maal, door delivery in 2 hours. WhatsApp 90000 44444. Demo payment demo.drug@ybl.",
     "image_path": "C:\\Users\\AJINKYA CHALKE\\Desktop\\rajasthan hackthon ps2\\sample_data\\demo_images\\ad_flyer_3.png",
     "category": "drugs",
-    "provenance": "SIMULATED"
+    "provenance": "VERIFIED-SYNTHETIC"
   },
   {
     "platform": "telegram",
@@ -87,7 +87,7 @@
     "text": "Urgent fake Aadhaar and forged PAN card in 24 hours. Scannable QR code and online verification bypass. Ping @doc_maker_demo.",
     "image_path": null,
     "category": "fake_documents",
-    "provenance": "SIMULATED"
+    "provenance": "VERIFIED-SYNTHETIC"
   },
   {
     "platform": "telegram",
@@ -97,7 +97,7 @@
     "text": "Pre-activated Airtel and Jio SIM cards without Aadhaar. Ready to use for WhatsApp and Telegram. DM @sim_vendor_demo.",
     "image_path": null,
     "category": "sim_card",
-    "provenance": "SIMULATED"
+    "provenance": "VERIFIED-SYNTHETIC"
   },
   {
     "platform": "telegram",
@@ -107,7 +107,7 @@
     "text": "SECURITY ALERT: HDFC Bank never asks for your OTP, Netbanking password, UPI PIN, or CVV. Beware of fraudsters offering fake loans or account rentals.",
     "image_path": null,
     "category": "benign",
-    "provenance": "SIMULATED"
+    "provenance": "VERIFIED-SYNTHETIC"
   },
   {
     "platform": "telegram",
@@ -117,6 +117,6 @@
     "text": "Apollo Pharmacy Health Notice: Paracetamol and cough syrup require a licensed doctor prescription. Visit our counter in Pune.",
     "image_path": null,
     "category": "benign",
-    "provenance": "SIMULATED"
+    "provenance": "VERIFIED-SYNTHETIC"
   }
 ]

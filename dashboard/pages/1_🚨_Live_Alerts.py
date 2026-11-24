@@ -13,6 +13,7 @@ import pandas as pd
 
 from core.db import Database
 from core.models import now_utc_iso
+from dashboard.provenance_banner import render_provenance_banner
 
 st.set_page_config(page_title="Live Alerts | TGSherlock", page_icon="🚨", layout="wide")
 
@@ -43,8 +44,11 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+# Standard Provenance Banner
+render_provenance_banner(page_title="Live Alerts", active_stream="VERIFIED-SYNTHETIC")
+
 st.title("🚨 Live Threat Alerts & Triage Workflow")
-st.caption("Actionable illegal trade detections across public channels with analyst confirmation workflow.")
+st.caption("Actionable illegal trade detections across public channels with 5-second live streaming auto-refresh.")
 
 db = Database()
 
@@ -61,58 +65,68 @@ category_filter = st.sidebar.selectbox(
     ["All", "drugs", "arms", "bank_account", "atm_card", "sim_card", "fake_documents", "net_banking_kit"],
     index=0
 )
+auto_refresh = st.sidebar.checkbox("⚡ Auto-refresh feed (every 5s)", value=True)
 
-# Fetch alerts
-with db.get_connection() as conn:
-    query = """
-    SELECT a.*, p.channel_id, p.platform, p.message_id, p.timestamp_utc, p.raw_text, p.ingestion_source,
-           e.evidence_id, e.current_hash, e.block_height
-    FROM alerts a
-    JOIN posts p ON a.post_uid = p.post_uid
-    LEFT JOIN evidence e ON a.post_uid = e.post_uid
-    WHERE 1=1
-    """
-    params = []
-    if risk_filter:
-        placeholders = ",".join("?" for _ in risk_filter)
-        query += f" AND a.risk_level IN ({placeholders})"
-        params.extend(risk_filter)
-    if status_filter != "All":
-        query += " AND a.status = ?"
-        params.append(status_filter)
-    if category_filter != "All":
-        query += " AND a.category = ?"
-        params.append(category_filter)
 
-    query += " ORDER BY a.created_at DESC LIMIT 100"
-    rows = conn.execute(query, tuple(params)).fetchall()
-    alerts = [dict(r) for r in rows]
+@st.fragment(run_every=5 if auto_refresh else None)
+def render_live_feed(r_filter, s_filter, c_filter):
+    with db.get_connection() as conn:
+        query = """
+        SELECT a.*, p.channel_id, p.platform, p.message_id, p.timestamp_utc, p.raw_text, p.ingestion_source,
+               e.evidence_id, e.current_hash, e.block_height
+        FROM alerts a
+        JOIN posts p ON a.post_uid = p.post_uid
+        LEFT JOIN evidence e ON a.post_uid = e.post_uid
+        WHERE 1=1
+        """
+        params = []
+        if r_filter:
+            placeholders = ",".join("?" for _ in r_filter)
+            query += f" AND a.risk_level IN ({placeholders})"
+            params.extend(r_filter)
+        if s_filter != "All":
+            query += " AND a.status = ?"
+            params.append(s_filter)
+        if c_filter != "All":
+            query += " AND a.category = ?"
+            params.append(c_filter)
 
-st.markdown(f"**Found {len(alerts)} alerts matching active filters.**")
+        query += " ORDER BY a.created_at DESC LIMIT 100"
+        rows = conn.execute(query, tuple(params)).fetchall()
+        alerts = [dict(r) for r in rows]
 
-# Export bar
-col_exp1, col_exp2 = st.columns([1, 4])
-with col_exp1:
-    if alerts:
-        df_export = pd.DataFrame([{
-            "alert_id": a["alert_id"],
-            "channel": a["channel_id"],
-            "platform": a["platform"],
-            "category": a["category"],
-            "risk_level": a["risk_level"],
-            "status": a["status"],
-            "timestamp": a["timestamp_utc"],
-            "text": a["raw_text"],
-            "evidence_hash": a.get("current_hash")
-        } for a in alerts])
-        csv_data = df_export.to_csv(index=False).encode("utf-8")
-        st.download_button("📥 Export Alerts (CSV)", csv_data, "threat_alerts.csv", "text/csv")
+    current_count = len(alerts)
+    last_count = st.session_state.get("last_seen_alert_count", None)
+    if last_count is not None and current_count > last_count:
+        new_diff = current_count - last_count
+        st.toast(f"🚨 New threat alert received! (+{new_diff} new)", icon="⚠️")
+    st.session_state["last_seen_alert_count"] = current_count
 
-st.divider()
+    col_meta1, col_meta2 = st.columns([2, 1])
+    with col_meta1:
+        st.markdown(f"**Found {len(alerts)} alerts matching active filters.** &nbsp; *(Auto-refresh active: checks every 5s)*")
+    with col_meta2:
+        if alerts:
+            df_export = pd.DataFrame([{
+                "alert_id": a["alert_id"],
+                "channel": a["channel_id"],
+                "platform": a["platform"],
+                "category": a["category"],
+                "risk_level": a["risk_level"],
+                "status": a["status"],
+                "timestamp": a["timestamp_utc"],
+                "text": a["raw_text"],
+                "evidence_hash": a.get("current_hash")
+            } for a in alerts])
+            csv_data = df_export.to_csv(index=False).encode("utf-8")
+            st.download_button("📥 Export Alerts (CSV)", csv_data, "threat_alerts.csv", "text/csv")
 
-if not alerts:
-    st.info("No alerts found for the selected criteria.")
-else:
+    st.divider()
+
+    if not alerts:
+        st.info("No alerts found for the selected criteria.")
+        return
+
     for alert in alerts:
         card_class = "threat-card-high" if alert["risk_level"] == "High" else "threat-card-med" if alert["risk_level"] == "Medium" else "threat-card-low"
         post_uid = alert["post_uid"]
@@ -186,3 +200,6 @@ else:
                         st.rerun()
 
             st.write("")
+
+
+render_live_feed(risk_filter, status_filter, category_filter)

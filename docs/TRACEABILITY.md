@@ -106,7 +106,28 @@ SUCCESS: All 12 evidence blocks cryptographically verified with unbroken chain
 
 ---
 
-## 4. Provenance Classification of Features
-- **LIVE:** Real public Telegram channel collection via TGSherlock daemon (`127.0.0.1:8765`) and `tgq preview` public broadcast scraper.
-- **IMPORTED:** External CSV/JSON dumps ingested via `addons/importer.py` / `ingestion/adapters.py` (Page 6).
-- **SIMULATED:** Seeded multi-platform dataset in `sample_data/demo_multiplatform_dataset.json` and synthetic training data in `data/train_synthetic.jsonl` replayed to demonstrate cross-channel attribution offline.
+## 4. Feature & Data Provenance Classification
+
+Per strict forensic standards and audit integrity requirements, all features, endpoints, and datasets are strictly labeled with one of four provenance tiers:
+- **`LIVE`**: Tested and verified against real live Telegram broadcast channels (e.g. `tgq preview`, live TGSherlock daemon).
+- **`VERIFIED-SYNTHETIC`**: Tested and cryptographically/algorithmically verified via automated unit tests (`pytest`) against reproducible synthetic benchmarks.
+- **`IMPORTED`**: Tested on investigator-uploaded multi-platform CSV/JSON dumps (`sample_data/demo_dataset.csv`, `sample_data/demo_multiplatform_dataset.json`).
+- **`UNVERIFIED`**: Features requiring manual channel joining or untested external network integrations (the system intentionally does NOT auto-join private groups).
+
+| Feature / Subsystem | Implementation Files | Automated Test / Verification Evidence | Provenance Tier | Description & Operational Audit Notes |
+| :--- | :--- | :--- | :---: | :--- |
+| **Public Channel Web Preview Ingestion** | `ingestion/adapters.py`<br>`discovery/finder.py` | `tgq preview <channel>` against public Telegram channels (`t.me/s/`) | **UNVERIFIED** | Unauthenticated web preview scraper for public broadcast feeds. Labeled UNVERIFIED in air-gap evaluation environment (requires active external internet access). |
+| **Local TGSherlock Daemon Ingestion** | `ingestion/adapters.py` (`TGSherlockAdapter`) | Local daemon IPC socket / SQLite DB poll (`127.0.0.1:8765`) | **UNVERIFIED** | Local daemon intake feed. Labeled UNVERIFIED in air-gap evaluation environment (requires active authenticated Telegram session on host). |
+| **Multi-Platform Dump Ingestion (CSV / JSON)** | `addons/importer.py`<br>`dashboard/pages/6_📁_Data_Ingestion.py` | `sample_data/demo_dataset.csv`<br>`sample_data/demo_multiplatform_dataset.json` | **IMPORTED** | External investigator dumps, courtroom evidentiary records, and multi-platform data feeds ingested via standard format parsers. |
+| **Unified SQLite DB (WAL Mode)** | `core/db.py`<br>`data/schema.sql` | `tests/test_unified_db.py`<br>`tests/test_graph_persistence.py` | **VERIFIED-SYNTHETIC** | Idempotent upserts, WAL journal, and foreign key cascades verified across 3,010 synthetic post records and 59 unit tests. |
+| **Text Normalization & Evasion Resistance** | `core/normalizer.py` | `tests/test_normalizer.py` (7 tests) | **VERIFIED-SYNTHETIC** | NFKC normalization, homoglyph folding, zero-width stripping, Devanagari numerals, and spaced word collapse verified against adversarial synthetic test suites. |
+| **Illicit Slang Scorer & Lexicon** | `addons/lexicon.yaml`<br>`addons/scorer.py` | `tests/test_addons.py::test_scorer_*` | **VERIFIED-SYNTHETIC** | 7 threat categories, multi-lingual slang (EN/Hinglish/Marathi), and emoji indicators calibrated strictly against synthetic benchmarks. |
+| **Hybrid Classifier & Embeddings** | `models/classifier.py`<br>`eval/evaluate_model.py` | `tests/test_classifier.py`<br>`data/test_heldout_novel_templates.jsonl` | **VERIFIED-SYNTHETIC** | Multilingual MiniLM-L12 embeddings + Logistic Regression trained on `data/train_synthetic.jsonl`. Evaluated on novel held-out synthetic templates. Zero Telegram data used for training. |
+| **Financial Ad Intent & Mule Detection** | `addons/financial_detector.py` | `tests/test_financial_detector.py` (6 tests) | **VERIFIED-SYNTHETIC** | Rule-based intent (buy/sell/rent/recruit) and evidentiary character offset spans tested on synthetic financial advertisement templates. |
+| **Identifier Extraction Suite** | `addons/extractors.py` | `tests/test_addons.py`<br>`tests/test_extractors_extended.py` | **VERIFIED-SYNTHETIC** | NPCI UPI handles, Indian phone numbers (including word-form and Devanagari), TRON Base58Check wallets, IFSC, and location gazetteer verified on synthetic test cases. Channel's own handle strictly excluded. |
+| **Cryptographic Evidence Hash Ledger** | `addons/evidence.py`<br>`addons/verify_evidence.py` | `tests/test_hash_chain.py`<br>`scripts/verify_flow_proof.py` | **VERIFIED-SYNTHETIC** | RFC-8785 canonical JSON, SHA-256 block hashing, and unbroken hash-chain integrity verified across all ledger blocks. |
+| **Entity Graph & Cross-Channel Attribution** | `dashboard/graph.py` | `tests/test_dashboard.py`<br>`tests/test_graph_persistence.py` | **VERIFIED-SYNTHETIC** | NetworkX bipartite graphs, centrality metrics, connected syndicates, and seller dossiers tested on synthetic multi-channel datasets. |
+| **MinHash & pHash Coordinated Ad Clustering** | `dashboard/similarity.py` | `tests/test_dashboard.py` | **VERIFIED-SYNTHETIC** | MinHash Jaccard text campaign clustering and perceptual hash duplicate flyer grouping verified on synthetic demo assets. |
+| **Optical Character Recognition (OCR)** | `addons/ocr_extractor.py` | `tests/test_demo_and_ocr.py`<br>`sample_data/demo_images/ad_flyer_1.png` | **VERIFIED-SYNTHETIC** | Multilingual (eng+hin+mar) OCR detection, fallback handling, and flyer text extraction verified on synthetic flyer images. |
+| **Direct Private Channel / Group Scraping** | N/A (Restricted by Design) | Manual Investigator Join Only | **UNVERIFIED** | The system deliberately avoids automatic joining or probing of non-public channels. Law enforcement users join private channels manually; unjoined private feeds remain UNVERIFIED. |
+| **Unauthenticated Proprietary Platforms** | N/A | External API Integration | **UNVERIFIED** | Closed proprietary networks lacking public web preview endpoints are unverified without investigator-supplied credentials or imported dumps. |

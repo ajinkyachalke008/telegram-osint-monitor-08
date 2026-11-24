@@ -1,4 +1,5 @@
 """OSINT Law Enforcement Dashboard - Executive Overview & Status."""
+import os
 import sys
 import json
 import html
@@ -16,7 +17,8 @@ import plotly.graph_objects as go
 
 from core.db import Database
 from core.models import now_utc_iso
-from dashboard.db_reader import load_dashboard_data
+from dashboard.provenance_banner import render_provenance_banner
+from scripts.generate_demo_data import seed_demo_database
 
 # Page configuration
 st.set_page_config(
@@ -31,32 +33,50 @@ st.markdown("""
 <style>
     .main { background-color: #0E131F; color: #ECEFF1; }
     .stMetric { background-color: #1A2238; border-radius: 8px; padding: 14px; border: 1px solid #283747; }
-    .legal-banner {
-        background-color: #1B263B; border-left: 6px solid #00ADB5;
-        padding: 14px 18px; border-radius: 6px; margin-bottom: 20px;
-        font-size: 13.5px; line-height: 1.5;
-    }
     .badge-live { background-color: #00897B; color: #E0F2F1; padding: 3px 8px; border-radius: 4px; font-weight: bold; font-size: 12px; }
+    .badge-synthetic { background-color: #7E57C2; color: #EDE7F6; padding: 3px 8px; border-radius: 4px; font-weight: bold; font-size: 12px; }
     .badge-imported { background-color: #1E88E5; color: #E3F2FD; padding: 3px 8px; border-radius: 4px; font-weight: bold; font-size: 12px; }
-    .badge-sim { background-color: #FB8C00; color: #FFF3E0; padding: 3px 8px; border-radius: 4px; font-weight: bold; font-size: 12px; }
+    .badge-unverified { background-color: #546E7A; color: #ECEFF1; padding: 3px 8px; border-radius: 4px; font-weight: bold; font-size: 12px; }
+    .chain-box {
+        background-color: #111B2E; border: 1px solid #00ADB5; border-radius: 8px;
+        padding: 12px 18px; margin-top: 10px; margin-bottom: 18px;
+    }
+    .tour-card {
+        background-color: #162238; border: 1px solid #283747; border-radius: 8px;
+        padding: 14px; margin-bottom: 10px;
+    }
 </style>
 """, unsafe_allow_html=True)
 
-# Mandatory Legal & OSINT Disclaimer
-st.markdown("""
-<div class="legal-banner">
-    <b>⚖️ LAW ENFORCEMENT OSINT MONITORING NOTICE & OPERATIONAL CONSTRAINTS:</b><br>
-    • <b>Public Channels Only:</b> Monitoring is restricted to public broadcast channels. The system never joins private groups, posts, reacts, DMs, or enumerates channel members.<br>
-    • <b>Leads, Not Proof:</b> All algorithmic classifications and link clusters represent intelligence leads for certified human review, not courtroom proof.<br>
-    • <b>Strict Training Compliance:</b> ZERO models were trained or fine-tuned on Telegram data. ML classification is trained exclusively on synthetic/handcrafted benchmarks.
-</div>
-""", unsafe_allow_html=True)
-
-st.title("🛡️ TGSherlock OSINT Threat Monitor")
-st.caption("Telegram & Multi-Platform Illegal Trade Intelligence Engine | Real-Time Detection & Link Analysis")
+# Standard Provenance Banner derived dynamically from SQLite DB
+render_provenance_banner(page_title="Executive Overview")
 
 # Database connection
 db = Database()
+
+# Sidebar Actions
+st.sidebar.title("🛡️ TGSherlock OSINT")
+st.sidebar.caption("Law Enforcement Intelligence Engine")
+
+# Gated Reset Demo State: ONLY visible when DEMO_MODE=1 and confirmed
+if os.environ.get("DEMO_MODE") == "1":
+    st.sidebar.divider()
+    st.sidebar.markdown("🛠️ **Demo Maintenance (`DEMO_MODE=1`)**")
+    confirm_reset = st.sidebar.checkbox("Confirm database reset & reseed", key="confirm_demo_reset")
+    if confirm_reset:
+        if st.sidebar.button("🚨 Wipe & Reseed Demo Database", use_container_width=True):
+            seed_demo_database(reset=True)
+            db.log_audit("demo_reset_executed", {
+                "confirmed": True,
+                "actor": "evaluator_ui",
+                "env_demo_mode": "1",
+                "timestamp": now_utc_iso()
+            })
+            st.toast("✅ Demo reset successfully! Baseline records and evidence chain reseeded.", icon="🔄")
+            st.rerun()
+
+st.title("🛡️ TGSherlock OSINT Threat Monitor")
+st.caption("Telegram & Multi-Platform Illegal Trade Intelligence Engine | Real-Time Detection & Link Analysis")
 
 # Load summary metrics
 with db.get_connection() as conn:
@@ -71,6 +91,12 @@ with db.get_connection() as conn:
     prov_rows = conn.execute("SELECT ingestion_source, COUNT(*) as cnt FROM posts GROUP BY ingestion_source").fetchall()
     prov_counts = {r["ingestion_source"]: r["cnt"] for r in prov_rows}
 
+    # Chain Head Hash
+    head_row = conn.execute("SELECT current_hash, block_height, generated_at_utc FROM evidence ORDER BY block_height DESC LIMIT 1").fetchone()
+    chain_head_hash = head_row["current_hash"] if head_row else "GENESIS"
+    chain_head_block = head_row["block_height"] if head_row else 0
+    chain_head_ts = head_row["generated_at_utc"] if head_row else "N/A"
+
 # Top Metric Banner
 col1, col2, col3, col4, col5 = st.columns(5)
 with col1:
@@ -82,22 +108,76 @@ with col3:
 with col4:
     st.metric("Cross-Channel Syndicates", f"{cross_actors:,}", delta="Active in 2+ Chans")
 with col5:
-    st.metric("Sealed Evidence Blocks", f"{evidence_blocks:,}", delta="Tamper-Evident Chain")
+    st.metric("Sealed Evidence Blocks", f"{evidence_blocks:,}", delta=f"Head #{chain_head_block}")
+
+# Cryptographic Chain-Head Banner
+st.markdown(f"""
+<div class="chain-box">
+    <b>🔒 EVIDENCE LEDGER CHAIN-HEAD HASH:</b> <code>{chain_head_hash}</code> &nbsp;(Block #{chain_head_block} | Sealed: {chain_head_ts})<br/>
+    <span style="color:#A0AEC0; font-size:12px;">RFC-8785 canonical JSON hashed with SHA-256. Section 63 BSA 2023 certificate requires signature and hash; anchoring outside DB is recommended practice; consult legal counsel.</span>
+</div>
+""", unsafe_allow_html=True)
+
+# ---------------------------------------------------------------------------
+# Guided 6-Step Demonstration Tour
+# ---------------------------------------------------------------------------
+st.subheader("🧭 Guided 6-Step Demonstration Tour (4-Minute Evaluation Flow)")
+st.caption("Follow this sequential workflow to evaluate the complete intelligence pipeline from live ingestion to evidence export:")
+
+tour_col1, tour_col2 = st.columns(2)
+
+with tour_col1:
+    with st.container():
+        st.markdown("**Step 1: Live Threat Alerts & Analyst Triage**")
+        st.markdown("Real-time streaming feed with auto-refresh every 5s, threat severity pill badges, extracted financial identifiers, and triage confirmation.")
+        st.page_link("pages/1_🚨_Live_Alerts.py", label="Open Step 1: Live Threat Alerts", icon="🚨")
+
+    with st.container():
+        st.markdown("**Step 2: Alert Detail & Cryptographic Hash Seal**")
+        st.markdown("Inspect RFC-8785 canonical JSON, verify live SHA-256 ledger integrity, analyze mule recruitment signals, and export Section 63 BSA 2023 evidence PDF.")
+        st.page_link("pages/2_🔍_Alert_Detail.py", label="Open Step 2: Alert Detail & PDF Export", icon="🔍")
+
+    with st.container():
+        st.markdown("**Step 3: Cross-Channel Entity Graph**")
+        st.markdown("Interactive network visualization tracing how shared UPI IDs (e.g., <code>mule.syndicate@ybl</code>) link 3+ public broadcast channels into an organized syndicate.")
+        st.page_link("pages/3_🕸️_Entity_Graph.py", label="Open Step 3: Entity Network Graph", icon="🕸️")
+
+with tour_col2:
+    with st.container():
+        st.markdown("**Step 4: Coordinated Ad Campaigns**")
+        st.markdown("MinHash LSH clustering detecting copy-pasted ad text and duplicate flyer banners broadcast synchronously across multiple channels.")
+        st.page_link("pages/4_🔁_Coordinated_Campaigns.py", label="Open Step 4: Coordinated Campaigns", icon="🔁")
+
+    with st.container():
+        st.markdown("**Step 5: Geographic Threat Hotspots**")
+        st.markdown("Spatial analysis of extracted location references identifying regional cybercrime hubs across Mewat, Jamtara, Jaipur, Delhi, and Mumbai.")
+        st.page_link("pages/5_🗺️_Geographic_Map.py", label="Open Step 5: Geographic Threat Map", icon="🗺️")
+
+    with st.container():
+        st.markdown("**Step 6: Responsible Use & Public Channel Discovery**")
+        st.markdown("Adjust category weights without ML retraining, review audit logs, and search public channels with snowball discovery (Page 9).")
+        col_s6a, col_s6b = st.columns(2)
+        with col_s6a:
+            st.page_link("pages/8_⚖️_Responsible_Use_and_Audit.py", label="Step 6A: Responsible Use & Audit", icon="⚖️")
+        with col_s6b:
+            st.page_link("pages/9_🔭_Channel_Discovery.py", label="Step 6B: Channel Discovery (Page 9)", icon="🔭")
 
 st.divider()
 
 # Ingestion Source & Provenance
-st.subheader("📡 Live Ingestion Streams & Data Provenance")
-pcol1, pcol2, pcol3 = st.columns(3)
+st.subheader("📡 Ingestion Streams & Data Provenance")
+pcol1, pcol2, pcol3, pcol4 = st.columns(4)
 with pcol1:
-    live_c = prov_counts.get("LIVE", 0)
-    st.markdown(f'<span class="badge-live">LIVE TELEGRAM</span> &nbsp; <b>{live_c}</b> posts ingested from local TGSherlock daemon.', unsafe_allow_html=True)
+    syn_c = prov_counts.get("VERIFIED-SYNTHETIC", prov_counts.get("SIMULATED", 0))
+    st.markdown(f'<span class="badge-synthetic">VERIFIED-SYNTHETIC</span> &nbsp; <b>{syn_c}</b> benchmark posts replayed & tested.', unsafe_allow_html=True)
 with pcol2:
     imp_c = prov_counts.get("IMPORTED", 0)
     st.markdown(f'<span class="badge-imported">IMPORTED DUMPS</span> &nbsp; <b>{imp_c}</b> posts ingested via multi-platform CSV/JSON.', unsafe_allow_html=True)
 with pcol3:
-    sim_c = prov_counts.get("SIMULATED", 0)
-    st.markdown(f'<span class="badge-sim">SIMULATED REPLAY</span> &nbsp; <b>{sim_c}</b> benchmark posts replayed for demonstration.', unsafe_allow_html=True)
+    live_c = prov_counts.get("LIVE", 0)
+    st.markdown(f'<span class="badge-live">LIVE TELEGRAM</span> &nbsp; <b>{live_c}</b> posts ingested from real live Telegram.', unsafe_allow_html=True)
+with pcol4:
+    st.markdown(f'<span class="badge-unverified">UNVERIFIED FEEDS</span> &nbsp; Telegram Web Preview Poller &amp; TGSherlock Daemon Intake (air-gap unverified).', unsafe_allow_html=True)
 
 st.write("")
 
@@ -118,7 +198,7 @@ with row1_col1:
             color="cnt", color_continuous_scale="Reds",
             template="plotly_dark"
         )
-        fig_cat.update_layout(margin=dict(l=10, r=10, t=10, b=10), height=300, yaxis=dict(autorange="reversed"))
+        fig_cat.update_layout(margin=dict(l=10, r=10, t=10, b=10), height=280, yaxis=dict(autorange="reversed"))
         st.plotly_chart(fig_cat, use_container_width=True)
     else:
         st.info("No categorized illegal posts in database yet.")
@@ -136,40 +216,7 @@ with row1_col2:
             color_discrete_sequence=px.colors.qualitative.Bold,
             template="plotly_dark"
         )
-        fig_ident.update_layout(margin=dict(l=10, r=10, t=10, b=10), height=300)
+        fig_ident.update_layout(margin=dict(l=10, r=10, t=10, b=10), height=280)
         st.plotly_chart(fig_ident, use_container_width=True)
     else:
         st.info("No identifiers extracted yet.")
-
-st.divider()
-
-# System Architecture Flow
-st.subheader("⚙️ Real-Time Intelligence Pipeline Flow")
-st.markdown("""
-```text
-[Public Telegram / CSV Dump / Replay Stream]
-                   │
-                   ▼
-       1. Text Normalization (NFKC, Homoglyphs, Leetspeak, Spaced Words, Devanagari)
-                   │
-                   ▼
-       2. Hybrid Classification (Slang Lexicon + Scikit-Learn TF-IDF + Hard-Negative Calibrator)
-                   │
-                   ▼
-       3. Financial-Ad Detector (Mule Recruitment Intent, Instruments, Commission, Text Offsets)
-                   │
-                   ▼
-       4. Identifier Extraction (UPI, Phones, Base58Check Wallets, Usernames, IFSC, Gazetteer)
-                   │
-                   ▼
-       5. Evidence Ledger (RFC-8785 Canonical JSON + SHA-256 Hash Chaining)
-                   │
-                   ▼
-       6. Link Analysis (Entities Graph, Centrality, Cross-Channel Syndicates, MinHash Ads)
-                   │
-                   ▼
-       7. Multipage Law Enforcement Dashboard (Triage, Verification, Dossiers, Export)
-```
-""")
-
-st.info("💡 **Navigation:** Use the left sidebar to navigate across the full suite: **Live Alerts**, **Alert Detail & Hash Verification**, **Entity Graph**, **Coordinated Campaigns**, **Geographic Map**, **Data Ingestion**, **Model Metrics**, and **Responsible Use & Audit**.")

@@ -13,6 +13,7 @@ from typing import Dict, List, Any, Optional, Tuple
 import yaml
 
 LEXICON_PATH = Path(__file__).parent / "lexicon.yaml"
+FEEDBACK_PATH = Path(__file__).parent / "lexicon_feedback.yaml"
 
 
 @dataclass
@@ -61,9 +62,11 @@ class ScoreResult:
 
 
 class RuleScorer:
-    def __init__(self, lexicon_file: Optional[Path] = None):
+    def __init__(self, lexicon_file: Optional[Path] = None, feedback_file: Optional[Path] = None):
         self.lexicon_file = lexicon_file or LEXICON_PATH
+        self.feedback_file = feedback_file or FEEDBACK_PATH
         self.lexicon = self._load_lexicon()
+        self.feedback_weights = self._load_feedback()
         self._compiled_patterns = self._compile_patterns()
 
     def _load_lexicon(self) -> Dict[str, Any]:
@@ -72,8 +75,19 @@ class RuleScorer:
         with open(self.lexicon_file, "r", encoding="utf-8") as f:
             return yaml.safe_load(f)
 
+    def _load_feedback(self) -> Dict[str, Any]:
+        """Load analyst feedback term weight overrides."""
+        if not self.feedback_file.exists():
+            return {}
+        try:
+            with open(self.feedback_file, "r", encoding="utf-8") as f:
+                data = yaml.safe_load(f) or {}
+                return data.get("overrides", {})
+        except Exception:
+            return {}
+
     def _compile_patterns(self) -> Dict[str, List[Tuple[str, str, float, re.Pattern]]]:
-        """Pre-compile regex patterns for terms for fast matching."""
+        """Pre-compile regex patterns for terms for fast matching, applying analyst feedback weights."""
         compiled = {}
         categories = self.lexicon.get("categories", {})
         
@@ -90,19 +104,107 @@ class RuleScorer:
                     if not term_str:
                         continue
                     
-                    # Weight determination
-                    if sec == "emojis":
-                        weight = 1.0 * multiplier
-                        pattern = re.compile(re.escape(term_str))
-                    elif sec == "coded_words":
-                        weight = (def_weight + 0.5) * multiplier
-                        pattern = re.compile(r"(?i)\b" + re.escape(term_str) + r"\b")
+                    # Check if analyst has set a feedback override for this term
+                    lookup_key = f"{cat_name}:{term_str.lower()}"
+                    global_key = term_str.lower()
+
+                    if lookup_key in self.feedback_weights:
+                        weight = float(self.feedback_weights[lookup_key].get("weight", def_weight))
+                    elif global_key in self.feedback_weights:
+                        weight = float(self.feedback_weights[global_key].get("weight", def_weight))
                     else:
-                        weight = def_weight * multiplier
-                        pattern = re.compile(r"(?i)\b" + re.escape(term_str) + r"\b")
+                        # Baseline weight determination
+                        if sec == "emojis":
+                            weight = 1.0 * multiplier
+                        elif sec == "coded_words":
+                            weight = (def_weight + 0.5) * multiplier
+                        else:
+                            weight = def_weight * multiplier
                         
+                    pattern = re.compile(re.escape(term_str)) if sec == "emojis" else re.compile(r"(?i)\b" + re.escape(term_str) + r"\b")
                     compiled[cat_name].append((term_str, sec, weight, pattern))
         return compiled
+
+    def adjust_term_weight(
+        self,
+        category: str,
+        term: str,
+        new_weight: float,
+        analyst_id: str = "certified_analyst",
+        reason: str = "Analyst triage feedback"
+    ) -> Dict[str, Any]:
+        """
+        Analyst feedback loop: Adjusts term weights in lexicon_feedback.yaml ONLY.
+        STRICT COMPLIANCE GUARANTEE: Never retrains or fine-tunes ML models on collected posts.
+        """
+        from datetime import datetime, timezone
+        ts = datetime.now(timezone.utc).isoformat()
+        clean_term = term.strip().lower()
+        key = f"{category}:{clean_term}"
+
+        # Load existing overrides
+        existing = {}
+        if self.feedback_file.exists():
+            try:
+                with open(self.feedback_file, "r", encoding="utf-8") as f:
+                    existing = yaml.safe_load(f) or {}
+            except Exception:
+                existing = {}
+
+        overrides = existing.get("overrides", {})
+        overrides[key] = {
+            "category": category,
+            "term": clean_term,
+            "weight": float(new_weight),
+            "updated_by": analyst_id,
+            "updated_at": ts,
+            "reason": reason,
+        }
+        existing["overrides"] = overrides
+        existing["last_updated"] = ts
+        existing["compliance_notice"] = "TERM WEIGHTS ADJUSTED ONLY. ZERO ML RETRAINING ON COLLECTED POSTS."
+
+        self.feedback_file.parent.mkdir(parents=True, exist_ok=True)
+        with open(self.feedback_file, "w", encoding="utf-8") as f:
+            yaml.safe_dump(existing, f, sort_keys=False)
+
+        # Reload weights and recompile patterns immediately
+        self.feedback_weights = overrides
+        self._compiled_patterns = self._compile_patterns()
+
+        # Record in system audit log
+        try:
+            from core.db import Database
+            db = Database()
+            db.record_audit_log(
+                action="LEXICON_WEIGHT_ADJUSTMENT",
+                details={
+                    "category": category,
+                    "term": clean_term,
+                    "new_weight": float(new_weight),
+                    "analyst": analyst_id,
+                    "reason": reason,
+                    "retrained_ml_model": False,
+                }
+            )
+        except Exception:
+            pass
+
+        return {
+            "category": category,
+            "term": clean_term,
+            "new_weight": float(new_weight),
+            "updated_by": analyst_id,
+            "retrained_ml_model": False,
+            "compliance_status": "COMPLIANT: Term weight adjusted in lexicon only. No model retraining.",
+        }
+
+    def reset_feedback_weights(self):
+        """Reset all analyst feedback overrides back to baseline defaults."""
+        if self.feedback_file.exists():
+            self.feedback_file.unlink()
+        self.feedback_weights = {}
+        self._compiled_patterns = self._compile_patterns()
 
     def score(self, text: str, identifiers: Optional[Dict[str, Any]] = None) -> ScoreResult:
         """

@@ -75,4 +75,8 @@
 > **Yes, 100%.**
 > - The entire stack runs on standard Python 3.11+ with SQLite WAL mode.
 > - No external cloud API keys, proprietary models, or external vector databases are required.
-> - The UI clearly labels all data provenance: `LIVE` (real Telegram), `IMPORTED` (investigator CSV/JSON dumps), or `SIMULATED` (replay benchmarks).
+> - The UI and documentation strictly enforce a 4-tier provenance labeling standard:
+>   - `VERIFIED-SYNTHETIC`: Features validated via reproducible automated tests against synthetic benchmarks.
+>   - `IMPORTED`: Investigator-provided external CSV/JSON dumps.
+>   - `UNVERIFIED`: Feeds and components not actively verified with live data in this environment (e.g. Telegram Web Preview Poller, TGSherlock daemon intake, private groups requiring manual investigator review).
+>   - `LIVE`: Features tested and verified against real live Telegram broadcast channels only when confirmed on host.

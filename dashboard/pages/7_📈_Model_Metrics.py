@@ -4,6 +4,9 @@ import streamlit as st
 
 st.set_page_config(page_title="Model Metrics | TGSherlock", page_icon="📈", layout="wide")
 
+from dashboard.provenance_banner import render_provenance_banner
+render_provenance_banner(page_title="Model Metrics", active_stream="VERIFIED-SYNTHETIC")
+
 st.title("📈 Machine Learning Performance & Validation Benchmarks (R2)")
 st.caption("Held-out evaluation metrics, hard-negative suppression results, and training compliance declaration.")
 

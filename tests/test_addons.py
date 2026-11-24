@@ -88,6 +88,23 @@ def test_username_and_tme_links():
     assert any("fake_cards_channel" in link for link in entities["tme_links"])
 
 
+def test_channel_own_handle_excluded_from_seller_identifiers():
+    """Verify that the channel's own handle is excluded from seller identifiers."""
+    text = "Fresh stock in our channel @mule_hub! Join t.me/mule_hub. Contact seller @actual_vendor or UPI vendor@ybl."
+    # When channel_handle is provided
+    entities = extract_all_entities(text, channel_handle="@mule_hub")
+    # Channel handle should NOT be in usernames
+    assert "@mule_hub" not in entities["usernames"]
+    assert "mule_hub" not in entities["usernames"]
+    # Actual vendor contact should be preserved
+    assert "@actual_vendor" in entities["usernames"]
+    # Channel link should not be treated as seller link
+    assert not any("mule_hub" in link for link in entities["tme_links"])
+    # all_flat should not contain mule_hub
+    flat_values = [e["value"] for e in entities["all_flat"]]
+    assert "@mule_hub" not in flat_values
+
+
 def test_location_extraction():
     text = "Delivery available across Mumbai, Jaipur, and Mewat within 24 hours."
     locs = extract_locations(text)
@@ -220,3 +237,96 @@ def test_importer_json(tmp_path):
     assert len(records) == 1
     assert records[0]["primary_category"] == "arms"
     assert "@gunman" in records[0]["extracted"]["usernames"]
+
+
+def test_lexicon_feedback_loop(tmp_path):
+    """Test that analyst feedback adjusts term weights in lexicon without model retraining."""
+    feedback_file = tmp_path / "test_feedback.yaml"
+    scorer = RuleScorer(feedback_file=feedback_file)
+    
+    # Baseline score with default weight
+    base_res = scorer.score("Looking for maal tonight.")
+    base_terms = {t["term"]: t["weight"] for t in base_res.matched_terms}
+    assert "maal" in base_terms
+    base_weight = base_terms["maal"]
+
+    # Analyst flags term to increase its weight
+    adj = scorer.adjust_term_weight(
+        category="drugs",
+        term="maal",
+        new_weight=8.5,
+        analyst_id="analyst_test",
+        reason="Critical street slang confirmed in regional investigations"
+    )
+    assert adj["new_weight"] == 8.5
+    assert adj["retrained_ml_model"] is False
+
+    # Re-score: weight must immediately reflect the updated value
+    updated_res = scorer.score("Looking for maal tonight.")
+    updated_terms = {t["term"]: t["weight"] for t in updated_res.matched_terms}
+    assert updated_terms["maal"] == 8.5
+    assert updated_res.total_score > base_res.total_score
+
+    # Reset reverts to default
+    scorer.reset_feedback_weights()
+    revert_res = scorer.score("Looking for maal tonight.")
+    revert_terms = {t["term"]: t["weight"] for t in revert_res.matched_terms}
+    assert revert_terms["maal"] == base_weight
+
+
+def test_ocr_honesty_policy(tmp_path):
+    """Verify OCR honesty: If real Tesseract is missing, OCR is DISABLED with zero fake shortcuts."""
+    from addons.ocr_extractor import OCRExtractor
+    ocr = OCRExtractor()
+    status = ocr.get_detection_status()
+    assert "engine" in status
+    
+    # If tesseract binary is not on host, extraction must fail honestly
+    if not status["tesseract_binary_detected"]:
+        dummy_img = tmp_path / "dummy.png"
+        dummy_img.write_bytes(b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15c4\x00\x00\x00\nIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82")
+        res = ocr.extract_text(dummy_img)
+        assert res["success"] is False
+        assert res["engine"] == "OCR DISABLED"
+        assert res["text"] == ""
+        assert "OCR DISABLED" in res["error"]
+
+
+def test_pdf_export_section_63_evidence_package():
+    """Verify Section 63 BSA 2023 Evidence Package PDF generation and chain-head anchoring."""
+    from addons.pdf_exporter import generate_evidence_pdf
+    fake_alert = {
+        "alert_id": "ALT-TEST-63BSA",
+        "post_uid": "telegram_demo_123",
+        "category": "bank_account",
+        "risk_level": "High",
+        "threat_score": 9.5,
+        "platform": "Telegram",
+        "channel_id": "t.me/delhi_classifieds_demo",
+        "message_id": "1001",
+        "timestamp_utc": "2026-11-24T12:00:00Z",
+        "raw_text": "Bank account available. Send token to mule.syndicate@ybl.",
+        "ingestion_source": "VERIFIED-SYNTHETIC"
+    }
+    fake_evidence = {
+        "current_hash": "a1b2c3d4e5f60182e38ffc17e65158a7428f73111f67f62ca858607a3c306d88",
+        "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+        "canonical_json": '{"channel_id":"t.me/delhi_classifieds_demo","message_id":"1001"}',
+        "block_height": 1,
+        "generated_at_utc": "2026-11-24T12:00:00Z"
+    }
+    fake_idents = [
+        {"type": "UPI", "normalized_value": "mule.syndicate@ybl", "channel_count": 3, "cross_channel": True}
+    ]
+    chain_head = "f7e6d5c4b3a20182e38ffc17e65158a7428f73111f67f62ca858607a3c306d99"
+    
+    pdf_bytes = generate_evidence_pdf(
+        alert=fake_alert,
+        evidence=fake_evidence,
+        identifiers=fake_idents,
+        chain_head_hash=chain_head
+    )
+    assert isinstance(pdf_bytes, bytes)
+    assert pdf_bytes.startswith(b"%PDF-")
+    assert len(pdf_bytes) > 2000
+

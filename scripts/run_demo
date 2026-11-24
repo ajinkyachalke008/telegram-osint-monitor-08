@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# TGSherlock 1-Command Demo Launcher for Bash / POSIX / Git Bash
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+cd "$ROOT_DIR" || exit 1
+
+if [ -f ".venv/Scripts/python.exe" ]; then
+    .venv/Scripts/python.exe scripts/run_demo.py "$@"
+elif [ -f ".venv/bin/python" ]; then
+    .venv/bin/python scripts/run_demo.py "$@"
+else
+    python3 scripts/run_demo.py "$@" || python scripts/run_demo.py "$@"
+fi

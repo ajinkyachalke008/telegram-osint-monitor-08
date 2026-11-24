@@ -36,6 +36,10 @@ EMBEDDING_HEAD_PATH = Path(__file__).resolve().parent / "embedding_head.joblib"
 TRAIN_DATA_PATH = Path(__file__).resolve().parent.parent / "data" / "train_synthetic.jsonl"
 TRANSFORMER_MODEL_NAME = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
 
+# Empirical Winner on Benchmark: TF-IDF (95.56% acc, 1.67ms latency vs 94.89% acc for Embeddings).
+# Embeddings will only be made default if human-written evaluations demonstrate superior generalization.
+DEFAULT_CLASSIFIER_MODE = "tfidf"
+
 
 @dataclass
 class ClassificationResult:
@@ -179,15 +183,23 @@ class HybridClassifier:
                 return True
         return False
 
-    def classify(self, text: str, identifiers: Optional[Dict[str, Any]] = None) -> ClassificationResult:
+    def classify(
+        self,
+        text: str,
+        identifiers: Optional[Dict[str, Any]] = None,
+        mode: str = "auto"
+    ) -> ClassificationResult:
         """
         Classifies post using hybrid pipeline:
         1. Text normalization
         2. Rule-based lexicon scoring
-        3. Multilingual Embedding + TF-IDF ML inference
+        3. Multilingual Embedding or TF-IDF ML inference (configured via `mode`: "auto" | "embedding" | "tfidf")
         4. Calibration & hard-negative suppression
         5. Explainability generation
         """
+        # Resolve effective inference mode (defaulting to empirical winner TF-IDF)
+        effective_mode = DEFAULT_CLASSIFIER_MODE if mode == "auto" else mode
+        active_arch = "TF-IDF + RuleScorer" if effective_mode == "tfidf" else self.model_name
         if not text or not text.strip():
             return ClassificationResult(
                 category="benign",
@@ -199,7 +211,7 @@ class HybridClassifier:
                 ml_probabilities={},
                 lexicon_score=0.0,
                 normalizations_applied=[],
-                model_architecture=self.model_name
+                model_architecture=active_arch
             )
 
         # 1. Normalize
@@ -208,13 +220,14 @@ class HybridClassifier:
         # 2. Rule scoring on normalized text
         score_res: ScoreResult = self.scorer.score(norm_text, identifiers)
 
-        # 3. ML inference (Multilingual Embeddings with TF-IDF fusion)
+        # 3. ML inference (Embeddings vs TF-IDF selection)
         ml_probs: Dict[str, float] = {}
         top_ml_category = "benign"
         top_ml_prob = 0.0
 
-        if self.embedding_model is not None and self.embedding_clf is not None:
-            emb = self.embedding_model.encode([norm_text])
+        use_emb = (effective_mode == "embedding") and (self.embedding_model is not None and self.embedding_clf is not None)
+        if use_emb:
+            emb = self.embedding_model.encode([norm_text], show_progress_bar=False)
             classes = self.embedding_clf.classes_
             probs = self.embedding_clf.predict_proba(emb)[0]
             for cls_name, prob in zip(classes, probs):

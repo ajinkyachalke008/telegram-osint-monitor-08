@@ -21,6 +21,9 @@ from dashboard.graph import (
 
 st.set_page_config(page_title="Entity Graph | TGSherlock", page_icon="🕸️", layout="wide")
 
+from dashboard.provenance_banner import render_provenance_banner
+render_provenance_banner(page_title="Entity Graph", active_stream="VERIFIED-SYNTHETIC")
+
 st.title("🕸️ Cross-Channel Entity Knowledge Graph & Profiling")
 st.caption("Multi-relational NetworkX graph linking Telegram channels, payment identifiers, and seller profiles.")
 

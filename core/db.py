@@ -48,6 +48,20 @@ class Database:
                 conn.executescript(schema_sql)
             conn.commit()
 
+    def init_db(self):
+        """Public alias to initialize database tables."""
+        self._init_db()
+
+    def reset_db(self):
+        """Wipe all database tables and recreate clean schema."""
+        with self._lock, self.get_connection() as conn:
+            conn.execute("PRAGMA foreign_keys = OFF")
+            tables = ["alerts", "post_identifiers", "evidence", "identifiers", "posts", "edges", "channels", "audit_log"]
+            for t in tables:
+                conn.execute(f"DROP TABLE IF EXISTS {t}")
+            conn.commit()
+        self._init_db()
+
     # ---------------------------------------------------------------------------
     # Audit Log
     # ---------------------------------------------------------------------------

@@ -77,11 +77,11 @@ def run_replay(speed_delay: float = 1.0, loop: bool = False, db: Optional[Databa
                 timestamp_utc=ts,
                 raw_text=raw_text,
                 normalized_text=norm_text,
-                ingestion_source="SIMULATED"
+                ingestion_source="VERIFIED-SYNTHETIC"
             )
 
             # Extract & score
-            extracted = extract_all_entities(norm_text)
+            extracted = extract_all_entities(norm_text, channel_handle=source)
             score_res = scorer.score(norm_text, identifiers=extracted)
             post.category = score_res.primary_category or "Clean"
             post.risk_level = score_res.risk_level
@@ -89,10 +89,22 @@ def run_replay(speed_delay: float = 1.0, loop: bool = False, db: Optional[Databa
 
             inserted = database.insert_post(post)
             if inserted:
-                # Link identifiers
+                # Link identifiers (excluding channel's own handle)
+                channel_slug = source.strip().lower().lstrip('@')
+                if "t.me/" in channel_slug:
+                    channel_slug = channel_slug.split("t.me/")[-1].strip("/@")
+
                 for ent in extracted.get("all_flat", []):
                     val = ent["value"]
                     etype = ent["type"]
+                    val_clean = str(val).strip().lower().lstrip('@')
+                    if "t.me/" in val_clean:
+                        val_clean = val_clean.split("t.me/")[-1].strip("/@")
+
+                    # Do not treat channel handle as seller identifier
+                    if etype in ("Username", "TelegramLink") and val_clean == channel_slug:
+                        continue
+
                     ident_id = f"{etype.lower()}:{val}"
                     from core.models import IdentifierRecord
                     database.upsert_identifier(
@@ -143,7 +155,7 @@ def run_replay(speed_delay: float = 1.0, loop: bool = False, db: Optional[Databa
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Replay simulated Telegram stream into OSINT database.")
-    parser.add_argument("--speed", type=float, default=1.0, help="Seconds delay between replayed posts (default: 1.0)")
+    parser.add_argument("--speed", "--interval", dest="speed", type=float, default=5.0, help="Seconds delay between replayed posts (default: 5.0)")
     parser.add_argument("--loop", action="store_true", help="Loop indefinitely")
     args = parser.parse_args()
 

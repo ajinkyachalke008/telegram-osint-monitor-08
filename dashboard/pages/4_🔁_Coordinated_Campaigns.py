@@ -14,6 +14,9 @@ from dashboard.similarity import find_text_ad_clusters
 
 st.set_page_config(page_title="Coordinated Campaigns | TGSherlock", page_icon="🔁", layout="wide")
 
+from dashboard.provenance_banner import render_provenance_banner
+render_provenance_banner(page_title="Coordinated Campaigns", active_stream="VERIFIED-SYNTHETIC")
+
 st.title("🔁 Coordinated Marketing Campaigns & Repeated Ads")
 st.caption("MinHash Jaccard text similarity to uncover copy-pasted marketing templates and coordinated syndicates.")
 

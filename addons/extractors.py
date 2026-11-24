@@ -346,8 +346,12 @@ def extract_tme_links(text: str) -> List[str]:
     return found
 
 
-def extract_all_entities(text: str, source: str = "text") -> Dict[str, Any]:
-    """Run full extraction suite and return structured entity metadata."""
+def extract_all_entities(text: str, source: str = "text", channel_handle: Optional[str] = None) -> Dict[str, Any]:
+    """Run full extraction suite and return structured entity metadata.
+    
+    If channel_handle is provided, the channel's own handle / link is excluded
+    from being treated as an illicit seller identifier.
+    """
     if not text:
         return {
             "upis": [], "phones": [], "ifscs": [], "crypto_wallets": [],
@@ -355,14 +359,47 @@ def extract_all_entities(text: str, source: str = "text") -> Dict[str, Any]:
             "all_flat": []
         }
 
+    # Normalize channel handle if provided
+    own_handles = set()
+    if channel_handle:
+        raw_ch = str(channel_handle).strip().lower()
+        own_handles.add(raw_ch)
+        own_handles.add(raw_ch.lstrip('@'))
+        own_handles.add(f"@{raw_ch.lstrip('@')}")
+        if "t.me/" in raw_ch:
+            slug = raw_ch.split("t.me/")[-1].strip("/@")
+            own_handles.add(slug)
+            own_handles.add(f"@{slug}")
+            own_handles.add(f"https://t.me/{slug}")
+            own_handles.add(f"http://t.me/{slug}")
+            own_handles.add(f"t.me/{slug}")
+
     upis = extract_upis(text)
     phones = extract_indian_phones(text)
     ifscs = extract_ifsc_codes(text)
     cryptos = extract_crypto_wallets(text)
     locations = extract_locations(text)
     prices = extract_prices(text)
-    usernames = extract_usernames(text)
-    links = extract_tme_links(text)
+    raw_usernames = extract_usernames(text)
+    raw_links = extract_tme_links(text)
+
+    # Filter out channel's own handle from seller identifiers
+    usernames = []
+    for un in raw_usernames:
+        un_l = un.lower()
+        if un_l in own_handles or un_l.lstrip('@') in own_handles:
+            continue
+        usernames.append(un)
+
+    links = []
+    for lk in raw_links:
+        lk_l = lk.lower()
+        if lk_l in own_handles:
+            continue
+        slug = lk_l.split("t.me/")[-1].strip("/@") if "t.me/" in lk_l else ""
+        if slug and (slug in own_handles or f"@{slug}" in own_handles):
+            continue
+        links.append(lk)
 
     # Flat representation for graph linking
     all_flat = []

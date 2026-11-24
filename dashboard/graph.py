@@ -69,7 +69,11 @@ def build_entity_graph(posts: List[Dict[str, Any]]) -> nx.Graph:
         # Edge Channel -> Post
         G.add_edge(channel, post_id, relation="contains")
 
-        # Process Identifiers
+        # Process Identifiers (excluding channel's own handle as a seller identifier)
+        channel_norm = str(channel).strip().lower().lstrip('@')
+        if "t.me/" in channel_norm:
+            channel_norm = channel_norm.split("t.me/")[-1].strip("/@")
+
         extracted = post.get("extracted", {})
         all_flat = extracted.get("all_flat", [])
 
@@ -77,6 +81,14 @@ def build_entity_graph(posts: List[Dict[str, Any]]) -> nx.Graph:
             val = ent.get("value")
             etype = ent.get("type", "Identifier")
             if not val:
+                continue
+
+            val_norm = str(val).strip().lower().lstrip('@')
+            if "t.me/" in val_norm:
+                val_norm = val_norm.split("t.me/")[-1].strip("/@")
+
+            # Never treat the channel's own handle or invite URL as an illicit seller identifier
+            if etype in ("Username", "TelegramLink") and (val_norm == channel_norm or val == channel):
                 continue
 
             node_id = f"id_{val}"
@@ -237,8 +249,28 @@ def generate_seller_profile(val: str, db: Database) -> Dict[str, Any]:
     """
     Generates a full cross-channel Seller Profile dossier for a specific identifier value.
     Extracts all posts, channels, co-occurring identifiers, and timeline.
+    Guarantees public channel handles are never treated as seller identifiers.
     """
     clean_val = val.strip().lower()
+
+    # Guard: Check if the value is a known public broadcast channel, not a seller identifier
+    with db.get_connection() as conn:
+        chan_row = conn.execute(
+            """
+            SELECT channel_id, title, username FROM channels
+            WHERE channel_id = ? OR username = ? OR title = ?
+               OR username = ? OR channel_id = ?
+            """,
+            (val, val.lstrip('@'), val, clean_val.lstrip('@'), clean_val)
+        ).fetchone()
+        if chan_row:
+            return {
+                "identifier": val,
+                "found": False,
+                "is_channel": True,
+                "summary": f"'{val}' is a public broadcast channel ({chan_row['title'] or chan_row['channel_id']}), not an illicit seller identifier."
+            }
+
     ident = db.get_identifier(clean_val)
     if not ident:
         # Try raw value or search

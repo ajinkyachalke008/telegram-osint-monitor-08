@@ -13,14 +13,28 @@ import streamlit as st
 from core.db import Database
 from addons.evidence import canonical_json, verify_evidence_record
 from addons.financial_detector import FinancialAdDetector
+from addons.pdf_exporter import generate_evidence_pdf
+from addons.ocr_extractor import OCRExtractor
+from dashboard.provenance_banner import render_provenance_banner
 
 st.set_page_config(page_title="Alert Detail & Hash Ledger | TGSherlock", page_icon="🔍", layout="wide")
 
+# Standard Provenance Banner
+render_provenance_banner(page_title="Alert Detail", active_stream="VERIFIED-SYNTHETIC")
+
 st.title("🔍 Forensic Alert Detail & Evidence Seal Verifier")
-st.caption("RFC-8785 canonical evidence inspection, cryptographic hash verification, and deep financial signals.")
+st.caption("RFC-8785 canonical evidence inspection, cryptographic hash verification, and Section 63 BSA 2023 evidence package export.")
 
 db = Database()
 fin_detector = FinancialAdDetector()
+ocr_extractor = OCRExtractor()
+ocr_status = ocr_extractor.get_detection_status()
+
+# Query latest Chain Head Hash
+with db.get_connection() as conn:
+    head_row = conn.execute("SELECT current_hash, block_height FROM evidence ORDER BY block_height DESC LIMIT 1").fetchone()
+    chain_head_hash = head_row["current_hash"] if head_row else "GENESIS"
+    chain_head_block = head_row["block_height"] if head_row else 0
 
 # Select Alert
 with db.get_connection() as conn:
@@ -80,6 +94,13 @@ with col_left:
     else:
         st.info("No illicit financial recruitment signals detected in this post.")
 
+    # OCR Subsystem Status
+    st.markdown("#### 🖼️ Image OCR Capability Status")
+    if not ocr_status["tesseract_binary_detected"]:
+        st.info(f"ℹ️ **OCR Engine:** `{ocr_status['engine']}` (System Tesseract binary not installed on host. Multilingual extraction disabled).")
+    else:
+        st.success(f"✅ **OCR Engine Active:** Tesseract `{ocr_status['tesseract_binary_path']}` (languages: {ocr_status['supported_languages']})")
+
 with col_right:
     st.subheader("🔒 Cryptographic Evidence Ledger (RFC-8785)")
     if not alert.get("current_hash"):
@@ -89,6 +110,7 @@ with col_right:
         st.markdown(f"**Generated UTC:** `{alert['generated_at_utc']}`")
         st.markdown(f"**Previous Hash:** `{alert['prev_hash']}`")
         st.markdown(f"**Current Hash:** `{alert['current_hash']}`")
+        st.markdown(f"**Ledger Chain-Head:** `<code>{chain_head_hash}</code>` (Block #{chain_head_block})")
 
         # Live Verification Action
         if st.button("🛡️ Verify Cryptographic Seal Live"):
@@ -107,3 +129,28 @@ with col_right:
             st.json(parsed_canonical)
         except Exception:
             st.code(alert.get("canonical_json") or "{}")
+
+        st.divider()
+        st.subheader("📄 Section 63 BSA 2023 Evidence Package")
+        idents = db.get_post_identifiers(alert["post_uid"])
+        pdf_bytes = generate_evidence_pdf(
+            alert=alert,
+            evidence={
+                "current_hash": alert.get("current_hash"),
+                "prev_hash": alert.get("prev_hash"),
+                "canonical_json": alert.get("canonical_json"),
+                "block_height": alert.get("block_height"),
+                "generated_at_utc": alert.get("generated_at_utc"),
+            },
+            identifiers=idents,
+            chain_head_hash=chain_head_hash,
+        )
+        st.download_button(
+            label="📥 Export Section 63 BSA 2023 Evidence Package (PDF)",
+            data=pdf_bytes,
+            file_name=f"evidence_package_{alert['alert_id']}.pdf",
+            mime="application/pdf",
+            use_container_width=True,
+            help="Evidence package prepared to support a Section 63 BSA 2023 certificate (must be signed by the responsible person and an expert). Not legal advice."
+        )
+        st.caption("⚖️ *Evidence package prepared to support a Section 63 BSA 2023 certificate (must be signed by the responsible person and an expert). Not legal advice.*")

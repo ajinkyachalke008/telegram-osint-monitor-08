@@ -17,6 +17,9 @@ from ingestion.worker import PipelineWorker
 
 st.set_page_config(page_title="Data Ingestion | TGSherlock", page_icon="📁", layout="wide")
 
+from dashboard.provenance_banner import render_provenance_banner
+render_provenance_banner(page_title="Data Ingestion", active_stream="IMPORTED")
+
 st.title("📁 Multi-Platform Threat Data Ingestion (R1)")
 st.caption("Upload CSV or JSON dumps from Twitter, WhatsApp, darknet forums, or Telegram for pipeline ingestion.")
 

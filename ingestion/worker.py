@@ -38,8 +38,8 @@ class IngestionWorker:
         """Run normalization, extraction, scoring, hash-chaining, and persistence."""
         post.normalized_text = normalize_text(post.raw_text)
 
-        # Extraction & Scoring
-        extracted = extract_all_entities(post.normalized_text)
+        # Extraction & Scoring (pass channel_id to exclude channel's own handle as a seller)
+        extracted = extract_all_entities(post.normalized_text, channel_handle=post.channel_id)
         score_res = self.scorer.score(post.normalized_text, identifiers=extracted)
         post.category = score_res.primary_category or "Clean"
         post.risk_level = score_res.risk_level
@@ -50,10 +50,22 @@ class IngestionWorker:
         if not inserted:
             return False  # Already processed
 
-        # 2. Persist & Link Identifiers
+        # 2. Persist & Link Identifiers (excluding channel's own handle)
+        channel_slug = post.channel_id.strip().lower().lstrip('@')
+        if "t.me/" in channel_slug:
+            channel_slug = channel_slug.split("t.me/")[-1].strip("/@")
+
         for ent in extracted.get("all_flat", []):
             val = ent["value"]
             etype = ent["type"]
+            val_clean = str(val).strip().lower().lstrip('@')
+            if "t.me/" in val_clean:
+                val_clean = val_clean.split("t.me/")[-1].strip("/@")
+
+            # Guard: Never treat the channel's own handle as a seller identifier
+            if etype in ("Username", "TelegramLink") and val_clean == channel_slug:
+                continue
+
             ident_id = f"{etype.lower()}:{val}"
             self.db.upsert_identifier(
                 IdentifierRecord(
@@ -91,6 +103,26 @@ class IngestionWorker:
                         post.risk_level, post.category, post.channel_id,
                         extracted.get("upis"), extracted.get("phones"))
         return True
+
+    def process_raw_post(
+        self,
+        platform: str,
+        channel_id: str,
+        message_id: str,
+        timestamp_utc: str,
+        raw_text: str,
+        ingestion_source: str = "IMPORTED"
+    ) -> bool:
+        """Construct PostRecord from raw fields and process through pipeline."""
+        post = PostRecord(
+            platform=platform or "imported",
+            channel_id=channel_id or "uploaded_channel",
+            message_id=str(message_id),
+            timestamp_utc=timestamp_utc or now_utc_iso(),
+            raw_text=raw_text,
+            ingestion_source=ingestion_source
+        )
+        return self.process_and_persist_post(post)
 
     def poll_tgsherlock_live(self):
         """Poll incoming messages from local TGSherlock DB."""

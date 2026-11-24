@@ -15,6 +15,9 @@ from addons.extractors import extract_locations
 
 st.set_page_config(page_title="Geographic Map | TGSherlock", page_icon="🗺️", layout="wide")
 
+from dashboard.provenance_banner import render_provenance_banner
+render_provenance_banner(page_title="Geographic Map", active_stream="VERIFIED-SYNTHETIC")
+
 st.title("🗺️ Geographic Distribution & Hotspot Mapping")
 st.caption("Spatial visualization of extracted Indian locations, cybercrime hotspots (Mewat, Jamtara), and PIN codes.")
 
