@@ -15,7 +15,7 @@
 | **Classification Head** | Logistic Regression (`C=2.5`, balanced) | Logistic Regression (`C=2.0`, balanced) |
 | **Multilingual Handling** | Exact dictionary & character n-gram matching | Semantic transfer across English, Hindi, and Marathi |
 | **Typo & Evasion Handling** | Sensitive to spaced letters and spelling changes | Resilient to synonym shifts and paraphrased copy |
-| **Inference Latency** | **2.40 ms / post** (Ultra-fast) | **33.60 ms / post** (Batched neural) |
+| **Inference Latency** | **1.52 ms / post** (Ultra-fast) | **56.42 ms / post** (Batched neural) |
 
 ## 2. Side-by-Side Performance Comparison (Novel Held-Out Set)
 
@@ -36,8 +36,8 @@ Evaluated on `data/test_heldout_novel_templates.jsonl` (out-of-distribution reco
 
 ## 3. Executive Benchmark Summary & Pipeline Default
 
-- **Model A (TF-IDF) Accuracy:** **95.56%** (Macro F1: `0.953`, Latency: `2.40 ms`)
-- **Model B (MiniLM-L12 Embedding) Accuracy:** **94.89%** (Macro F1: `0.946`, Latency: `33.60 ms`)
+- **Model A (TF-IDF) Accuracy:** **95.56%** (Macro F1: `0.953`, Latency: `1.52 ms`)
+- **Model B (MiniLM-L12 Embedding) Accuracy:** **94.89%** (Macro F1: `0.946`, Latency: `56.42 ms`)
 - **Active Pipeline Default:** **Model A (TF-IDF + Logistic Regression)** is the active default model based on higher overall accuracy (95.56% vs 94.89%) and 19.5x lower inference latency (1.67 ms vs 32.67 ms).
 - **Strict Grounding:** Embeddings are NOT claimed to be superior. Embeddings will only be considered for pipeline default if empirical evaluation on human-written records (`data/test_human_written.jsonl`) demonstrates superior accuracy.
 - **False Positive Rate on Hard Negatives:** **0.0%** across both models (legitimate bank alerts, police advisories, and pharmacy counter notices were 100% suppressed as Clean).

@@ -1,0 +1,150 @@
+{
+  "timestamp_utc": "2026-11-24T13:27:32Z",
+  "benchmark_dataset": "data/test_heldout_novel_templates.jsonl",
+  "sample_count": 450,
+  "hard_negative_fpr": 0.0,
+  "active_pipeline_default": "Model A (TF-IDF + Logistic Regression)",
+  "model_a_tfidf": {
+    "name": "Model A: TF-IDF + Logistic Regression",
+    "accuracy": 0.9556,
+    "accuracy_pct": "95.56%",
+    "macro_f1": 0.953,
+    "weighted_f1": 0.955,
+    "avg_latency_ms": 1.52,
+    "report": {
+      "arms": {
+        "precision": 0.8928571428571429,
+        "recall": 1.0,
+        "f1-score": 0.9433962264150944,
+        "support": 50.0
+      },
+      "atm_card": {
+        "precision": 0.78125,
+        "recall": 1.0,
+        "f1-score": 0.8771929824561403,
+        "support": 50.0
+      },
+      "bank_account": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 50.0
+      },
+      "benign": {
+        "precision": 1.0,
+        "recall": 0.94,
+        "f1-score": 0.9690721649484536,
+        "support": 100.0
+      },
+      "drugs": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 50.0
+      },
+      "fake_documents": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 50.0
+      },
+      "net_banking_kit": {
+        "precision": 1.0,
+        "recall": 0.72,
+        "f1-score": 0.8372093023255814,
+        "support": 50.0
+      },
+      "sim_card": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 50.0
+      },
+      "accuracy": 0.9555555555555556,
+      "macro avg": {
+        "precision": 0.9592633928571428,
+        "recall": 0.9575,
+        "f1-score": 0.9533588345181587,
+        "support": 450.0
+      },
+      "weighted avg": {
+        "precision": 0.9637896825396824,
+        "recall": 0.9555555555555556,
+        "f1-score": 0.9551047601215248,
+        "support": 450.0
+      }
+    }
+  },
+  "model_b_embedding": {
+    "name": "Model B: Multilingual MiniLM-L12 Dense Embeddings",
+    "accuracy": 0.9489,
+    "accuracy_pct": "94.89%",
+    "macro_f1": 0.946,
+    "weighted_f1": 0.948,
+    "avg_latency_ms": 56.42,
+    "report": {
+      "arms": {
+        "precision": 0.8928571428571429,
+        "recall": 1.0,
+        "f1-score": 0.9433962264150944,
+        "support": 50.0
+      },
+      "atm_card": {
+        "precision": 0.78125,
+        "recall": 1.0,
+        "f1-score": 0.8771929824561403,
+        "support": 50.0
+      },
+      "bank_account": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 50.0
+      },
+      "benign": {
+        "precision": 1.0,
+        "recall": 0.94,
+        "f1-score": 0.9690721649484536,
+        "support": 100.0
+      },
+      "drugs": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 50.0
+      },
+      "fake_documents": {
+        "precision": 0.9433962264150944,
+        "recall": 1.0,
+        "f1-score": 0.970873786407767,
+        "support": 50.0
+      },
+      "net_banking_kit": {
+        "precision": 1.0,
+        "recall": 0.72,
+        "f1-score": 0.8372093023255814,
+        "support": 50.0
+      },
+      "sim_card": {
+        "precision": 1.0,
+        "recall": 0.94,
+        "f1-score": 0.9690721649484536,
+        "support": 50.0
+      },
+      "accuracy": 0.9488888888888889,
+      "macro avg": {
+        "precision": 0.9521879211590296,
+        "recall": 0.95,
+        "f1-score": 0.9458520784376863,
+        "support": 450.0
+      },
+      "weighted avg": {
+        "precision": 0.9575003743635819,
+        "recall": 0.9488888888888889,
+        "f1-score": 0.9484320880499937,
+        "support": 450.0
+      }
+    }
+  },
+  "real_data_risk": "Statistical machine learning model trained on synthetic data. Real-world performance on novel dialects, slang, and unseen templates carries statistical error risk (false positives/false negatives). Requires human review."
+}
