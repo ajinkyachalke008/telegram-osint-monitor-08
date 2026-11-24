@@ -1,17 +1,20 @@
 """Link Analysis and Entity Knowledge Graph Module.
 
 Constructs multi-relational NetworkX graphs linking:
-- Identifiers (UPI, Phone, Username, Crypto Wallet, IFSC)
+- Identifiers (UPI, Phone, Username, Crypto Wallet, IFSC, Location)
 - Public Channels
 - Flagged Posts
 
-Calculates centrality, identifies cross-channel syndicates (actors operating in 2+ channels),
-and generates interactive Plotly visualizations.
+Calculates centrality (degree, betweenness), persists edges to SQLite WAL DB,
+identifies cross-channel syndicates (actors operating in 2+ channels),
+generates detailed Seller Profiles, and renders interactive Plotly visualizations.
 """
 from typing import List, Dict, Any, Tuple, Optional
+import json
 import networkx as nx
 import plotly.graph_objects as go
 
+from core.db import Database
 
 # Color palette for node types
 NODE_COLORS = {
@@ -31,14 +34,14 @@ NODE_COLORS = {
 
 def build_entity_graph(posts: List[Dict[str, Any]]) -> nx.Graph:
     """
-    Build NetworkX Graph from standard post records.
+    Build NetworkX Graph from post records.
     Nodes: Channels, Posts, Identifiers.
-    Edges: contains (Channel -> Post), mentions (Post -> Identifier).
+    Edges: contains (Channel -> Post), identifies (Post -> Identifier).
     """
     G = nx.Graph()
 
     # Track which channels each identifier appears in
-    identifier_channels = {}
+    identifier_channels: Dict[str, set] = {}
 
     for post in posts:
         post_id = f"post_{post.get('source')}_{post.get('post_id')}"
@@ -115,6 +118,196 @@ def build_entity_graph(posts: List[Dict[str, Any]]) -> nx.Graph:
     return G
 
 
+def calculate_centrality(G: nx.Graph) -> Dict[str, Dict[str, float]]:
+    """
+    Computes degree and betweenness centrality for all nodes in the network.
+    Attaches metrics as node attributes.
+    """
+    if len(G) == 0:
+        return {}
+
+    deg = nx.degree_centrality(G)
+    bet = nx.betweenness_centrality(G)
+
+    centrality_metrics = {}
+    for node in G.nodes():
+        d_val = round(deg.get(node, 0.0), 4)
+        b_val = round(bet.get(node, 0.0), 4)
+        G.nodes[node]["degree_centrality"] = d_val
+        G.nodes[node]["betweenness_centrality"] = b_val
+        centrality_metrics[node] = {
+            "degree": d_val,
+            "betweenness": b_val
+        }
+
+    return centrality_metrics
+
+
+def persist_graph_to_db(G: nx.Graph, db: Database) -> int:
+    """Persists all graph edges into SQLite entities_edges table."""
+    count = 0
+    for u, v, data in G.edges(data=True):
+        rel = data.get("relation", "linked_to")
+        weight = float(data.get("weight", 1.0))
+        db.upsert_edge(str(u), str(v), rel, weight)
+        count += 1
+    return count
+
+
+def load_graph_from_db(db: Database) -> nx.Graph:
+    """Reconstructs the full NetworkX entity graph from database tables."""
+    G = nx.Graph()
+
+    # Load edges
+    edges = db.get_all_edges()
+    for e in edges:
+        u = e["source_id"]
+        v = e["target_id"]
+        rel = e.get("relation", "linked_to")
+        weight = float(e.get("weight", 1.0))
+        G.add_edge(u, v, relation=rel, weight=weight)
+
+    # Decorate identifier nodes from DB
+    cross_identifiers = {i["normalized_value"]: i for i in db.list_cross_channel_identifiers()}
+    with db.get_connection() as conn:
+        all_idents = conn.execute("SELECT * FROM identifiers").fetchall()
+        for row in all_idents:
+            r = dict(row)
+            val = r["normalized_value"]
+            node_id = f"id_{val}"
+            if G.has_node(node_id):
+                G.nodes[node_id]["node_type"] = r["type"]
+                G.nodes[node_id]["label"] = val
+                G.nodes[node_id]["value"] = val
+                G.nodes[node_id]["channel_count"] = r["channel_count"]
+                is_cross = bool(r["cross_channel"])
+                G.nodes[node_id]["cross_channel"] = is_cross
+                G.nodes[node_id]["color"] = NODE_COLORS["Cross-Channel"] if is_cross else NODE_COLORS.get(r["type"], "#FFC107")
+                G.nodes[node_id]["size"] = 24 if is_cross else 14
+
+    return G
+
+
+def get_connected_syndicates(G: nx.Graph, min_size: int = 3) -> List[Dict[str, Any]]:
+    """
+    Groups connected components in the graph into suspected syndicates/campaigns.
+    Filters out isolated singletons.
+    """
+    syndicates = []
+    components = list(nx.connected_components(G))
+
+    for idx, comp in enumerate(components, 1):
+        if len(comp) < min_size:
+            continue
+
+        channels = []
+        identifiers = []
+        posts = []
+        cross_channel_count = 0
+
+        for node in comp:
+            data = G.nodes[node]
+            ntype = data.get("node_type", "")
+            if ntype == "Channel":
+                channels.append(data.get("label", node))
+            elif ntype == "Post":
+                posts.append(node)
+            else:
+                identifiers.append({"type": ntype, "value": data.get("value", node)})
+                if data.get("cross_channel"):
+                    cross_channel_count += 1
+
+        syndicates.append({
+            "syndicate_id": f"SYN-{idx:03d}",
+            "total_nodes": len(comp),
+            "channels": sorted(list(set(channels))),
+            "channel_count": len(set(channels)),
+            "identifiers": identifiers,
+            "identifier_count": len(identifiers),
+            "post_count": len(posts),
+            "cross_channel_actors": cross_channel_count,
+            "risk_tier": "CRITICAL" if cross_channel_count > 0 or len(set(channels)) >= 2 else "HIGH"
+        })
+
+    syndicates.sort(key=lambda s: (s["cross_channel_actors"], s["channel_count"], s["total_nodes"]), reverse=True)
+    return syndicates
+
+
+def generate_seller_profile(val: str, db: Database) -> Dict[str, Any]:
+    """
+    Generates a full cross-channel Seller Profile dossier for a specific identifier value.
+    Extracts all posts, channels, co-occurring identifiers, and timeline.
+    """
+    clean_val = val.strip().lower()
+    ident = db.get_identifier(clean_val)
+    if not ident:
+        # Try raw value or search
+        with db.get_connection() as conn:
+            row = conn.execute(
+                "SELECT * FROM identifiers WHERE normalized_value = ? OR raw_value = ?",
+                (clean_val, val.strip())
+            ).fetchone()
+            ident = dict(row) if row else None
+
+    if not ident:
+        return {
+            "identifier": val,
+            "found": False,
+            "summary": "Identifier not found in database ledger."
+        }
+
+    ident_id = ident["identifier_id"]
+
+    with db.get_connection() as conn:
+        # Get all posts linking this identifier
+        posts = conn.execute(
+            """
+            SELECT p.post_uid, p.channel_id, p.platform, p.message_id, p.timestamp_utc,
+                   p.raw_text, p.category, p.risk_level, p.threat_score
+            FROM post_identifiers pi
+            JOIN posts p ON pi.post_uid = p.post_uid
+            WHERE pi.identifier_id = ?
+            ORDER BY p.timestamp_utc ASC
+            """,
+            (ident_id,)
+        ).fetchall()
+        post_records = [dict(p) for p in posts]
+
+        # Get all co-occurring identifiers from those same posts
+        post_uids = [p["post_uid"] for p in post_records]
+        co_occurring = []
+        if post_uids:
+            placeholders = ",".join("?" for _ in post_uids)
+            co_rows = conn.execute(
+                f"""
+                SELECT DISTINCT i.type, i.normalized_value, i.channel_count
+                FROM post_identifiers pi
+                JOIN identifiers i ON pi.identifier_id = i.identifier_id
+                WHERE pi.post_uid IN ({placeholders}) AND i.identifier_id != ?
+                """,
+                (*post_uids, ident_id)
+            ).fetchall()
+            co_occurring = [dict(r) for r in co_rows]
+
+    channels_used = sorted(list(set(p["channel_id"] for p in post_records)))
+    categories_promoted = sorted(list(set(p["category"] for p in post_records)))
+
+    return {
+        "identifier": ident["normalized_value"],
+        "type": ident["type"],
+        "found": True,
+        "first_seen": ident["first_seen"],
+        "last_seen": ident["last_seen"],
+        "cross_channel": bool(ident["cross_channel"]),
+        "channel_count": len(channels_used),
+        "channels": channels_used,
+        "categories": categories_promoted,
+        "total_posts": len(post_records),
+        "co_occurring_identifiers": co_occurring,
+        "recent_posts": post_records[-5:]  # top 5 latest
+    }
+
+
 def get_cross_channel_identifiers(G: nx.Graph) -> List[Dict[str, Any]]:
     """Return all actors/identifiers operating across 2 or more distinct channels."""
     cross_actors = []
@@ -126,16 +319,14 @@ def get_cross_channel_identifiers(G: nx.Graph) -> List[Dict[str, Any]]:
                 "channel_count": data.get("channel_count", 0),
                 "channels": data.get("channels", []),
                 "degree": G.degree(node),
+                "betweenness": data.get("betweenness_centrality", 0.0)
             })
     cross_actors.sort(key=lambda x: x["channel_count"], reverse=True)
     return cross_actors
 
 
 def plot_entity_graph(G: nx.Graph, title: str = "Cross-Channel Link Analysis Graph") -> go.Figure:
-    """
-    Generate interactive Plotly Graph of the entity network.
-    Highlights cross-channel actors and relationships.
-    """
+    """Generate interactive Plotly Graph of the entity network."""
     if len(G.nodes) == 0:
         fig = go.Figure()
         fig.update_layout(title="No entity nodes to display.")
@@ -186,6 +377,7 @@ def plot_entity_graph(G: nx.Graph, title: str = "Cross-Channel Link Analysis Gra
                 f"<b>Identifier:</b> {lbl}<br>"
                 f"<b>Type:</b> {ntype}<br>"
                 f"<b>Channel Count:</b> {data.get('channel_count')}<br>"
+                f"<b>Betweenness Centrality:</b> {data.get('betweenness_centrality', 0.0):.4f}<br>"
                 f"<b>Appears In:</b><br> • {chans}"
             )
         elif ntype == "Channel":

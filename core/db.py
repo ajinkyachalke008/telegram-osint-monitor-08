@@ -227,6 +227,14 @@ class Database:
             )
             conn.commit()
 
+    def get_identifier(self, identifier_id_or_val: str) -> Optional[Dict[str, Any]]:
+        with self.get_connection() as conn:
+            row = conn.execute(
+                "SELECT * FROM identifiers WHERE identifier_id = ? OR normalized_value = ?",
+                (identifier_id_or_val, identifier_id_or_val)
+            ).fetchone()
+            return dict(row) if row else None
+
     def get_post_identifiers(self, post_uid: str) -> List[Dict[str, Any]]:
         with self.get_connection() as conn:
             rows = conn.execute(
