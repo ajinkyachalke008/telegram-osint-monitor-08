@@ -52,7 +52,7 @@ This script provides an exact, minute-by-minute walkthrough designed for hackath
     - **Recruiter Username:** `Username: @fast_cash_hub`
     - **Channel Handle Separation:** The channel's own handle (`delhi_classifieds_demo`) is excluded from seller identifiers.
     - **Multi-Channel Ad Detection:** For identical ad copy posted across multiple channels, notice the deduplicated card indicator: `🔁 Also posted in N other channels: <links>`.
-    - **Runtime Evidence Block:** Note the dynamically assigned evidence block displayed on the card: `🔒 Evidence Block #<N>` (read directly from the runtime evidence record, e.g. `Block #34`).
+    - **Runtime Evidence Block:** Note the dynamically assigned evidence block displayed on the card: `🔒 Evidence Block #<N>` (read directly from the runtime evidence record, e.g. `Block #43`).
 - **What to Click:** Expand **"⚙️ Triage & Analyst Action for Alert"**:
   - Change status from `new` to `confirmed`.
   - Enter Analyst Note: `"Verified mule recruiter mule.syndicate@ybl operating synchronously across public channels."`

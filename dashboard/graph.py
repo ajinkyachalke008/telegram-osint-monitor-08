@@ -178,16 +178,21 @@ def load_graph_from_db(db: Database) -> nx.Graph:
         rel = e.get("relation", "linked_to")
         weight = float(e.get("weight", 1.0))
         G.add_edge(u, v, relation=rel, weight=weight)
+        if u not in G.nodes or not G.nodes[u].get("node_type"):
+            G.nodes[u]["node_type"] = "Channel"
+            G.nodes[u]["label"] = u
+            G.nodes[u]["size"] = 22
+            G.nodes[u]["color"] = NODE_COLORS["Channel"]
 
     # Decorate identifier nodes from DB
-    cross_identifiers = {i["normalized_value"]: i for i in db.list_cross_channel_identifiers()}
     with db.get_connection() as conn:
         all_idents = conn.execute("SELECT * FROM identifiers").fetchall()
         for row in all_idents:
             r = dict(row)
             val = r["normalized_value"]
-            node_id = f"id_{val}"
-            if G.has_node(node_id):
+            ident_id = r.get("identifier_id") or f"{r['type'].lower()}:{val}"
+            target_nodes = [n for n in (ident_id, f"id_{val}", val) if G.has_node(n)]
+            for node_id in target_nodes:
                 G.nodes[node_id]["node_type"] = r["type"]
                 G.nodes[node_id]["label"] = val
                 G.nodes[node_id]["value"] = val
@@ -196,6 +201,8 @@ def load_graph_from_db(db: Database) -> nx.Graph:
                 G.nodes[node_id]["cross_channel"] = is_cross
                 G.nodes[node_id]["color"] = NODE_COLORS["Cross-Channel"] if is_cross else NODE_COLORS.get(r["type"], "#FFC107")
                 G.nodes[node_id]["size"] = 24 if is_cross else 14
+                linked_ch = [n for n in G.neighbors(node_id) if G.nodes[n].get("node_type") == "Channel"]
+                G.nodes[node_id]["channels"] = linked_ch
 
     return G
 
@@ -345,11 +352,17 @@ def get_cross_channel_identifiers(G: nx.Graph) -> List[Dict[str, Any]]:
     cross_actors = []
     for node, data in G.nodes(data=True):
         if data.get("cross_channel"):
+            linked_ch = [n for n in G.neighbors(node) if G.nodes[n].get("node_type") == "Channel" or str(n).startswith("t.me/")]
+            channels = data.get("channels") or linked_ch
+            val = data.get("value", node)
+            ntype = data.get("node_type")
             cross_actors.append({
-                "value": data.get("value", node),
-                "type": data.get("node_type"),
-                "channel_count": data.get("channel_count", 0),
-                "channels": data.get("channels", []),
+                "value": val,
+                "identifier_val": val,
+                "type": ntype,
+                "identifier_type": ntype,
+                "channel_count": data.get("channel_count", len(channels)),
+                "channels": channels,
                 "degree": G.degree(node),
                 "betweenness": data.get("betweenness_centrality", 0.0)
             })

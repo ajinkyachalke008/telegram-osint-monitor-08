@@ -84,6 +84,48 @@ class TGQPreviewAdapter:
     def __init__(self, executable: str = TGQ_CMD):
         self.executable = executable
 
+    @staticmethod
+    def parse_tgq_json_line(data_or_line: Any, default_channel: str = "") -> Optional[PostRecord]:
+        """Parse a single JSON record or line output by tgq preview."""
+        if isinstance(data_or_line, str):
+            line = data_or_line.strip()
+            if not line or not line.startswith("{"):
+                return None
+            try:
+                data = json.loads(line)
+            except json.JSONDecodeError:
+                return None
+        elif isinstance(data_or_line, dict):
+            data = data_or_line
+        else:
+            return None
+
+        # Robust message ID extraction: check 'message_id', 'id', 'msg_id', or trailing path of 'source_url'
+        msg_id_val = data.get("message_id")
+        if msg_id_val is None:
+            msg_id_val = data.get("id")
+        if msg_id_val is None:
+            msg_id_val = data.get("msg_id")
+        if msg_id_val is None and data.get("source_url"):
+            try:
+                msg_id_val = int(str(data["source_url"]).rstrip("/").split("/")[-1])
+            except (ValueError, TypeError):
+                msg_id_val = 0
+        message_id = str(msg_id_val if msg_id_val is not None else 0)
+
+        channel = data.get("channel_username") or default_channel or "telegram"
+        timestamp = data.get("date") or data.get("timestamp") or now_utc_iso()
+        text = str(data.get("text", "") or "")
+
+        return PostRecord(
+            platform="Telegram",
+            channel_id=channel,
+            message_id=message_id,
+            timestamp_utc=timestamp,
+            raw_text=text,
+            ingestion_source="LIVE"
+        )
+
     def fetch_channel_posts(self, channel_name: str, limit: int = 25) -> List[PostRecord]:
         clean_name = re.sub(r"^(?:https?://)?(?:t\.me|telegram\.me)/(?:s/)?", "", channel_name).strip("/@")
         if not clean_name:
@@ -94,20 +136,9 @@ class TGQPreviewAdapter:
             proc = subprocess.run(cmd, capture_output=True, text=True, timeout=25)
             posts = []
             for line in proc.stdout.strip().splitlines():
-                if not line.strip():
-                    continue
-                try:
-                    data = json.loads(line)
-                    posts.append(PostRecord(
-                        platform="Telegram",
-                        channel_id=clean_name,
-                        message_id=str(data.get("id", 0)),
-                        timestamp_utc=data.get("date") or now_utc_iso(),
-                        raw_text=data.get("text", "") or "",
-                        ingestion_source="LIVE"
-                    ))
-                except json.JSONDecodeError:
-                    continue
+                post = self.parse_tgq_json_line(line, default_channel=clean_name)
+                if post:
+                    posts.append(post)
             return posts[-limit:] if posts else []
         except Exception as exc:
             log.warning("tgq preview error for %s: %s", clean_name, exc)

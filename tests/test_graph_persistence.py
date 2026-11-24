@@ -165,3 +165,72 @@ def test_seller_profile_generation(temp_db):
     assert profile["total_posts"] == 2
     co_occurring = [c["normalized_value"] for c in profile["co_occurring_identifiers"]]
     assert "9000033333" in co_occurring
+
+
+def test_load_graph_from_db_decorates_cross_channel_nodes(temp_db):
+    """Verify load_graph_from_db attaches cross_channel=True to identifier nodes when stored as upi:{val}."""
+    now = now_utc_iso()
+    post1 = PostRecord(
+        platform="Telegram",
+        channel_id="chan_alpha",
+        message_id=1,
+        timestamp_utc=now,
+        raw_text="Fresh accounts via UPI syndicate.boss@ybl",
+        normalized_text="fresh accounts via upi syndicate.boss@ybl",
+        category="bank_account",
+        risk_level="High",
+        threat_score=8.5,
+        ingestion_source="SIMULATED",
+        created_at=now
+    )
+    post2 = PostRecord(
+        platform="Telegram",
+        channel_id="chan_beta",
+        message_id=2,
+        timestamp_utc=now,
+        raw_text="Cashout services via syndicate.boss@ybl",
+        normalized_text="cashout services via syndicate.boss@ybl",
+        category="bank_account",
+        risk_level="High",
+        threat_score=8.5,
+        ingestion_source="SIMULATED",
+        created_at=now
+    )
+    temp_db.insert_post(post1)
+    temp_db.insert_post(post2)
+
+    ident = IdentifierRecord(
+        identifier_id="upi:syndicate.boss@ybl",
+        type="UPI",
+        raw_value="syndicate.boss@ybl",
+        normalized_value="syndicate.boss@ybl",
+        channel_count=1,
+        first_seen=now,
+        last_seen=now,
+        cross_channel=False
+    )
+    # Upsert in chan_alpha then chan_beta to trigger cross_channel = 1
+    temp_db.upsert_identifier(ident, "chan_alpha")
+    temp_db.link_post_identifier(post1.post_uid, ident.identifier_id)
+    temp_db.upsert_edge("chan_alpha", ident.identifier_id, "mentions")
+
+    temp_db.upsert_identifier(ident, "chan_beta")
+    temp_db.link_post_identifier(post2.post_uid, ident.identifier_id)
+    temp_db.upsert_edge("chan_beta", ident.identifier_id, "mentions")
+
+    # Load graph from DB
+    G = load_graph_from_db(temp_db)
+
+    # Node ID in graph is 'upi:syndicate.boss@ybl' from edges
+    assert "upi:syndicate.boss@ybl" in G.nodes, "Identifier node should exist in graph loaded from DB"
+    node_data = G.nodes["upi:syndicate.boss@ybl"]
+    assert node_data.get("cross_channel") is True, f"cross_channel flag must be True, got {node_data.get('cross_channel')}"
+    assert node_data.get("channel_count") == 2, f"channel_count must be 2, got {node_data.get('channel_count')}"
+    assert node_data.get("value") == "syndicate.boss@ybl"
+
+    # Cross-channel helper should return this actor
+    cross_actors = get_cross_channel_identifiers(G)
+    assert len(cross_actors) == 1
+    assert cross_actors[0]["value"] == "syndicate.boss@ybl"
+    assert cross_actors[0]["channel_count"] == 2
+
