@@ -1,6 +1,13 @@
 """Page 1: Live Threat Alerts & Analyst Triage Workflow."""
+import sys
 import json
 import html
+from pathlib import Path
+
+for p in [Path(__file__).resolve().parent, Path(__file__).resolve().parent.parent, Path(__file__).resolve().parent.parent.parent]:
+    if (p / "core").exists() and str(p) not in sys.path:
+        sys.path.insert(0, str(p))
+
 import streamlit as st
 import pandas as pd
 

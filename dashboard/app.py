@@ -1,7 +1,14 @@
 """OSINT Law Enforcement Dashboard - Executive Overview & Status."""
+import sys
 import json
 import html
 from pathlib import Path
+
+# Ensure workspace root is in sys.path
+for p in [Path(__file__).resolve().parent, Path(__file__).resolve().parent.parent]:
+    if (p / "core").exists() and str(p) not in sys.path:
+        sys.path.insert(0, str(p))
+
 import streamlit as st
 import pandas as pd
 import plotly.express as px

@@ -1,10 +1,17 @@
 """Page 2: Forensic Alert Detail & Cryptographic Hash Chain Verifier."""
+import sys
 import json
 import hashlib
+from pathlib import Path
+
+for p in [Path(__file__).resolve().parent, Path(__file__).resolve().parent.parent, Path(__file__).resolve().parent.parent.parent]:
+    if (p / "core").exists() and str(p) not in sys.path:
+        sys.path.insert(0, str(p))
+
 import streamlit as st
 
 from core.db import Database
-from addons.evidence import canonical_json_dumps, verify_evidence_record
+from addons.evidence import canonical_json, verify_evidence_record
 from addons.financial_detector import FinancialAdDetector
 
 st.set_page_config(page_title="Alert Detail & Hash Ledger | TGSherlock", page_icon="🔍", layout="wide")

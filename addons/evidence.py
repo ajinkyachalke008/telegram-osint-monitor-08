@@ -29,6 +29,10 @@ def canonical_json(data: Dict[str, Any]) -> str:
     return json.dumps(data, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
 
 
+# Backward-compatibility alias
+canonical_json_dumps = canonical_json
+
+
 def compute_sha256(content: Union[str, bytes]) -> str:
     """Compute standard SHA-256 hex digest of string or byte buffer."""
     if isinstance(content, str):

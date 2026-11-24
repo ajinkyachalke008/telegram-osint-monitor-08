@@ -117,8 +117,9 @@ class TGQPreviewAdapter:
 class FileImporterAdapter:
     """Multi-platform CSV/JSON file importer with validation, error report, and --dry-run."""
 
-    def __init__(self):
-        pass
+    def __init__(self, db: Optional[Any] = None, worker: Optional[Any] = None):
+        self.db = db
+        self.worker = worker
 
     def validate_and_map_row(self, raw_row: Dict[str, Any], default_platform: str = "External") -> Tuple[Optional[PostRecord], List[str]]:
         """Map raw dict to PostRecord, returning (record, errors)."""

@@ -1,4 +1,4 @@
-﻿# Windows PowerShell One-Click Demo Runner for TGSherlock OSINT Monitor
+# Windows PowerShell One-Click Demo Runner for TGSherlock OSINT Monitor
 Write-Host "==========================================================" -ForegroundColor Cyan
 Write-Host " 🛡️ TGSherlock OSINT Threat Intelligence System " -ForegroundColor Green
 Write-Host "==========================================================" -ForegroundColor Cyan

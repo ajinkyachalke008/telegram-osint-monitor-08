@@ -1,9 +1,12 @@
 """Hybrid ML and Rule-Based Classifier for Illegal Trade Detection.
 
-Combines:
-1. Normalizer (NFKC, homoglyphs, leetspeak, Devanagari numerals)
-2. Lexicon RuleScorer (multi-lingual slang, emojis, weighted categories)
-3. Synthetic-Trained Scikit-Learn Pipeline (TF-IDF + Logistic Regression)
+Architecture:
+1. Normalizer (NFKC, homoglyphs, leetspeak, Devanagari numerals, spaced words)
+2. Multilingual Dense Semantic Embeddings:
+   - Model: sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2 (384 dims)
+   - Trained classification head (Logistic Regression) on synthetic data only
+   - Fast TF-IDF (1-3 ngrams) secondary feature ensemble
+3. Lexicon RuleScorer (multi-lingual slang, emojis, weighted categories)
 4. Calibrated Hybrid Scoring with Hard-Negative Suppression & Explainability
 """
 import os
@@ -14,16 +17,24 @@ from dataclasses import dataclass, field
 from typing import Dict, List, Any, Optional, Tuple
 
 import joblib
+import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import Pipeline
-from sklearn.model_selection import train_test_split
+
+try:
+    from sentence_transformers import SentenceTransformer
+    SENTENCE_TRANSFORMERS_AVAILABLE = True
+except ImportError:
+    SENTENCE_TRANSFORMERS_AVAILABLE = False
 
 from core.normalizer import normalize_text
 from addons.scorer import RuleScorer, ScoreResult
 
 DEFAULT_MODEL_PATH = Path(__file__).resolve().parent / "classifier_weights.joblib"
+EMBEDDING_HEAD_PATH = Path(__file__).resolve().parent / "embedding_head.joblib"
 TRAIN_DATA_PATH = Path(__file__).resolve().parent.parent / "data" / "train_synthetic.jsonl"
+TRANSFORMER_MODEL_NAME = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
 
 
 @dataclass
@@ -37,6 +48,7 @@ class ClassificationResult:
     ml_probabilities: Dict[str, float]
     lexicon_score: float
     normalizations_applied: List[str]
+    model_architecture: str
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -49,13 +61,14 @@ class ClassificationResult:
             "ml_probabilities": {k: round(v, 3) for k, v in self.ml_probabilities.items()},
             "lexicon_score": round(self.lexicon_score, 2),
             "normalizations_applied": self.normalizations_applied,
+            "model_architecture": self.model_architecture,
         }
 
 
 class HybridClassifier:
     """
-    Hybrid OSINT classifier that combines semantic TF-IDF ML inference with
-    rule-based lexicon scoring and hard-negative suppression.
+    Hybrid OSINT classifier that combines multilingual sentence embeddings
+    with TF-IDF n-grams, rule-based lexicon scoring, and hard-negative suppression.
     """
 
     BENIGN_SUPPRESSION_PATTERNS = [
@@ -72,18 +85,39 @@ class HybridClassifier:
         re.compile(r"(?i)\btutor available\b"),
         re.compile(r"(?i)\bzero liability\b"),
         re.compile(r"(?i)\bcybercrime helpline 1930\b"),
+        re.compile(r"(?i)\bpunishable offense under pmla\b"),
     ]
 
     def __init__(self, model_path: Optional[Path] = None, auto_load: bool = True):
         self.model_path = model_path or DEFAULT_MODEL_PATH
+        self.embedding_head_path = EMBEDDING_HEAD_PATH
         self.scorer = RuleScorer()
-        self.pipeline: Optional[Pipeline] = None
+        self.tfidf_pipeline: Optional[Pipeline] = None
+        self.embedding_model: Optional[Any] = None
+        self.embedding_clf: Optional[LogisticRegression] = None
+        self.model_name = "TF-IDF + RuleScorer"
 
-        if auto_load and self.model_path.exists():
-            self.load(self.model_path)
+        if SENTENCE_TRANSFORMERS_AVAILABLE:
+            try:
+                self.embedding_model = SentenceTransformer(TRANSFORMER_MODEL_NAME)
+                self.model_name = f"paraphrase-multilingual-MiniLM-L12-v2 + RuleScorer"
+            except Exception:
+                self.embedding_model = None
+
+        if auto_load:
+            if self.embedding_head_path.exists():
+                try:
+                    self.embedding_clf = joblib.load(str(self.embedding_head_path))
+                except Exception:
+                    self.embedding_clf = None
+            if self.model_path.exists():
+                try:
+                    self.tfidf_pipeline = joblib.load(str(self.model_path))
+                except Exception:
+                    self.tfidf_pipeline = None
 
     def train_on_synthetic(self, data_path: Optional[Path] = None) -> Dict[str, Any]:
-        """Train scikit-learn pipeline on synthetic JSONL dataset."""
+        """Train both multilingual embeddings head and TF-IDF pipeline on synthetic JSONL dataset."""
         path = data_path or TRAIN_DATA_PATH
         if not path.exists():
             raise FileNotFoundError(f"Training data not found at {path}")
@@ -95,12 +129,12 @@ class HybridClassifier:
                 if not line.strip():
                     continue
                 record = json.loads(line)
-                # Normalize text before training for consistency
                 norm_text = normalize_text(record["text"])
                 texts.append(norm_text)
                 labels.append(record["category"])
 
-        self.pipeline = Pipeline([
+        # 1. Train TF-IDF pipeline
+        self.tfidf_pipeline = Pipeline([
             ("tfidf", TfidfVectorizer(
                 ngram_range=(1, 3),
                 max_features=25000,
@@ -114,17 +148,29 @@ class HybridClassifier:
                 random_state=42
             ))
         ])
+        self.tfidf_pipeline.fit(texts, labels)
+        self.model_path.parent.mkdir(parents=True, exist_ok=True)
+        joblib.dump(self.tfidf_pipeline, str(self.model_path))
 
-        self.pipeline.fit(texts, labels)
-        self.save(self.model_path)
-        return {"samples": len(texts), "classes": list(self.pipeline.classes_)}
+        # 2. Train Multilingual Embedding Classification Head (if sentence-transformers available)
+        if self.embedding_model is not None:
+            print("Encoding synthetic texts with paraphrase-multilingual-MiniLM-L12-v2...")
+            embeddings = self.embedding_model.encode(texts, batch_size=64, show_progress_bar=False)
+            self.embedding_clf = LogisticRegression(
+                C=2.0,
+                max_iter=1000,
+                class_weight="balanced",
+                random_state=42
+            )
+            self.embedding_clf.fit(embeddings, labels)
+            joblib.dump(self.embedding_clf, str(self.embedding_head_path))
+            print("Multilingual embedding head trained and saved.")
 
-    def save(self, path: Path):
-        path.parent.mkdir(parents=True, exist_ok=True)
-        joblib.dump(self.pipeline, str(path))
-
-    def load(self, path: Path):
-        self.pipeline = joblib.load(str(path))
+        return {
+            "samples": len(texts),
+            "classes": list(self.tfidf_pipeline.classes_),
+            "multilingual_embeddings_enabled": bool(self.embedding_clf is not None)
+        }
 
     def _check_hard_negative(self, text: str) -> bool:
         """Returns True if text contains unmistakable legitimate/warning disclaimer markers."""
@@ -136,9 +182,9 @@ class HybridClassifier:
     def classify(self, text: str, identifiers: Optional[Dict[str, Any]] = None) -> ClassificationResult:
         """
         Classifies post using hybrid pipeline:
-        1. Normalize text
+        1. Text normalization
         2. Rule-based lexicon scoring
-        3. ML inference
+        3. Multilingual Embedding + TF-IDF ML inference
         4. Calibration & hard-negative suppression
         5. Explainability generation
         """
@@ -152,7 +198,8 @@ class HybridClassifier:
                 matched_terms=[],
                 ml_probabilities={},
                 lexicon_score=0.0,
-                normalizations_applied=[]
+                normalizations_applied=[],
+                model_architecture=self.model_name
             )
 
         # 1. Normalize
@@ -161,14 +208,23 @@ class HybridClassifier:
         # 2. Rule scoring on normalized text
         score_res: ScoreResult = self.scorer.score(norm_text, identifiers)
 
-        # 3. ML inference
+        # 3. ML inference (Multilingual Embeddings with TF-IDF fusion)
         ml_probs: Dict[str, float] = {}
         top_ml_category = "benign"
         top_ml_prob = 0.0
 
-        if self.pipeline is not None:
-            classes = self.pipeline.classes_
-            probs = self.pipeline.predict_proba([norm_text])[0]
+        if self.embedding_model is not None and self.embedding_clf is not None:
+            emb = self.embedding_model.encode([norm_text])
+            classes = self.embedding_clf.classes_
+            probs = self.embedding_clf.predict_proba(emb)[0]
+            for cls_name, prob in zip(classes, probs):
+                ml_probs[cls_name] = float(prob)
+                if cls_name != "benign" and prob > top_ml_prob:
+                    top_ml_prob = prob
+                    top_ml_category = cls_name
+        elif self.tfidf_pipeline is not None:
+            classes = self.tfidf_pipeline.classes_
+            probs = self.tfidf_pipeline.predict_proba([norm_text])[0]
             for cls_name, prob in zip(classes, probs):
                 ml_probs[cls_name] = float(prob)
                 if cls_name != "benign" and prob > top_ml_prob:
@@ -185,13 +241,13 @@ class HybridClassifier:
         # Determine dominant category
         if score_res.primary_category and score_res.total_score >= 2.5:
             category = score_res.primary_category
-            cat_ml_prob = ml_probs.get(category, top_ml_prob)
+            cat_ml_prob = max(ml_probs.get(category, 0.0), top_ml_prob if top_ml_category != "benign" else 0.0)
         elif top_ml_prob >= 0.30 and total_illegal_prob > benign_prob:
             category = top_ml_category
             cat_ml_prob = top_ml_prob
         elif score_res.primary_category and score_res.total_score > 0:
             category = score_res.primary_category
-            cat_ml_prob = ml_probs.get(category, 0.2)
+            cat_ml_prob = max(ml_probs.get(category, 0.2), top_ml_prob if top_ml_category != "benign" else 0.2)
         else:
             category = "benign"
             cat_ml_prob = 0.0
@@ -201,7 +257,7 @@ class HybridClassifier:
         if category == "benign":
             confidence = 0.0
         else:
-            confidence = 0.55 * cat_ml_prob + 0.45 * lex_norm
+            confidence = 0.60 * cat_ml_prob + 0.40 * lex_norm
 
         # Suppress if hard negative detected
         if is_hard_neg:
@@ -219,7 +275,7 @@ class HybridClassifier:
                 confidence = min(0.99, confidence + 0.08)
 
         # Risk level determination
-        if confidence >= 0.70 or (category in ("arms", "net_banking_kit", "bank_account") and confidence >= 0.55):
+        if confidence >= 0.65 or (category in ("arms", "net_banking_kit", "bank_account") and confidence >= 0.50):
             risk_level = "High"
         elif confidence >= 0.35:
             risk_level = "Medium"
@@ -242,7 +298,7 @@ class HybridClassifier:
             if matched_terms_names:
                 reasons.append(f"matched slang/coded terms {matched_terms_names}")
             if cat_ml_prob >= 0.40:
-                reasons.append(f"ML intent probability {cat_ml_prob:.1%}")
+                reasons.append(f"multilingual embedding probability {cat_ml_prob:.1%}")
             if identifiers and (identifiers.get("upis") or identifiers.get("crypto_wallets")):
                 reasons.append("direct financial payment identifiers present")
             elif identifiers and identifiers.get("phones"):
@@ -263,5 +319,6 @@ class HybridClassifier:
             matched_terms=score_res.matched_terms,
             ml_probabilities=ml_probs,
             lexicon_score=score_res.total_score,
-            normalizations_applied=["nfkc", "homoglyph_fold", "devanagari_fold", "emoji_map"] if norm_text != text else []
+            normalizations_applied=["nfkc", "homoglyph_fold", "devanagari_fold", "emoji_map"] if norm_text != text else [],
+            model_architecture=self.model_name
         )

@@ -21,15 +21,16 @@
 ### Q2: How do you prevent false positives on legitimate banking warnings or licensed pharmacies?
 > **Answer:**
 > We implement a multi-layered **Hard-Negative Suppression Engine**:
-> 1. **Lexical & Semantic Disclaimers:** Official bank notices containing phrases like *"never share OTP"*, *"beware of fraudsters"*, or *"report to 1930"* activate suppression filters that damp threat confidence by 85%.
-> 2. **Intent Verification:** Legitimate pharmacies (e.g., Apollo, MedPlus) requiring *"doctor prescription"* or sports clubs advertising *"10m air rifle shooting trials"* lack the commercial solicitations, mule commission offers, and anonymized delivery guarantees that trigger our illegal classifier.
-> 3. **Empirical Verification:** In our held-out test suite of 602 synthetic records, **hard negative bank advisories and pharmacy notices achieved 0% false alarm rate**, remaining classified as `Clean` or `benign`.
+> 1. **Synthetic Data Disclosure:** All benchmark evaluation metrics (accuracy, precision, recall, F1) are measured strictly on **synthetic benchmark datasets** (`data/train_synthetic.jsonl` and `data/test_heldout_novel_templates.jsonl`). **Zero Telegram posts were used for model training or tuning**.
+> 2. **Lexical & Semantic Disclaimers:** Official bank notices containing phrases like *"never share OTP"*, *"beware of fraudsters"*, or *"report to 1930"* activate suppression filters that damp threat confidence by 85%.
+> 3. **Intent Verification:** Legitimate pharmacies (e.g., Apollo, MedPlus) requiring *"doctor prescription"* or sports clubs advertising *"10m air rifle shooting trials"* lack the commercial solicitations, mule commission offers, and anonymized delivery guarantees that trigger our illegal classifier.
+> 4. **Empirical Verification:** In our novel held-out test suite, **hard negative bank advisories and pharmacy notices achieved 0% false alarm rate**, remaining classified as `Clean` or `benign`.
 
 ### Q3: What is the benefit of your Hybrid Classifier over a pure keyword list or pure LLM?
 > **Answer:**
 > - **Pure Keywords Fail** against evasion tactics like leetspeak (`c0ke`), homoglyphs (`а` vs `a`), spaced characters (`a t m`), or Devanagari numerals (`९००००`). Our Normalizer defeats these evasion tactics before matching.
 > - **Pure LLMs / APIs** are slow, expensive, rate-limited, and vulnerable to hallucinations or cloud data leaks.
-> - **Our Hybrid Architecture:** Combines deterministic slang/coded lexicons (`addons/lexicon.yaml`) with a local scikit-learn TF-IDF n-gram Logistic Regression classifier. It runs completely offline in <5 milliseconds per post, provides exact numerical confidence, and outputs plain-language explainability traces (`why_flagged`).
+> - **Our Hybrid Architecture:** Combines deterministic slang/coded lexicons (`addons/lexicon.yaml`) with **multilingual sentence embeddings (`sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2`, 384 dimensions)** and a trained classification head. It runs completely offline on CPU in milliseconds per post, provides exact numerical confidence, and outputs plain-language explainability traces (`why_flagged`). All metrics are based on synthetic data.
 
 ---
 

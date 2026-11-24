@@ -1,6 +1,13 @@
 """Page 6: Multi-Platform Data Ingestion & Live Pipeline Execution."""
+import sys
 import io
 import json
+from pathlib import Path
+
+for p in [Path(__file__).resolve().parent, Path(__file__).resolve().parent.parent, Path(__file__).resolve().parent.parent.parent]:
+    if (p / "core").exists() and str(p) not in sys.path:
+        sys.path.insert(0, str(p))
+
 import streamlit as st
 import pandas as pd
 
