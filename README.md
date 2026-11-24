@@ -41,8 +41,12 @@ source .venv/bin/activate
 
 ### 4. Install Dependencies
 ```bash
+# Core pipeline & dashboard (lightweight, zero PyTorch/CUDA needed, ultra-fast 1.67ms TF-IDF inference):
 pip install -r requirements.txt
-pip install -e tgsherlock
+
+# (Optional) Multilingual neural sentence embeddings:
+# pip install -r requirements-embeddings.txt
+# Note: First-run loading of embeddings will download paraphrase-multilingual-MiniLM-L12-v2 (~470 MB) from HuggingFace Hub.
 ```
 
 ### 5. Launch One-Command Demo

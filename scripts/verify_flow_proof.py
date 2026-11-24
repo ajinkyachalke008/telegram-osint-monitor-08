@@ -161,6 +161,45 @@ def main():
     print(" END-TO-END FLOW PROOF COMPLETE: ALL 5 STEPS VERIFIED (100% SUCCESS)")
     print("=" * 72)
 
+    # Write / Update docs/evidence_proof.json with flow proof details
+    docs_dir = Path(__file__).resolve().parent.parent / "docs"
+    docs_dir.mkdir(parents=True, exist_ok=True)
+    proof_file = docs_dir / "evidence_proof.json"
+
+    proof_data = {}
+    if proof_file.exists():
+        try:
+            with open(proof_file, "r", encoding="utf-8") as pf:
+                proof_data = json.load(pf)
+        except Exception:
+            proof_data = {}
+
+    from core.models import now_utc_iso
+    proof_data["verified_at_utc"] = now_utc_iso()
+    proof_data["flow_proof_target"] = {
+        "target_identifier": target_upi,
+        "post_uid": post_uid,
+        "evidence_id": ev["evidence_id"],
+        "block_height": ev["block_height"],
+        "stored_hash": ev["current_hash"],
+        "recomputed_hash": recomputed_hash,
+        "verification": "TAMPER-EVIDENT VALID (100% CRYPTOGRAPHIC MATCH)",
+        "chain_head_block": head_ev["block_height"] if head_ev else None,
+        "chain_head_hash": head_ev["current_hash"] if head_ev else None,
+        "cross_channel_count": channel_count,
+        "linked_channels": list(channels)
+    }
+
+    with open(proof_file, "w", encoding="utf-8") as pf:
+        json.dump(proof_data, pf, indent=2, ensure_ascii=False)
+    print(f"[Evidence Proof] Updated flow proof details in {proof_file}")
+
+    try:
+        from scripts.sync_evidence_proof_docs import sync_docs_from_proof
+        sync_docs_from_proof()
+    except Exception:
+        pass
+
 
 if __name__ == "__main__":
     main()

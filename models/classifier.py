@@ -22,11 +22,29 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import Pipeline
 
-try:
-    from sentence_transformers import SentenceTransformer
-    SENTENCE_TRANSFORMERS_AVAILABLE = True
-except ImportError:
-    SENTENCE_TRANSFORMERS_AVAILABLE = False
+# Lazy import helper for optional neural sentence embeddings (PyTorch + SentenceTransformers)
+_TRANSFORMER_INSTANCE = None
+
+def get_embedding_transformer():
+    """Lazy-import and instantiate SentenceTransformer model on demand."""
+    global _TRANSFORMER_INSTANCE
+    if _TRANSFORMER_INSTANCE is not None:
+        return _TRANSFORMER_INSTANCE
+    try:
+        from sentence_transformers import SentenceTransformer
+        _TRANSFORMER_INSTANCE = SentenceTransformer(TRANSFORMER_MODEL_NAME)
+        return _TRANSFORMER_INSTANCE
+    except Exception:
+        return None
+
+def is_sentence_transformers_available() -> bool:
+    """Check if sentence-transformers and PyTorch are available without downloading models."""
+    try:
+        import sentence_transformers
+        import torch
+        return True
+    except ImportError:
+        return False
 
 from core.normalizer import normalize_text
 from addons.scorer import RuleScorer, ScoreResult
@@ -97,16 +115,9 @@ class HybridClassifier:
         self.embedding_head_path = EMBEDDING_HEAD_PATH
         self.scorer = RuleScorer()
         self.tfidf_pipeline: Optional[Pipeline] = None
-        self.embedding_model: Optional[Any] = None
+        self._embedding_model: Optional[Any] = None
         self.embedding_clf: Optional[LogisticRegression] = None
         self.model_name = "TF-IDF + RuleScorer"
-
-        if SENTENCE_TRANSFORMERS_AVAILABLE:
-            try:
-                self.embedding_model = SentenceTransformer(TRANSFORMER_MODEL_NAME)
-                self.model_name = f"paraphrase-multilingual-MiniLM-L12-v2 + RuleScorer"
-            except Exception:
-                self.embedding_model = None
 
         if auto_load:
             if self.embedding_head_path.exists():
@@ -119,6 +130,20 @@ class HybridClassifier:
                     self.tfidf_pipeline = joblib.load(str(self.model_path))
                 except Exception:
                     self.tfidf_pipeline = None
+
+    @property
+    def embedding_model(self) -> Optional[Any]:
+        """Lazy-loaded SentenceTransformer model."""
+        if self._embedding_model is None:
+            self._embedding_model = get_embedding_transformer()
+            if self._embedding_model is not None:
+                self.model_name = f"paraphrase-multilingual-MiniLM-L12-v2 + RuleScorer"
+        return self._embedding_model
+
+    @property
+    def embedding_available(self) -> bool:
+        """True if SentenceTransformer is importable and weights are loaded."""
+        return is_sentence_transformers_available() and self.embedding_clf is not None
 
     def train_on_synthetic(self, data_path: Optional[Path] = None) -> Dict[str, Any]:
         """Train both multilingual embeddings head and TF-IDF pipeline on synthetic JSONL dataset."""

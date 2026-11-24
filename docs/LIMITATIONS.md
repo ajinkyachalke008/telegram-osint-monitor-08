@@ -42,3 +42,10 @@ This document details the intentional design limitations, data boundaries, and t
 ## 6. Optical Character Recognition (OCR) Engine Honesty
 - **Binary Dependency:** Multilingual OCR (`eng+hin+mar`) requires an external installation of the Google Tesseract OCR binary (`tesseract.exe` on Windows or `tesseract-ocr` on Linux) along with trained data packs (`hin.traineddata`, `mar.traineddata`).
 - **Strict Honesty Policy:** When the underlying Tesseract system binary is not detected on the host machine, the OCR subsystem reports `OCR DISABLED`. The platform intentionally contains zero hardcoded shortcuts or mocked extraction routines for demo images.
+
+---
+
+## 7. Multilingual Embeddings Dependency & First-Run Model Download
+- **Core Pipeline Independence:** The primary production pipeline, dashboard, and full test suite run entirely on standard dependencies (`requirements.txt`) using the ultra-fast TF-IDF model (1.67 ms / post) without requiring PyTorch, CUDA, or large binary packages.
+- **Optional Neural Extension:** Multilingual dense embeddings (`sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2`) are packaged separately in `requirements-embeddings.txt`.
+- **First-Run HuggingFace Download:** When embeddings are installed and initialized for the first time, `sentence-transformers` automatically downloads the model weights (~470 MB) from the HuggingFace Hub (`huggingface.co/sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2`) and caches them in `~/.cache/huggingface/hub/`. Subsequent runs use the local cached weights.

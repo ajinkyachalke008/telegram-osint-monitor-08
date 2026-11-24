@@ -65,7 +65,7 @@ def run_replay(speed_delay: float = 1.0, loop: bool = False, db: Optional[Databa
         for idx, item in enumerate(demo_posts):
             ts = now_utc_iso()
             source = item.get("source", "Demo Channel")
-            msg_id = f"demo_{iteration}_{item.get('post_id', idx+1)}"
+            msg_id = f"stream_{iteration}_{item.get('post_id', idx+1)}_{int(time.time() * 1000) % 100000}"
             raw_text = item.get("text", "")
             norm_text = normalize_text(raw_text)
 
@@ -126,7 +126,7 @@ def run_replay(speed_delay: float = 1.0, loop: bool = False, db: Optional[Databa
                 ev_block = build_chained_evidence_block(database, post.post_uid, source, msg_id, ts, raw_text)
                 database.record_evidence_block(ev_block)
 
-                # Create Alert if actionable
+                # Create Alert if actionable (deduping identical alerts)
                 if score_res.is_actionable:
                     from core.models import AlertRecord
                     alert = AlertRecord(
@@ -138,9 +138,12 @@ def run_replay(speed_delay: float = 1.0, loop: bool = False, db: Optional[Databa
                         matched_terms=score_res.matched_terms,
                         status="new"
                     )
-                    database.create_alert(alert)
-                    log.warning("🚨 [REPLAY ALERT - %s] %s in %s (UPIs: %s)",
-                                post.risk_level, post.category, source, extracted.get("upis"))
+                    inserted_alert = database.create_alert(alert)
+                    if inserted_alert:
+                        log.warning("🚨 [REPLAY ALERT - %s] %s in %s (UPIs: %s)",
+                                    post.risk_level, post.category, source, extracted.get("upis"))
+                    else:
+                        log.info("Deduplicated identical alert for %s in %s", post.category, source)
                 else:
                     log.info("Replayed [CLEAN] post in %s", source)
 

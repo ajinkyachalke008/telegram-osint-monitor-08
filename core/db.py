@@ -316,8 +316,30 @@ class Database:
     # ---------------------------------------------------------------------------
     # Alerts Management & Workflow
     # ---------------------------------------------------------------------------
-    def create_alert(self, alert: AlertRecord):
+    def create_alert(self, alert: AlertRecord) -> bool:
+        """Create alert with deduplication. Returns True if created, False if duplicate."""
         with self._lock, self.get_connection() as conn:
+            # Check if an alert already exists for this post_uid
+            dup = conn.execute("SELECT alert_id FROM alerts WHERE post_uid = ?", (alert.post_uid,)).fetchone()
+            if dup:
+                return False
+
+            # Check if an identical alert already exists for the same normalized text and category
+            cur_post = conn.execute("SELECT normalized_text FROM posts WHERE post_uid = ?", (alert.post_uid,)).fetchone()
+            if cur_post:
+                norm_text = cur_post["normalized_text"]
+                existing_content = conn.execute(
+                    """
+                    SELECT a.alert_id FROM alerts a
+                    JOIN posts p ON a.post_uid = p.post_uid
+                    WHERE p.normalized_text = ? AND a.category = ?
+                    LIMIT 1
+                    """,
+                    (norm_text, alert.category)
+                ).fetchone()
+                if existing_content:
+                    return False
+
             conn.execute(
                 """
                 INSERT INTO alerts(alert_id, post_uid, category, risk_level, threat_score, matched_terms_json, status, analyst_notes, created_at)
@@ -330,6 +352,7 @@ class Database:
                 )
             )
             conn.commit()
+            return True
 
     def update_alert_status(self, alert_id: str, status: str, notes: str = ""):
         with self._lock, self.get_connection() as conn:

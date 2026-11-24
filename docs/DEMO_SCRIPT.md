@@ -30,12 +30,15 @@ This script provides an exact, minute-by-minute walkthrough designed for hackath
 - **Where to Click:** In the sidebar or 6-Step Tour on Home, click **"1_🚨_Live_Alerts"**.
 - **What to Observe:**
   - The page displays incoming alerts ranked by risk level (`[HIGH]` in neon red, `[MEDIUM]` in gold).
-  - Observe the auto-refresh fragment: every 5 seconds, the background replay worker injects simulated posts. When an alert arrives, a toast notification pops up: `🚨 New threat alert received!`.
-  - Look at the entity pill badges: notice extracted UPI IDs (e.g., `mule.syndicate@ybl 🚨(2+ Chans)`), Indian phone numbers (`+919876543210`), and usernames (`@fast_cash_hub`).
-  - Notice the channel's own handle is excluded from seller identifiers.
+  - Observe the auto-refresh fragment: every 5 seconds, the background streaming replay worker injects incoming threat posts from the live stream. When the stream injects the coordinated mule recruitment post, an alert notification toast pops up: `🚨 New threat alert received! (+1 new)`.
+  - Look at the top newly arrived threat card from `Public Deals Hub (Mule & SIM)` or `t.me/delhi_classifieds_demo`:
+    - Extracted Payment Handle: `mule.syndicate@ybl 🚨(2+ Chans)` (highlighted with cross-channel syndicate pill badge).
+    - Extracted Phone: `+919000011111`
+    - Recruiter Username: `@fast_cash_hub`
+    - Notice the channel's own handle is excluded from seller identifiers.
 - **What to Click:** Expand **"⚙️ Triage & Analyst Action for Alert"**:
   - Change status from `new` to `confirmed`.
-  - Enter Analyst Note: `"Verified mule recruiter linked to Delhi classifieds."`
+  - Enter Analyst Note: `"Verified mule recruiter mule.syndicate@ybl operating synchronously across public channels."`
   - Click **"Save Verdict"** -> page updates and writes an immutable audit record.
 - **Talking Points:**
   > *"Live alerts stream directly into analyst triage cards. The system extracts financial payment handles (UPI, IFSC, crypto) and phone numbers, normalizing Devanagari numerals. When an actor appears in multiple channels, the system automatically flags them with a cross-channel syndicate badge."*
@@ -44,7 +47,7 @@ This script provides an exact, minute-by-minute walkthrough designed for hackath
 
 ### ⏱️ Minute 1:30 – 2:15 | Step 2: Evidence Seal & Section 63 BSA 2023 Dossier (`2_🔍_Alert_Detail.py`)
 - **Where to Click:** In the sidebar, click **"2_🔍_Alert_Detail"**.
-- **What to Select:** In the dropdown, select the alert containing `mule.syndicate@ybl` (`delhi_classifieds_demo`).
+- **What to Select:** In the dropdown, select the streamed alert containing the payment identifier `mule.syndicate@ybl`.
 - **What to Observe:**
   - **Left Column:** Shows the raw post text, metadata, and the **Financial Ad Analysis** flagging `MULE RECRUITMENT PATTERN DETECTED` with character offsets.
   - **Image OCR Capability Status:** Honestly shows `OCR DISABLED` because the host environment does not have the external Google Tesseract binary installed. Highlight that we never fake OCR outputs.
@@ -62,11 +65,12 @@ This script provides an exact, minute-by-minute walkthrough designed for hackath
 - **Where to Click:** In the sidebar, click **"3_🕸️_Entity_Graph"**.
 - **What to Observe:**
   - Interactive multi-relational network graph.
-  - Trace the central red node: `mule.syndicate@ybl`.
-  - Notice it connects across **3 distinct public broadcast channels**:
+  - Trace the central red node: `mule.syndicate@ybl` (the same identifier observed streaming into Live Alerts).
+  - Notice it connects across **3+ distinct public broadcast channels**:
     1. `t.me/delhi_classifieds_demo`
     2. `t.me/mumbai_trade_network`
     3. `t.me/mule_accounts_market`
+    4. `Public Deals Hub (Mule & SIM)`
   - The channel handles are blue broadcast nodes, not misclassified as sellers.
 - **Where to Click:** In the sidebar, click **"4_🔁_Coordinated_Campaigns"**.
 - **What to Observe:**

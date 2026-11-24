@@ -34,7 +34,7 @@ for p in files_to_test:
         all_passed = False
 
 if all_passed:
-    print("\n🎉 ALL 9 STREAMLIT DASHBOARD PAGES VERIFIED CLEANLY WITH 0 EXCEPTIONS!")
+    print(f"\n🎉 ALL {len(files_to_test)} STREAMLIT DASHBOARD PAGES VERIFIED CLEANLY WITH 0 EXCEPTIONS!")
 else:
     print("\n⚠️ SOME PAGES ENCOUNTERED ERRORS. FIX REQUIRED.")
     sys.exit(1)

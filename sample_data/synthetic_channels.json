@@ -46,5 +46,53 @@
     "subscribers": 4100,
     "primary_threat": "drugs",
     "risk_level": "High"
+  },
+  {
+    "channel_id": "chan_007",
+    "username": "bulk_sim_otp",
+    "title": "Bulk SIM & OTP Bypass",
+    "subscribers": 2300,
+    "primary_threat": "sim_card",
+    "risk_level": "High"
+  },
+  {
+    "channel_id": "chan_008",
+    "username": "mewat_trade_hub",
+    "title": "Mewat Financial Trade Exchange",
+    "subscribers": 6100,
+    "primary_threat": "bank_account",
+    "risk_level": "High"
+  },
+  {
+    "channel_id": "chan_009",
+    "username": "delhi_classifieds_demo",
+    "title": "t.me/delhi_classifieds_demo",
+    "subscribers": 7800,
+    "primary_threat": "bank_account",
+    "risk_level": "High"
+  },
+  {
+    "channel_id": "chan_010",
+    "username": "mule_accounts_market",
+    "title": "t.me/mule_accounts_market",
+    "subscribers": 4400,
+    "primary_threat": "bank_account",
+    "risk_level": "High"
+  },
+  {
+    "channel_id": "chan_011",
+    "username": "mumbai_trade_network",
+    "title": "t.me/mumbai_trade_network",
+    "subscribers": 8900,
+    "primary_threat": "bank_account",
+    "risk_level": "High"
+  },
+  {
+    "channel_id": "chan_012",
+    "username": "rajasthan_official_news",
+    "title": "Rajasthan Official News Broadcast",
+    "subscribers": 12500,
+    "primary_threat": "Clean",
+    "risk_level": "Low"
   }
 ]
