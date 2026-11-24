@@ -1,29 +1,17 @@
-"""OSINT Law Enforcement Dashboard for Telegram & Multi-Platform Threat Monitoring.
-
-Features:
-- Threat Alerts & Forensic Evidence Chain of Custody (SHA-256)
-- Cross-Channel Link Analysis & Knowledge Graph (NetworkX + Plotly)
-- Coordinated Campaign & Repeated-Ad Detection (MinHash & pHash)
-- Deep Identifier Profiling & Multi-Format Evidence Export
-"""
+"""OSINT Law Enforcement Dashboard - Executive Overview & Status."""
 import json
-import os
-import io
 import html
-from datetime import datetime
 from pathlib import Path
-
 import streamlit as st
 import pandas as pd
+import plotly.express as px
 import plotly.graph_objects as go
 
-# Local modules
+from core.db import Database
+from core.models import now_utc_iso
 from dashboard.db_reader import load_dashboard_data
-from dashboard.similarity import find_text_ad_clusters, find_image_clusters
-from dashboard.graph import build_entity_graph, plot_entity_graph, get_cross_channel_identifiers
-from addons.evidence import verify_evidence_record
 
-# Streamlit Page Config
+# Page configuration
 st.set_page_config(
     page_title="TGSherlock OSINT Threat Intelligence",
     page_icon="🛡️",
@@ -31,363 +19,150 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# Custom Styling for Law Enforcement OSINT Dashboard
+# Custom dark law-enforcement styling
 st.markdown("""
 <style>
     .main { background-color: #0E131F; color: #ECEFF1; }
-    .stMetric { background-color: #1A2238; border-radius: 8px; padding: 12px; border: 1px solid #283747; }
-    .threat-card-high {
-        background-color: #231215; border-left: 5px solid #FF3366;
-        padding: 16px; border-radius: 8px; margin-bottom: 14px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    .stMetric { background-color: #1A2238; border-radius: 8px; padding: 14px; border: 1px solid #283747; }
+    .legal-banner {
+        background-color: #1B263B; border-left: 6px solid #00ADB5;
+        padding: 14px 18px; border-radius: 6px; margin-bottom: 20px;
+        font-size: 13.5px; line-height: 1.5;
     }
-    .threat-card-med {
-        background-color: #242013; border-left: 5px solid #FFAA00;
-        padding: 16px; border-radius: 8px; margin-bottom: 14px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-    }
-    .threat-card-low {
-        background-color: #14221A; border-left: 5px solid #00CC88;
-        padding: 16px; border-radius: 8px; margin-bottom: 14px;
-    }
-    .badge-pill {
-        display: inline-block; padding: 3px 8px; border-radius: 12px;
-        font-size: 11px; font-weight: bold; margin-right: 6px; margin-bottom: 4px;
-    }
-    .badge-upi { background-color: #3E2723; color: #FFE082; border: 1px solid #FFE082; }
-    .badge-phone { background-color: #372023; color: #FF8A80; border: 1px solid #FF8A80; }
-    .badge-crypto { background-color: #261738; color: #EA80FC; border: 1px solid #EA80FC; }
-    .badge-user { background-color: #102A43; color: #82B1FF; border: 1px solid #82B1FF; }
-    .badge-hash {
-        font-family: monospace; font-size: 11px; background-color: #121824;
-        color: #80DEEA; padding: 2px 6px; border-radius: 4px; border: 1px solid #263238;
-    }
+    .badge-live { background-color: #00897B; color: #E0F2F1; padding: 3px 8px; border-radius: 4px; font-weight: bold; font-size: 12px; }
+    .badge-imported { background-color: #1E88E5; color: #E3F2FD; padding: 3px 8px; border-radius: 4px; font-weight: bold; font-size: 12px; }
+    .badge-sim { background-color: #FB8C00; color: #FFF3E0; padding: 3px 8px; border-radius: 4px; font-weight: bold; font-size: 12px; }
 </style>
 """, unsafe_allow_html=True)
 
+# Mandatory Legal & OSINT Disclaimer
+st.markdown("""
+<div class="legal-banner">
+    <b>⚖️ LAW ENFORCEMENT OSINT MONITORING NOTICE & OPERATIONAL CONSTRAINTS:</b><br>
+    • <b>Public Channels Only:</b> Monitoring is restricted to public broadcast channels. The system never joins private groups, posts, reacts, DMs, or enumerates channel members.<br>
+    • <b>Leads, Not Proof:</b> All algorithmic classifications and link clusters represent intelligence leads for certified human review, not courtroom proof.<br>
+    • <b>Strict Training Compliance:</b> ZERO models were trained or fine-tuned on Telegram data. ML classification is trained exclusively on synthetic/handcrafted benchmarks.
+</div>
+""", unsafe_allow_html=True)
 
-def export_html_report(posts: list, title: str = "OSINT Intelligence Brief") -> str:
-    """Generate self-contained standalone HTML evidence report."""
-    rows = []
-    for p in posts:
-        ev = p.get("evidence", {})
-        ev_hash = ev.get("evidence_hash", "N/A")
-        rows.append(f"""
-        <tr>
-            <td><b>{html.escape(str(p.get('source')))}</b><br><small>Msg #{p.get('post_id')}</small></td>
-            <td><span style="color:#e50914;font-weight:bold;">{html.escape(str(p.get('risk_level')))}</span><br>{html.escape(str(p.get('primary_category')))}</td>
-            <td>{html.escape(str(p.get('timestamp')))}</td>
-            <td style="max-width:350px;">{html.escape(str(p.get('text')))}</td>
-            <td><code>{ev_hash[:16]}...</code></td>
-        </tr>
-        """)
-    return f"""<!doctype html>
-    <html>
-    <head>
-        <meta charset="utf-8">
-        <title>{html.escape(title)}</title>
-        <style>
-            body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 30px; background: #fafafa; color: #222; }}
-            h1 {{ color: #0d1b2a; border-bottom: 2px solid #0077b6; padding-bottom: 8px; }}
-            table {{ border-collapse: collapse; width: 100%; margin-top: 15px; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }}
-            th, td {{ border: 1px solid #ddd; padding: 10px; text-align: left; vertical-align: top; font-size: 13px; }}
-            th {{ background: #0077b6; color: #fff; }}
-            tr:nth-child(even) {{ background: #f8f9fa; }}
-        </style>
-    </head>
-    <body>
-        <h1>🛡️ {html.escape(title)}</h1>
-        <p>Generated by <b>TGSherlock OSINT Threat Intelligence Engine</b> | Records: {len(posts)}</p>
-        <table>
-            <thead>
-                <tr><th>Channel</th><th>Risk / Category</th><th>Timestamp (UTC)</th><th>Message Content</th><th>Evidence Hash</th></tr>
-            </thead>
-            <tbody>
-                {"".join(rows)}
-            </tbody>
-        </table>
-    </body>
-    </html>"""
+st.title("🛡️ TGSherlock OSINT Threat Monitor")
+st.caption("Telegram & Multi-Platform Illegal Trade Intelligence Engine | Real-Time Detection & Link Analysis")
 
+# Database connection
+db = Database()
 
-# ---------------------------------------------------------------------------
-# Sidebar Controls
-# ---------------------------------------------------------------------------
-st.sidebar.image("https://raw.githubusercontent.com/emrekybs/tgsherlock/main/src/tgsherlock/static/logo-sm.png", width=70)
-st.sidebar.title("OSINT Radar")
-st.sidebar.markdown("**Law Enforcement Telegram Monitor**")
+# Load summary metrics
+with db.get_connection() as conn:
+    total_posts = conn.execute("SELECT COUNT(*) FROM posts").fetchone()[0]
+    high_threats = conn.execute("SELECT COUNT(*) FROM posts WHERE risk_level = 'High'").fetchone()[0]
+    med_threats = conn.execute("SELECT COUNT(*) FROM posts WHERE risk_level = 'Medium'").fetchone()[0]
+    total_identifiers = conn.execute("SELECT COUNT(*) FROM identifiers").fetchone()[0]
+    cross_actors = conn.execute("SELECT COUNT(*) FROM identifiers WHERE cross_channel = 1").fetchone()[0]
+    evidence_blocks = conn.execute("SELECT COUNT(*) FROM evidence").fetchone()[0]
+    
+    # Ingestion provenance counts
+    prov_rows = conn.execute("SELECT ingestion_source, COUNT(*) as cnt FROM posts GROUP BY ingestion_source").fetchall()
+    prov_counts = {r["ingestion_source"]: r["cnt"] for r in prov_rows}
 
-# Data Source Selection
-data_mode = st.sidebar.radio(
-    "Data Source",
-    ["Auto-Detect (Live or Demo)", "Synthetic Demo Dataset", "Live TGSherlock DB", "Upload External Dump (CSV/JSON)"],
-    index=0
-)
+# Top Metric Banner
+col1, col2, col3, col4, col5 = st.columns(5)
+with col1:
+    st.metric("Total Ingested Posts", f"{total_posts:,}")
+with col2:
+    st.metric("Actionable Threats (High)", f"{high_threats:,}", delta=f"{high_threats+med_threats} Total Flagged")
+with col3:
+    st.metric("Extracted Identifiers", f"{total_identifiers:,}")
+with col4:
+    st.metric("Cross-Channel Syndicates", f"{cross_actors:,}", delta="Active in 2+ Chans")
+with col5:
+    st.metric("Sealed Evidence Blocks", f"{evidence_blocks:,}", delta="Tamper-Evident Chain")
 
-uploaded_file_path = None
-if data_mode == "Upload External Dump (CSV/JSON)":
-    uploaded = st.sidebar.file_uploader("Upload CSV or JSON dump", type=["csv", "json"])
-    if uploaded:
-        tmp_dir = Path(".tmp_uploads")
-        tmp_dir.mkdir(exist_ok=True)
-        uploaded_file_path = tmp_dir / uploaded.name
-        uploaded_file_path.write_bytes(uploaded.getvalue())
+st.divider()
 
-# Resolve data source
-source_code = "auto"
-if data_mode == "Synthetic Demo Dataset":
-    source_code = "synthetic"
-elif data_mode == "Live TGSherlock DB":
-    source_code = "live"
-elif data_mode == "Upload External Dump (CSV/JSON)" and uploaded_file_path:
-    source_code = "custom"
+# Ingestion Source & Provenance
+st.subheader("📡 Live Ingestion Streams & Data Provenance")
+pcol1, pcol2, pcol3 = st.columns(3)
+with pcol1:
+    live_c = prov_counts.get("LIVE", 0)
+    st.markdown(f'<span class="badge-live">LIVE TELEGRAM</span> &nbsp; <b>{live_c}</b> posts ingested from local TGSherlock daemon.', unsafe_allow_html=True)
+with pcol2:
+    imp_c = prov_counts.get("IMPORTED", 0)
+    st.markdown(f'<span class="badge-imported">IMPORTED DUMPS</span> &nbsp; <b>{imp_c}</b> posts ingested via multi-platform CSV/JSON.', unsafe_allow_html=True)
+with pcol3:
+    sim_c = prov_counts.get("SIMULATED", 0)
+    st.markdown(f'<span class="badge-sim">SIMULATED REPLAY</span> &nbsp; <b>{sim_c}</b> benchmark posts replayed for demonstration.', unsafe_allow_html=True)
 
-# Load Posts
-raw_posts = load_dashboard_data(source_type=source_code, uploaded_file=uploaded_file_path)
+st.write("")
 
-st.sidebar.divider()
-st.sidebar.subheader("Threat Filters")
+# Charts Row
+row1_col1, row1_col2 = st.columns([1, 1])
 
-# Category filter
-all_categories = sorted(list({p.get("primary_category") for p in raw_posts if p.get("primary_category")}))
-selected_cats = st.sidebar.multiselect("Category", all_categories, default=all_categories)
-
-# Risk Level filter
-risk_levels = ["High", "Medium", "Low", "Clean"]
-selected_risks = st.sidebar.multiselect("Risk Level", risk_levels, default=["High", "Medium", "Low"])
-
-# Search Query
-search_query = st.sidebar.text_input("Filter by Keyword / Identifier", "").strip().lower()
-
-# Apply filters
-filtered_posts = []
-for p in raw_posts:
-    if selected_cats and p.get("primary_category") not in selected_cats and p.get("primary_category") is not None:
-        continue
-    if selected_risks and p.get("risk_level") not in selected_risks:
-        continue
-    if search_query:
-        txt = p.get("text", "").lower()
-        upis = [u.lower() for u in p.get("extracted", {}).get("upis", [])]
-        phones = [ph.lower() for ph in p.get("extracted", {}).get("phones", [])]
-        usernames = [un.lower() for un in p.get("extracted", {}).get("usernames", [])]
-        if search_query not in txt and not any(search_query in u for u in upis) and not any(search_query in ph for ph in phones) and not any(search_query in un for un in usernames):
-            continue
-    filtered_posts.append(p)
-
-# ---------------------------------------------------------------------------
-# Header Metrics
-# ---------------------------------------------------------------------------
-st.title("🛡️ TGSherlock OSINT Threat Intelligence Dashboard")
-st.markdown("Real-time public Telegram surveillance, illicit marketplace seller attribution, and cross-channel link analysis.")
-
-# Build graph early for metrics
-G = build_entity_graph(filtered_posts)
-cross_actors = get_cross_channel_identifiers(G)
-ad_campaigns = find_text_ad_clusters(filtered_posts)
-
-col1, col2, col3, col4 = st.columns(4)
-col1.metric("Flagged Posts", len(filtered_posts))
-col2.metric("High-Risk Alerts", sum(1 for p in filtered_posts if p.get("risk_level") == "High"))
-col3.metric("Cross-Channel Syndicates", len(cross_actors))
-col4.metric("Coordinated Ad Campaigns", len(ad_campaigns))
-
-# ---------------------------------------------------------------------------
-# Tabs
-# ---------------------------------------------------------------------------
-tab_alerts, tab_graph, tab_campaigns, tab_export = st.tabs([
-    "🚨 Live Threat Alerts & Evidence",
-    "🕸️ Entity Link Analysis (Graph)",
-    "🔁 Coordinated Campaigns (Repeated Ads)",
-    "📦 Evidence Chain of Custody & Export"
-])
-
-# ---------------------------------------------------------------------------
-# TAB 1: Live Threat Alerts & Evidence
-# ---------------------------------------------------------------------------
-with tab_alerts:
-    st.subheader(f"Flagged Post Stream ({len(filtered_posts)} posts)")
-
-    if not filtered_posts:
-        st.info("No messages match the current filter parameters.")
-    else:
-        for p in filtered_posts:
-            risk = p.get("risk_level", "Low")
-            card_class = "threat-card-high" if risk == "High" else "threat-card-med" if risk == "Medium" else "threat-card-low"
-            ev = p.get("evidence", {})
-            ev_hash = ev.get("evidence_hash", "UNKNOWN")
-            extracted = p.get("extracted", {})
-
-            # Build badge chips for identifiers
-            id_chips = []
-            for u in extracted.get("upis", []):
-                id_chips.append(f'<span class="badge-pill badge-upi">💳 UPI: {u}</span>')
-            for ph in extracted.get("phones", []):
-                id_chips.append(f'<span class="badge-pill badge-phone">📞 Phone: {ph}</span>')
-            for cr, net in extracted.get("crypto_wallets", []):
-                id_chips.append(f'<span class="badge-pill badge-crypto">🪙 {net}: {cr[:10]}...{cr[-6:]}</span>')
-            for un in extracted.get("usernames", []):
-                id_chips.append(f'<span class="badge-pill badge-user">👤 {un}</span>')
-            for ifsc in extracted.get("ifscs", []):
-                id_chips.append(f'<span class="badge-pill badge-upi">🏦 IFSC: {ifsc}</span>')
-
-            # Matched terms chips
-            term_chips = []
-            for m in p.get("matched_terms", []):
-                term_chips.append(f'<span class="badge-pill" style="background:#263238;color:#CFD8DC;">🏷️ {m.get("term")} ({m.get("weight")})</span>')
-
-            card_html = f"""
-            <div class="{card_class}">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <div>
-                        <b style="font-size:16px; color:#FFFFFF;">📢 {html.escape(str(p.get("source")))}</b>
-                        <span style="color:#90A4AE; font-size:13px; margin-left:10px;">Post #{p.get("post_id")} • {p.get("timestamp")}</span>
-                    </div>
-                    <div>
-                        <span style="font-weight:bold; font-size:14px; color:{'#FF3366' if risk=='High' else '#FFAA00' if risk=='Medium' else '#00CC88'};">
-                            [{risk.upper()} RISK]
-                        </span>
-                        <span style="background:#37474F; color:#ECEFF1; padding:3px 8px; border-radius:4px; font-size:12px; margin-left:6px;">
-                            {p.get("primary_category", "General")}
-                        </span>
-                    </div>
-                </div>
-                <div style="margin-top:10px; font-size:14px; line-height:1.5; color:#E0E0E0;">
-                    {html.escape(str(p.get("text")))}
-                </div>
-                <div style="margin-top:12px;">
-                    {"".join(id_chips) if id_chips else "<span style='color:#78909C;font-size:12px;'>No direct payment/phone identifiers</span>"}
-                </div>
-                <div style="margin-top:8px;">
-                    <span style="font-size:12px; color:#B0BEC5;">Matched Rules: </span>{"".join(term_chips)}
-                </div>
-                <div style="margin-top:10px; font-size:12px; color:#78909C; display:flex; justify-content:space-between;">
-                    <div>SHA-256 Digest: <span class="badge-hash">{ev_hash}</span></div>
-                    <div>Score: <b>{p.get('total_score', 0)}</b></div>
-                </div>
-            </div>
-            """
-            st.markdown(card_html, unsafe_allow_html=True)
-
-
-# ---------------------------------------------------------------------------
-# TAB 2: Entity Link Analysis (Graph)
-# ---------------------------------------------------------------------------
-with tab_graph:
-    st.subheader("Cross-Channel Entity Attribution Network")
-    st.markdown("Visualizes actors, payment vectors, and accounts shared across multiple Telegram channels.")
-
-    col_g1, col_g2 = st.columns([3, 1])
-
-    with col_g2:
-        st.markdown("### 🚨 Cross-Channel Actors")
-        if not cross_actors:
-            st.info("No single identifier has been detected in 2 or more channels yet.")
-        else:
-            for ca in cross_actors:
-                st.error(f"""
-                **{ca['value']}** ({ca['type']})  
-                Active in **{ca['channel_count']} channels**:  
-                • {', '.join(ca['channels'])}  
-                *Network Degree: {ca['degree']}*
-                """)
-
-    with col_g1:
-        fig = plot_entity_graph(G, title="Entity-Channel Link Graph (Red = Multi-Channel Syndicates)")
-        st.plotly_chart(fig, use_container_width=True)
-
-
-# ---------------------------------------------------------------------------
-# TAB 3: Coordinated Campaigns (Repeated Ads)
-# ---------------------------------------------------------------------------
-with tab_campaigns:
-    st.subheader("Coordinated Ad Syndicates & Repeated-Ad Detection")
-    st.markdown("Detects criminal syndicates deploying identical marketing templates across independent channels via MinHash Jaccard similarity.")
-
-    if not ad_campaigns:
-        st.info("No repeated ad campaigns identified in current dataset.")
-    else:
-        for camp in ad_campaigns:
-            with st.expander(f"📁 {camp['cluster_id']} — {camp['ad_count']} Repeated Ads across {camp['channel_count']} Channels", expanded=True):
-                st.markdown(f"**Channels Involved:** `{'`, `'.join(camp['channels'])}`")
-                if camp['shared_upis']:
-                    st.markdown(f"**Shared UPIs:** `{', '.join(camp['shared_upis'])}`")
-                if camp['shared_phones']:
-                    st.markdown(f"**Shared Phones:** `{', '.join(camp['shared_phones'])}`")
-                st.markdown("**Sample Templated Ad Text:**")
-                st.code(camp['sample_text'], language="text")
-
-    # Image clustering
-    st.divider()
-    st.subheader("Image Perceptual Hashing (pHash) Clusters")
-    img_clusters = find_image_clusters(filtered_posts)
-    if not img_clusters:
-        st.info("No perceptual image duplicate groups detected among posts with media.")
-    else:
-        for ic in img_clusters:
-            st.warning(f"📸 Image Campaign {ic['cluster_id']}: {ic['image_count']} copies found in channels: {', '.join(ic['channels'])}")
-
-
-# ---------------------------------------------------------------------------
-# TAB 4: Evidence Chain of Custody & Export
-# ---------------------------------------------------------------------------
-with tab_export:
-    st.subheader("Forensic Chain of Custody & Evidence Export")
-    st.markdown("Generate admissible evidence packages with RFC-8785 canonical JSON and SHA-256 integrity verification.")
-
-    if filtered_posts:
-        col_ex1, col_ex2, col_ex3 = st.columns(3)
-
-        # 1. CSV Export
-        csv_rows = []
-        for p in filtered_posts:
-            csv_rows.append({
-                "Channel": p.get("source"),
-                "Message_ID": p.get("post_id"),
-                "Timestamp_UTC": p.get("timestamp"),
-                "Risk_Level": p.get("risk_level"),
-                "Category": p.get("primary_category"),
-                "Text": p.get("text"),
-                "Evidence_SHA256": p.get("evidence", {}).get("evidence_hash"),
-                "UPIs": ", ".join(p.get("extracted", {}).get("upis", [])),
-                "Phones": ", ".join(p.get("extracted", {}).get("phones", [])),
-            })
-        df_csv = pd.DataFrame(csv_rows)
-        csv_buffer = io.StringIO()
-        df_csv.to_csv(csv_buffer, index=False)
-        col_ex1.download_button(
-            label="📥 Download Evidence CSV",
-            data=csv_buffer.getvalue().encode("utf-8-sig"),
-            file_name="tgsherlock_evidence_export.csv",
-            mime="text/csv",
+with row1_col1:
+    st.markdown("### 📊 Threat Categories Distribution")
+    with db.get_connection() as conn:
+        cat_rows = conn.execute(
+            "SELECT category, COUNT(*) as cnt FROM posts WHERE category != 'benign' AND category != 'unclassified' GROUP BY category ORDER BY cnt DESC"
+        ).fetchall()
+    if cat_rows:
+        df_cat = pd.DataFrame([dict(r) for r in cat_rows])
+        fig_cat = px.bar(
+            df_cat, x="cnt", y="category", orientation="h",
+            labels={"cnt": "Flagged Posts", "category": "Trade Category"},
+            color="cnt", color_continuous_scale="Reds",
+            template="plotly_dark"
         )
+        fig_cat.update_layout(margin=dict(l=10, r=10, t=10, b=10), height=300, yaxis=dict(autorange="reversed"))
+        st.plotly_chart(fig_cat, use_container_width=True)
+    else:
+        st.info("No categorized illegal posts in database yet.")
 
-        # 2. JSON Export
-        json_str = json.dumps([p.get("evidence", {}) for p in filtered_posts], indent=2, ensure_ascii=False)
-        col_ex2.download_button(
-            label="📥 Download Forensic JSON (RFC-8785)",
-            data=json_str.encode("utf-8"),
-            file_name="tgsherlock_evidence_chain.json",
-            mime="application/json",
+with row1_col2:
+    st.markdown("### 🔍 Extracted Identifiers by Type")
+    with db.get_connection() as conn:
+        ident_rows = conn.execute(
+            "SELECT type, COUNT(*) as cnt FROM identifiers GROUP BY type ORDER BY cnt DESC"
+        ).fetchall()
+    if ident_rows:
+        df_ident = pd.DataFrame([dict(r) for r in ident_rows])
+        fig_ident = px.pie(
+            df_ident, names="type", values="cnt", hole=0.45,
+            color_discrete_sequence=px.colors.qualitative.Bold,
+            template="plotly_dark"
         )
+        fig_ident.update_layout(margin=dict(l=10, r=10, t=10, b=10), height=300)
+        st.plotly_chart(fig_ident, use_container_width=True)
+    else:
+        st.info("No identifiers extracted yet.")
 
-        # 3. HTML / PDF Printable Report
-        html_report = export_html_report(filtered_posts, title="TGSherlock Law Enforcement Intelligence Dossier")
-        col_ex3.download_button(
-            label="📄 Download HTML Dossier",
-            data=html_report.encode("utf-8"),
-            file_name="tgsherlock_intelligence_dossier.html",
-            mime="text/html",
-        )
+st.divider()
 
-        st.divider()
-        st.markdown("### 🔍 Live Cryptographic Tamper Verification")
-        sample_post = filtered_posts[0]
-        ev_rec = sample_post.get("evidence", {})
-        valid, msg = verify_evidence_record(ev_rec)
-        if valid:
-            st.success(f"✅ Cryptographic Integrity Verified for {ev_rec.get('evidence_id')}: {msg} (Hash: `{ev_rec.get('evidence_hash')}`)")
-        else:
-            st.error(f"❌ Verification Failed: {msg}")
+# System Architecture Flow
+st.subheader("⚙️ Real-Time Intelligence Pipeline Flow")
+st.markdown("""
+```text
+[Public Telegram / CSV Dump / Replay Stream]
+                   │
+                   ▼
+       1. Text Normalization (NFKC, Homoglyphs, Leetspeak, Spaced Words, Devanagari)
+                   │
+                   ▼
+       2. Hybrid Classification (Slang Lexicon + Scikit-Learn TF-IDF + Hard-Negative Calibrator)
+                   │
+                   ▼
+       3. Financial-Ad Detector (Mule Recruitment Intent, Instruments, Commission, Text Offsets)
+                   │
+                   ▼
+       4. Identifier Extraction (UPI, Phones, Base58Check Wallets, Usernames, IFSC, Gazetteer)
+                   │
+                   ▼
+       5. Evidence Ledger (RFC-8785 Canonical JSON + SHA-256 Hash Chaining)
+                   │
+                   ▼
+       6. Link Analysis (Entities Graph, Centrality, Cross-Channel Syndicates, MinHash Ads)
+                   │
+                   ▼
+       7. Multipage Law Enforcement Dashboard (Triage, Verification, Dossiers, Export)
+```
+""")
 
-        st.json(ev_rec)
+st.info("💡 **Navigation:** Use the left sidebar to navigate across the full suite: **Live Alerts**, **Alert Detail & Hash Verification**, **Entity Graph**, **Coordinated Campaigns**, **Geographic Map**, **Data Ingestion**, **Model Metrics**, and **Responsible Use & Audit**.")
