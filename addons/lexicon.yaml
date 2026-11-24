@@ -1,0 +1,342 @@
+version: 1.0
+categories:
+  drugs:
+    label: "Narcotics & Controlled Substances"
+    description: "Illegal narcotics, synthetic drugs, prescription pill diversion"
+    weight_multiplier: 1.0
+    default_weight: 2.5
+    slang_en:
+      - mdma
+      - mephedrone
+      - meow meow
+      - weed
+      - og kush
+      - charas
+      - hashish
+      - heroin
+      - cocaine
+      - meth
+      - crystal meth
+      - lsd
+      - acid stamp
+      - ganja
+      - brown sugar
+      - tramadol
+      - alprazolam
+      - ketamine
+    slang_hinglish:
+      - maal
+      - chitta
+      - afeem
+      - bhang
+      - smack
+      - nasheeli goli
+      - white powder
+      - high quality maal
+      - stuff available
+      - score maal
+    slang_marathi:
+      - gard
+      - charas
+      - nasha
+      - padarth
+      - goli
+    coded_words:
+      - "420"
+      - c0ke
+      - w33d
+      - white stone
+      - ice crystal
+      - pure stuff
+      - home delivery available
+      - instant parcel
+      - drop shipping weed
+    emojis:
+      - "🍁"
+      - "🌿"
+      - "💊"
+      - "❄️"
+      - "💉"
+      - "🍄"
+      - "💨"
+      - "🧪"
+
+  arms:
+    label: "Illegal Weapons & Ammunition"
+    description: "Unlicensed firearms, country-made weapons, illegal ammunition"
+    weight_multiplier: 1.2
+    default_weight: 3.0
+    slang_en:
+      - pistol
+      - revolver
+      - glock
+      - country made pistol
+      - ammo
+      - bullets
+      - 9mm
+      - 315 bore
+      - 32 bore
+      - 7.65mm
+      - rifle
+      - shotgun
+      - silencer
+      - magazine
+      - cartridge
+    slang_hinglish:
+      - katta
+      - desi katta
+      - tamancha
+      - bandook
+      - chhuri
+      - hathiyar
+      - goli
+      - asla
+      - desi pistol
+      - loha
+      - maal pistol
+      - revolver piece
+    slang_marathi:
+      - gavti katta
+      - banduk
+      - chaku
+      - talwar
+      - katti
+      - lohandi saman
+    coded_words:
+      - "315 piece"
+      - "32 piece"
+      - iron piece
+      - toy available
+      - safety tool
+      - full loaded piece
+      - brass rounds
+      - direct delivery bihar
+      - up delivery
+    emojis:
+      - "🔫"
+      - "🗡️"
+      - "⚔️"
+      - "💣"
+      - "💥"
+
+  fake_documents:
+    label: "Counterfeit & Forged Documents"
+    description: "Fake identity proofs, fake certificates, biometric bypass services"
+    weight_multiplier: 1.0
+    default_weight: 2.5
+    slang_en:
+      - fake aadhar
+      - forged pan
+      - counterfeit marksheet
+      - fake passport
+      - fake driving license
+      - fake voter id
+      - cloned voter id
+      - rto passing
+      - duplicate rc
+      - biometric bypass
+      - rubber stamp
+    slang_hinglish:
+      - nakli aadhar
+      - duplicate pan
+      - farzi marksheet
+      - duplicate license
+      - aadhar biometric bypass
+      - crack software
+      - seal stamp
+      - bina exam certificate
+      - backdated marksheet
+      - aadhar card print
+    slang_marathi:
+      - nakli kagadpatra
+      - khoti marksheet
+      - banavat pan card
+      - dakhla
+      - pramanpatra
+    coded_words:
+      - clean document
+      - original print
+      - bypass verification
+      - any state passing
+      - all india valid
+      - 100% qr scan passing
+      - instant soft copy
+    emojis:
+      - "🪪"
+      - "📄"
+      - "📑"
+      - "🖨️"
+      - "✍️"
+      - "📂"
+
+  bank_account:
+    label: "Bank Account Mule Recruitment / Rent / Sale"
+    description: "Sale or rental of current/savings accounts for cyber fraud and money laundering"
+    weight_multiplier: 1.2
+    default_weight: 3.0
+    slang_en:
+      - current account for rent
+      - savings account for sale
+      - corporate bank account
+      - bank mule
+      - ready bank kit
+      - rented account
+      - merchant account for rent
+      - current account available
+      - mule account
+      - bank drop
+      - dormant account
+    slang_hinglish:
+      - khata sale
+      - current khata chahiye
+      - bank khata rent
+      - account commission base
+      - account deal
+      - kotak account
+      - icici current
+      - hdfc current
+      - axis bank khata
+      - daily withdrawal limit
+      - payment transfer khata
+    slang_marathi:
+      - khate bhadyane
+      - bank khate vikne
+      - commission var khate
+      - rokh khate
+      - vyapari khate
+    coded_words:
+      - clean khata
+      - heavy limit
+      - fastag account
+      - daily limit 50L
+      - payment gateway rent
+      - p2p merchant account
+      - crypto deposit khata
+      - cyber safe account
+    emojis:
+      - "🏦"
+      - "🏛️"
+      - "💰"
+      - "💸"
+      - "📈"
+      - "🤝"
+
+  atm_card:
+    label: "Debit / ATM Card Trafficking"
+    description: "Sale or dispatch of physical ATM/Debit cards with PIN for cash extraction"
+    weight_multiplier: 1.0
+    default_weight: 2.5
+    slang_en:
+      - atm card with pin
+      - debit card for sale
+      - cloned debit card
+      - fresh atm kit
+      - blank card
+      - pos carding
+      - magstripe dump
+      - platinum debit card
+    slang_hinglish:
+      - atm card deliver
+      - debit card pin ke sath
+      - atm kit available
+      - card swipe
+      - carding kit
+      - courier se atm
+      - withdrawal card
+    slang_marathi:
+      - atm card ani pin
+      - debit card vikne
+      - card kit
+      - paise kadhnyasathi card
+    coded_words:
+      - card with full info
+      - ready to swipe
+      - dump card
+      - daily withdrawal kit
+      - unblocked card
+    emojis:
+      - "💳"
+      - "🏧"
+      - "💵"
+
+  sim_card:
+    label: "Pre-Activated / Fake KYC SIM Cards"
+    description: "Mule SIM cards registered on fraudulent identities for telecom fraud"
+    weight_multiplier: 1.0
+    default_weight: 2.5
+    slang_en:
+      - pre-activated sim
+      - bulk sim cards
+      - fake kyc sim
+      - foreign sim
+      - virtual sim
+      - otps sim
+      - corporate sim for sale
+      - anonymous sim
+    slang_hinglish:
+      - chalu sim
+      - activated sim card
+      - bina aadhar sim
+      - jio pre activated
+      - airtel pre activated
+      - vi pre activated
+      - otp bypass sim
+      - ready sim courier
+      - bulk sim delivery
+    slang_marathi:
+      - chalu sim card
+      - aadhar shivay sim
+      - activate sim vikne
+      - sim card parcel
+    coded_words:
+      - ready sim
+      - wholesale sim
+      - otps available
+      - fresh activation
+      - tele verification done
+      - non-blocking sim
+    emojis:
+      - "📲"
+      - "📶"
+      - "📳"
+      - "📞"
+
+  net_banking_kit:
+    label: "Complete Net Banking Kits"
+    description: "Full banking kits including internet banking credentials, registered SIM, chequebook, and ATM card"
+    weight_multiplier: 1.3
+    default_weight: 3.5
+    slang_en:
+      - full net banking kit
+      - internet banking kit with sim
+      - corporate net banking
+      - complete bank kit with cheque book
+      - net banking kit
+      - corporate login credentials
+      - full kit account
+    slang_hinglish:
+      - full kit khata
+      - net banking user id password
+      - cheque book passbook atm sim
+      - complete kit available
+      - fresh kit
+      - ready corporate kit
+      - sim sahit net banking
+    slang_marathi:
+      - sampurna bank kit
+      - net banking ani sim card
+      - cheque book kit
+      - purna khate kit
+    coded_words:
+      - full corporate kit
+      - 4 in 1 kit
+      - 5 in 1 kit
+      - all papers ready
+      - immediate delivery kit
+      - token device included
+    emojis:
+      - "💼"
+      - "📦"
+      - "💻"
+      - "🔐"
+      - "🔑"
