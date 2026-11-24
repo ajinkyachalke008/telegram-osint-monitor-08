@@ -1,4 +1,7 @@
 """90-Second Real Demo Verification with Playwright Screenshots & Toast Detection."""
+# Prevent pytest from treating this verification script as a unit test module
+__test__ = False
+
 import os
 import sys
 import time
