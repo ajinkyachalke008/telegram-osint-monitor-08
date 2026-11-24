@@ -54,8 +54,8 @@ def main():
     )
     print(f"      ✅ Replay worker running in background (PID: {replay_proc.pid})")
 
-    # 3. Spawn Streamlit dashboard (with DEMO_MODE=1)
-    print("\n[3/4] 🚀 Starting Streamlit OSINT Dashboard on http://localhost:8501 ...")
+    # 3. Spawn Streamlit dashboard engine (with DEMO_MODE=1)
+    print("\n[3/5] 🚀 Starting Streamlit Intelligence Engine on http://localhost:8501 ...")
     dashboard_cmd = [
         sys.executable,
         "-m", "streamlit",
@@ -71,15 +71,36 @@ def main():
         cwd=str(PROJECT_ROOT),
         env=dashboard_env
     )
-    print(f"      ✅ Dashboard process started (PID: {dashboard_proc.pid})")
+    print(f"      ✅ Intelligence Engine started (PID: {dashboard_proc.pid})")
 
-    # 4. Open browser
-    print("\n[4/4] 🌐 Opening browser to http://localhost:8501 ...")
+    # 4. Check & Spawn Unified Web Panel on http://127.0.0.1:8765
+    print("\n[4/5] 🌐 Starting Unified OSINT Web Panel on http://127.0.0.1:8765 ...")
+    panel_proc = None
+    import socket
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    is_port_8765_open = False
+    try:
+        s.connect(("127.0.0.1", 8765))
+        is_port_8765_open = True
+        s.close()
+    except Exception:
+        pass
+
+    if not is_port_8765_open:
+        panel_cmd = [sys.executable, "-m", "tgsherlock", "--no-browser", "--port", "8765"]
+        panel_proc = subprocess.Popen(panel_cmd, cwd=str(PROJECT_ROOT))
+        print(f"      ✅ Unified Web Panel started (PID: {panel_proc.pid})")
+    else:
+        print("      ✅ Unified Web Panel is already active on port 8765.")
+
+    # 5. Open Unified Browser App
+    print("\n[5/5] 🚀 Opening Unified Application in Browser at http://127.0.0.1:8765 ...")
     time.sleep(2.5)
-    webbrowser.open("http://localhost:8501")
+    webbrowser.open("http://127.0.0.1:8765")
 
     print("\n" + "=" * 76)
-    print("  🎉 DEMO IS LIVE! Press Ctrl+C at any time to shut down gracefully.")
+    print("  🎉 UNIFIED APPLICATION IS LIVE at http://127.0.0.1:8765!")
+    print("  Press Ctrl+C at any time to shut down gracefully.")
     print("=" * 76 + "\n")
 
     def handle_exit(sig, frame):
@@ -87,6 +108,8 @@ def main():
         try:
             replay_proc.terminate()
             dashboard_proc.terminate()
+            if panel_proc:
+                panel_proc.terminate()
         except Exception:
             pass
         print("[telegram-osint-monitor-08] Demo shutdown complete.")
