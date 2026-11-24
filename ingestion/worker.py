@@ -132,6 +132,11 @@ class IngestionWorker:
             time.sleep(poll_interval)
 
 
+# Alias for backward-compatibility
+PipelineWorker = IngestionWorker
+
+
+
 if __name__ == "__main__":
     worker = IngestionWorker()
     worker.run_loop(poll_interval=15)

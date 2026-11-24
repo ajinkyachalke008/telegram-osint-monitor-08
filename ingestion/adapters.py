@@ -203,3 +203,8 @@ class FileImporterAdapter:
             "posts": valid_posts,
         }
         return report
+
+
+# Alias for backward-compatibility
+CSVJSONImporter = FileImporterAdapter
+
