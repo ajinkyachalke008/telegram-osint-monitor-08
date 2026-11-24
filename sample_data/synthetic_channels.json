@@ -1,0 +1,50 @@
+[
+  {
+    "channel_id": "chan_001",
+    "username": "public_mule_deals",
+    "title": "Public Deals Hub (Mule & SIM)",
+    "subscribers": 3420,
+    "primary_threat": "bank_account",
+    "risk_level": "High"
+  },
+  {
+    "channel_id": "chan_002",
+    "username": "rajasthan_fast_docs",
+    "title": "Rajasthan Fast Documents & Biometric",
+    "subscribers": 1850,
+    "primary_threat": "fake_documents",
+    "risk_level": "High"
+  },
+  {
+    "channel_id": "chan_003",
+    "username": "dark_deals_india",
+    "title": "Dark Deals All India",
+    "subscribers": 5200,
+    "primary_threat": "bank_account",
+    "risk_level": "High"
+  },
+  {
+    "channel_id": "chan_004",
+    "username": "p2p_cashout_net",
+    "title": "Crypto P2P Cashout Network",
+    "subscribers": 2900,
+    "primary_threat": "bank_account",
+    "risk_level": "High"
+  },
+  {
+    "channel_id": "chan_005",
+    "username": "underground_arms_sec",
+    "title": "Underground Arms & Security",
+    "subscribers": 950,
+    "primary_threat": "arms",
+    "risk_level": "High"
+  },
+  {
+    "channel_id": "chan_006",
+    "username": "pharma_chem_bazaar",
+    "title": "Pharma & Chemical Market",
+    "subscribers": 4100,
+    "primary_threat": "drugs",
+    "risk_level": "High"
+  }
+]
