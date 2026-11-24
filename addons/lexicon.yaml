@@ -176,6 +176,7 @@ categories:
     default_weight: 3.0
     slang_en:
       - current account for rent
+      - current account rent
       - savings account for sale
       - corporate bank account
       - bank mule
@@ -187,6 +188,7 @@ categories:
       - bank drop
       - dormant account
     slang_hinglish:
+      - khata
       - khata sale
       - current khata chahiye
       - bank khata rent
