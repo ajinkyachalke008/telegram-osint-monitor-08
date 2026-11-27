@@ -9,7 +9,7 @@ A research and hackathon demonstration for **public-source, multi-platform threa
 - Telegram Desktop JSON export ingestion and generic CSV/JSON import.
 - Public Telegram preview and local TGSherlock read-only adapters.
 - Unicode normalization, Hindi/English number normalization, homoglyph handling, and rule-based threat scoring.
-- Candidate extraction for phones, UPI-style identifiers, IFSCs, cryptocurrency addresses, Telegram handles/links, location mentions and prices.
+- Candidate extraction for phones, context-labelled bank-account numbers, UPI-style identifiers, IFSCs, cryptocurrency addresses, Telegram handles/links, location mentions and prices.
 - SQLite storage, source provenance, shared-identifier linking, alerts and a SHA-256 evidence chain.
 - Streamlit dashboard for alerts, evidence review, entity graph, text similarity, geographic mentions, data ingestion, metrics, responsible use and channel discovery.
 - Optional OCR through Tesseract (English, Hindi and Marathi, where language packs are installed).
@@ -77,7 +77,7 @@ Location displays represent locations mentioned in message text or structured po
 - The current ingestion worker uses rule-based scoring. The separate ML classifier is not automatically part of the PS02 worker pipeline.
 - OCR quality depends on source image quality and installed Tesseract language packs; empty or poor OCR results must remain visible as limitations.
 - Exact SHA-256 image matching finds byte-identical files, not visually similar or recompressed variants.
-- Text similarity and entity graphs are exploratory; their clusters need analyst validation and must not be presented as confirmed criminal networks.
+- Text similarity, pHash image candidates and entity graphs are exploratory; their clusters need analyst validation and must not be presented as confirmed criminal networks. Context-labelled bank-account candidates can help test cross-source links, but extraction does not verify account ownership or account status.
 - Geographic results are reported mentions/tags, not physical tracking.
 - Authentication, access controls, independent evidence anchoring, retention governance and production security require further work before any operational deployment.
 
