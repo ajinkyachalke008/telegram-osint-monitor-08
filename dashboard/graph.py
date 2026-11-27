@@ -376,19 +376,15 @@ def get_cross_channel_identifiers(G: nx.Graph) -> List[Dict[str, Any]]:
 
 def plot_entity_graph(
     G: nx.Graph,
-    title: str = "Cross-Channel Link Analysis Graph",
+    title: str = "OSINT Cross-Channel Entity Network",
     label_mode: str = "smart",
     *args,
     **kwargs
 ) -> go.Figure:
     """
-    Generate interactive Plotly Graph of the entity network with smart decluttering.
-    
-    label_mode options:
-      - 'smart': Labels displayed only for Cross-Channel actors and key Channel hubs (avoids label overlap).
-      - 'cross_only': Labels displayed strictly for Cross-Channel Syndicate actors.
-      - 'all': Labels on all nodes.
-      - 'hover_only': All labels hidden on canvas; rich data visible on hover.
+    Generate interactive Plotly Graph of the entity network.
+    Matches the original forensic intelligence specification with crisp white outlines,
+    prominent cross-channel actor identification, and spring force layout.
     """
     if len(G.nodes) == 0:
         fig = go.Figure()
@@ -400,12 +396,10 @@ def plot_entity_graph(
         )
         return fig
 
-    # Layout using Spring layout with tuned repulsion (k) and iterations for spaciousness
-    num_nodes = len(G.nodes)
-    repulsion_k = max(0.65, 3.2 / (num_nodes ** 0.42))
-    pos = nx.spring_layout(G, k=repulsion_k, iterations=75, seed=42)
+    # Layout using Spring layout (k=0.45, seed=42)
+    pos = nx.spring_layout(G, k=0.45, iterations=55, seed=42)
 
-    # Edge traces
+    # Edge traces (clean visible connecting lines)
     edge_x, edge_y = [], []
     for edge in G.edges():
         x0, y0 = pos[edge[0]]
@@ -415,7 +409,7 @@ def plot_entity_graph(
 
     edge_trace = go.Scatter(
         x=edge_x, y=edge_y,
-        line=dict(width=1.2, color="rgba(0, 173, 181, 0.24)"),
+        line=dict(width=1, color="rgba(160, 175, 195, 0.40)"),
         hoverinfo="none",
         mode="lines"
     )
@@ -433,23 +427,23 @@ def plot_entity_graph(
         ntype = data.get("node_type", "Node")
         lbl = data.get("label", node)
         is_cross = bool(data.get("cross_channel"))
-        
-        # Smart label decluttering logic
-        display_label = ""
-        if label_mode == "smart":
-            if is_cross:
-                display_label = f"<b>🚨 {lbl}</b>"
-            elif ntype == "Channel" and G.degree(node) >= 2:
-                short_ch = lbl if len(lbl) <= 16 else f"{lbl[:14]}.."
-                display_label = f"<b>{short_ch}</b>"
-        elif label_mode == "cross_only":
-            if is_cross:
-                display_label = f"<b>🚨 {lbl}</b>"
-        elif label_mode == "all":
-            short_lbl = lbl if len(lbl) <= 18 else f"{lbl[:16]}.."
-            display_label = f"{short_lbl}"
 
-        node_text.append(display_label)
+        # Label display logic: channels and cross-channel actors have clean bold labels
+        if label_mode == "cross_only":
+            if is_cross:
+                node_text.append(f"<b>{lbl}</b>")
+            else:
+                node_text.append("")
+        elif label_mode == "hover_only":
+            node_text.append("")
+        elif label_mode == "all":
+            node_text.append(f"<b>{lbl}</b>")
+        else:
+            # Default "smart" mode: prominent labels on channels and cross-channel actors
+            if is_cross or ntype == "Channel":
+                node_text.append(f"<b>{lbl}</b>")
+            else:
+                node_text.append("")
 
         # Detailed, polished hover tooltip
         if is_cross:
@@ -459,7 +453,7 @@ def plot_entity_graph(
                 f"━━━━━━━━━━━━━━━━━━━━━━━━━━<br>"
                 f"<b>Identifier:</b> <code>{lbl}</code><br>"
                 f"<b>Type:</b> {ntype}<br>"
-                f"<b>Operating In:</b> <b>{data.get('channel_count')} Channels</b><br>"
+                f"<b>Operating In:</b> <b>{data.get('channel_count', 2)} Channels</b><br>"
                 f"<b>Betweenness Centrality:</b> {data.get('betweenness_centrality', 0.0):.4f}<br>"
                 f"<b>Associated Channels:</b><br> • {chans}"
             )
@@ -474,9 +468,9 @@ def plot_entity_graph(
             hover = (
                 f"📝 <b>Post Message</b><br>"
                 f"━━━━━━━━━━━━━━━━━━━━━━━━━━<br>"
-                f"<b>Channel:</b> {data.get('channel')}<br>"
-                f"<b>Category:</b> {data.get('category')}<br>"
-                f"<b>Risk Level:</b> {data.get('risk')}<br>"
+                f"<b>Channel:</b> {data.get('channel', 'Unknown')}<br>"
+                f"<b>Category:</b> {data.get('category', 'Unknown')}<br>"
+                f"<b>Risk Level:</b> {data.get('risk', 'Low')}<br>"
                 f"<b>Text Preview:</b> {data.get('text', '')}"
             )
         else:
@@ -500,7 +494,7 @@ def plot_entity_graph(
         marker=dict(
             color=node_colors,
             size=node_sizes,
-            line=dict(width=2, color="#0A0F1D"),
+            line=dict(width=1.6, color="#FFFFFF"),
             opacity=0.94,
         ),
         textfont=dict(
@@ -515,7 +509,7 @@ def plot_entity_graph(
         layout=go.Layout(
             title=dict(
                 text=title,
-                font=dict(family='Inter, sans-serif', size=16, color="#F8FAFC")
+                font=dict(family='Inter, -apple-system, sans-serif', size=17, color="#FFFFFF")
             ),
             showlegend=False,
             hovermode="closest",
@@ -525,7 +519,7 @@ def plot_entity_graph(
             plot_bgcolor="#0A0F1D",
             paper_bgcolor="#0A0F1D",
             font=dict(color="#ECEFF1"),
-            height=580,
+            height=620,
         )
     )
     return fig

@@ -1,6 +1,5 @@
 """Page 3: Entity Knowledge Graph, Centrality, and Seller Profiling."""
 import sys
-import html
 from pathlib import Path
 
 for p in [Path(__file__).resolve().parent, Path(__file__).resolve().parent.parent, Path(__file__).resolve().parent.parent.parent]:
@@ -8,16 +7,11 @@ for p in [Path(__file__).resolve().parent, Path(__file__).resolve().parent.paren
         sys.path.insert(0, str(p))
 
 import streamlit as st
-import streamlit.components.v1 as components
 import pandas as pd
-import networkx as nx
 
 from core.db import Database
 from dashboard.graph import (
     build_entity_graph,
-    build_direct_syndicate_graph,
-    build_participant_dataset_graph,
-    render_vis_network_html,
     calculate_centrality,
     plot_entity_graph,
     get_cross_channel_identifiers,
@@ -37,39 +31,9 @@ inject_theme()
 render_provenance_banner(page_title="Entity Graph", active_stream="VERIFIED-SYNTHETIC")
 
 st.title("🕸️ Cross-Channel Entity Knowledge Graph & Profiling")
-st.caption("Interactive, physics-driven force-directed network linking broadcast channels, financial payment identifiers, and cross-channel mule syndicates. Every node is touchable, draggable, and movable.")
+st.caption("Multi-relational NetworkX graph linking Telegram channels, payment identifiers, and cross-channel mule syndicates.")
 
 db = Database()
-
-# Sidebar: Graph Topology & Canvas Engine Configuration
-with st.sidebar:
-    st.markdown("""
-    <div style="padding-bottom:8px; border-bottom:1px solid #1E2B45; margin-bottom:12px;">
-        <span style="font-weight:700; color:#00E5FF; font-size:12px; text-transform:uppercase; letter-spacing:0.06em;">⚙️ GRAPH CONFIGURATION</span>
-    </div>
-    """, unsafe_allow_html=True)
-
-    graph_model = st.selectbox(
-        "Dataset Topology Model",
-        [
-            "Direct Syndicate Network (Entities & Channels)",
-            "Cross-Channel Syndicates Only (Targeted Triage)",
-            "Full Forensic Tripartite (Channels + Posts + Entities)",
-            "Official PS02 Participant Dataset Topology",
-        ],
-        index=0,
-        help="Select how the knowledge graph is constructed from database records."
-    )
-
-    canvas_engine = st.radio(
-        "Visualization Canvas Engine",
-        [
-            "🎮 Touchable & Movable Physics (Vis-Network)",
-            "📊 Plotly Static Topology Canvas",
-        ],
-        index=0,
-        help="Touchable & Movable physics engine allows clicking, dragging, and rearranging every node."
-    )
 
 # Load posts and identifiers to construct graph
 with db.get_connection() as conn:
@@ -78,7 +42,7 @@ with db.get_connection() as conn:
         SELECT p.post_uid, p.channel_id as source, p.message_id as post_id, p.raw_text as text,
                p.category as primary_category, p.risk_level
         FROM posts p
-        ORDER BY p.timestamp_utc DESC LIMIT 250
+        ORDER BY p.timestamp_utc DESC LIMIT 200
         """
     ).fetchall()
 
@@ -95,26 +59,8 @@ if not posts_data:
     st.warning("No posts available in database to build graph.")
     st.stop()
 
-# Build selected graph model
-if graph_model == "Direct Syndicate Network (Entities & Channels)":
-    G = build_direct_syndicate_graph(posts_data, only_cross_channel=False)
-    graph_title = "Direct Syndicate Topology (Entities & Monitored Channels)"
-elif graph_model == "Cross-Channel Syndicates Only (Targeted Triage)":
-    G = build_direct_syndicate_graph(posts_data, only_cross_channel=True)
-    graph_title = "Cross-Channel Illicit Syndicate Actors & Compromised Channels"
-elif graph_model == "Official PS02 Participant Dataset Topology":
-    G = build_participant_dataset_graph()
-    graph_title = "Official PS02 Participant Dataset Multi-Platform Topology"
-else:
-    G = build_entity_graph(posts_data)
-    graph_title = "Full Forensic Tripartite Graph (Channels, Posts, Entities)"
-
-# Fallback if selected model is empty
-if len(G.nodes) == 0:
-    G = build_direct_syndicate_graph(posts_data, only_cross_channel=False)
-    graph_title = "Direct Syndicate Topology (Fallback)"
-
-# Graph metrics calculation
+# Build and analyze graph
+G = build_entity_graph(posts_data)
 metrics = calculate_centrality(G)
 cross_actors = get_cross_channel_identifiers(G)
 syndicates = get_connected_syndicates(G)
@@ -122,7 +68,7 @@ syndicates = get_connected_syndicates(G)
 # Top KPI Summary Cards
 kcol1, kcol2, kcol3, kcol4 = st.columns(4)
 with kcol1:
-    st.metric("Total Graph Nodes", len(G.nodes), delta="Physics Active")
+    st.metric("Total Graph Nodes", len(G.nodes))
 with kcol2:
     st.metric("Total Inter-Entity Edges", len(G.edges))
 with kcol3:
@@ -130,40 +76,33 @@ with kcol3:
 with kcol4:
     st.metric("Connected Syndicates", len(syndicates))
 
-st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
+st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
 
-# Controls & Interactive Visual Legend
+# Graph Controls and Interactive Legend
 ctrl_col1, ctrl_col2 = st.columns([1, 1])
 with ctrl_col1:
-    if canvas_engine == "📊 Plotly Static Topology Canvas":
-        label_choice = st.radio(
-            "Canvas Label Display Mode",
-            ["Smart (Syndicates & Key Channels)", "Cross-Channel Actors Only", "Hover Tooltips Only"],
-            horizontal=True,
-            index=0,
-            help="Declutters canvas by showing prominent labels only for key nodes."
-        )
-        mode_map = {
-            "Smart (Syndicates & Key Channels)": "smart",
-            "Cross-Channel Actors Only": "cross_only",
-            "Hover Tooltips Only": "hover_only",
-        }
-        active_mode = mode_map[label_choice]
-    else:
-        st.markdown("""
-        <div style="background-color: #0C1220; border: 1px solid #1A263D; border-radius: 6px; padding: 10px 14px; font-size: 12px; color: #94A3B8;">
-            🎮 <b>Touchable Canvas Active:</b> Touch or click any node to drag it across the canvas. Click empty space to unselect.
-        </div>
-        """, unsafe_allow_html=True)
-        active_mode = "smart"
+    label_choice = st.radio(
+        "Canvas Label Display Mode",
+        ["Key Channels & Cross-Channel Actors", "Cross-Channel Actors Only", "All Node Labels", "Hover Tooltips Only"],
+        horizontal=True,
+        index=0,
+        help="Declutters canvas by showing prominent labels only for key nodes. Hover over any node for full forensic details."
+    )
+    mode_map = {
+        "Key Channels & Cross-Channel Actors": "smart",
+        "Cross-Channel Actors Only": "cross_only",
+        "All Node Labels": "all",
+        "Hover Tooltips Only": "hover_only",
+    }
+    active_mode = mode_map.get(label_choice, "smart")
 
 with ctrl_col2:
     st.markdown("""
     <div style="background-color: #0C1220; border: 1px solid #1A263D; border-radius: 6px; padding: 10px 14px; font-size: 11.5px;">
         <b style="color: #94A3B8; text-transform: uppercase; letter-spacing: 0.04em;">Node Legend:</b><br/>
         <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px;">
-            <span><span style="color:#FF3366;">◆</span> <b>Cross-Channel (≥2 Chans)</b></span>
-            <span><span style="color:#00ADB5;">■</span> Channel Hub</span>
+            <span><span style="color:#FF3366;">●</span> <b>Cross-Channel (≥2 Chans)</b></span>
+            <span><span style="color:#00ADB5;">●</span> Channel Hub</span>
             <span><span style="color:#FFD369;">●</span> UPI ID</span>
             <span><span style="color:#FF5722;">●</span> Phone</span>
             <span><span style="color:#9C27B0;">●</span> Crypto</span>
@@ -174,18 +113,28 @@ with ctrl_col2:
     </div>
     """, unsafe_allow_html=True)
 
-st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
+st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
 
-# Render Graph Visualization based on chosen canvas engine
-if "Touchable & Movable" in canvas_engine:
-    vis_html = render_vis_network_html(G, height=660, title=graph_title)
-    components.html(vis_html, height=690)
-else:
-    try:
-        fig = plot_entity_graph(G, title=graph_title, label_mode=active_mode)
-    except TypeError:
-        fig = plot_entity_graph(G, title=graph_title)
-    st.plotly_chart(fig, use_container_width=True)
+# Main Graph Visualization (Exact Layout Matching User Screenshot)
+st.subheader("🌐 Interactive Entity Knowledge Graph")
+st.caption("Drag, zoom, and hover on nodes. Red nodes represent actors identified across 2 or more channels.")
+
+fig = plot_entity_graph(
+    G,
+    title="OSINT Cross-Channel Entity Network",
+    label_mode=active_mode
+)
+
+st.plotly_chart(
+    fig,
+    use_container_width=True,
+    config={
+        "displayModeBar": True,
+        "scrollZoom": True,
+        "displaylogo": False,
+        "modeBarButtonsToAdd": ["drawline", "drawcircle", "eraseshape"]
+    }
+)
 
 st.divider()
 
@@ -207,7 +156,7 @@ with tab1:
         })
         st.dataframe(df_cross[["Identifier Value", "Entity Type", "Active Channels Count", "Channel List", "Node Degree", "Betweenness Centrality"]], use_container_width=True, hide_index=True)
     else:
-        st.info("No cross-channel actors identified in the current graph view.")
+        st.info("No cross-channel actors identified in the current sample.")
 
 with tab2:
     st.subheader("Connected Campaign Syndicates")
@@ -220,7 +169,7 @@ with tab2:
                 st.markdown(f"**Total Identifier Nodes:** `{syn['identifier_count']}`")
                 st.markdown(f"**Associated Posts:** `{syn['post_count']}`")
     else:
-        st.info("No multi-node connected syndicates detected.")
+        st.info("No clustered syndicates found.")
 
 with tab3:
     st.subheader("👤 Deep Seller Dossier Lookup")
