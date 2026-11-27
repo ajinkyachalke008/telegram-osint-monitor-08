@@ -116,7 +116,10 @@ with ctrl_col2:
 st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
 
 # Render Graph Visualization
-fig = plot_entity_graph(G, title="OSINT Cross-Channel Entity Network & Syndicate Topology", label_mode=active_mode)
+try:
+    fig = plot_entity_graph(G, title="OSINT Cross-Channel Entity Network & Syndicate Topology", label_mode=active_mode)
+except TypeError:
+    fig = plot_entity_graph(G, title="OSINT Cross-Channel Entity Network & Syndicate Topology")
 st.plotly_chart(fig, use_container_width=True)
 
 st.divider()
@@ -166,7 +169,7 @@ with tab3:
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; font-size:13px;">
                     <div><b>First Observed:</b> <code style="color:#94A3B8;">{profile['first_seen']}</code></div>
                     <div><b>Last Observed:</b> <code style="color:#94A3B8;">{profile['last_seen']}</code></div>
-                    <div><b>Channels Active ({profile['channel_count']}):</b> <code>{', '.join(profile['channels'])}</code></div>
+                    <div><b>Channels Active ({profile.get('channel_count', 0)}):</b> <code>{', '.join(str(c) for c in profile.get('channels', []))}</code></div>
                     <div><b>Total Linked Posts:</b> <b>{profile['total_posts']}</b></div>
                 </div>
             </div>

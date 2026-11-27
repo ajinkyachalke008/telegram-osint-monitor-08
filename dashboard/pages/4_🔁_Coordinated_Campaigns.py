@@ -105,4 +105,5 @@ else:
             st.markdown("#### Matched Post Instances")
             matched_posts = cl.get("posts", [])
             for mp in matched_posts[:6]:
-                st.caption(f"• **{mp.get('source')}** (Msg #{mp.get('post_id')} | {mp.get('timestamp')}): {mp.get('text')[:120]}...")
+                mp_text = (mp.get("text") or "")[:120]
+                st.caption(f"• **{mp.get('source')}** (Msg #{mp.get('post_id')} | {mp.get('timestamp')}): {mp_text}...")

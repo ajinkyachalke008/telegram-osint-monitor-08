@@ -207,7 +207,7 @@ def render_live_feed(r_filter, s_filter, c_filter):
                     </div>
                 </div>
                 <div style="margin-top:10px; font-size:14px; color:#E2E8F0; line-height:1.45; background-color:rgba(0,0,0,0.22); padding:10px 12px; border-radius:6px; border:1px solid rgba(255,255,255,0.04);">
-                    {html.escape(alert['raw_text'])}
+                    {html.escape(alert.get('raw_text') or '')}
                 </div>
                 {ident_block}
                 {ev_html}
@@ -217,28 +217,32 @@ def render_live_feed(r_filter, s_filter, c_filter):
             # Triage action toolbar
             btn_col1, btn_col2, btn_col3 = st.columns([1, 1, 2])
             with btn_col1:
+                status_opts = ["new", "reviewing", "confirmed", "false_positive"]
+                curr_st = alert.get("status", "new")
+                st_idx = status_opts.index(curr_st) if curr_st in status_opts else 0
                 new_st = st.selectbox(
                     "Status",
-                    ["new", "reviewing", "confirmed", "false_positive"],
-                    index=["new", "reviewing", "confirmed", "false_positive"].index(alert["status"]),
+                    status_opts,
+                    index=st_idx,
                     key=f"status_{alert['alert_id']}",
                     label_visibility="collapsed"
                 )
-                if new_st != alert["status"]:
+                if new_st != alert.get("status"):
                     db.update_alert_status(alert["alert_id"], new_st, notes="Updated via Live Alerts UI")
                     st.toast(f"Updated alert {alert['alert_id']} to '{new_st}'", icon="✅")
                     st.rerun()
 
             with btn_col2:
+                notes_val = alert.get("analyst_notes") or alert.get("notes") or ""
                 notes_input = st.text_input(
                     "Triage Notes",
-                    value=alert.get("notes") or "",
+                    value=notes_val,
                     key=f"notes_{alert['alert_id']}",
                     placeholder="Add triage notes...",
                     label_visibility="collapsed"
                 )
-                if notes_input != (alert.get("notes") or "") and st.button("Save", key=f"btn_save_{alert['alert_id']}"):
-                    db.update_alert_status(alert["alert_id"], alert["status"], notes=notes_input)
+                if notes_input != notes_val and st.button("Save", key=f"btn_save_{alert['alert_id']}"):
+                    db.update_alert_status(alert["alert_id"], alert.get("status", "new"), notes=notes_input)
                     st.toast(f"Notes saved for alert {alert['alert_id']}", icon="💾")
                     st.rerun()
 

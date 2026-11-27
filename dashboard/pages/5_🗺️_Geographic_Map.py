@@ -53,7 +53,7 @@ with db.get_connection() as conn:
 geo_counts = {}
 all_categories = set()
 for r in rows:
-    text = r["raw_text"]
+    text = r["raw_text"] or ""
     locs = extract_locations(text)
     for loc in locs:
         lname = loc["name"].lower()

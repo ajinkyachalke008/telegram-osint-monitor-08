@@ -85,8 +85,8 @@ with col_left:
             <div><span style="color:#64748B;">Channel / Source:</span><br><b style="color:#00ADB5;">{alert['channel_id']}</b> ({alert['platform']})</div>
             <div><span style="color:#64748B;">Timestamp (UTC):</span><br><span style="font-family:'JetBrains Mono',monospace; color:#94A3B8;">{alert['timestamp_utc']}</span></div>
             <div><span style="color:#64748B;">Data Provenance:</span><br><span class="badge-pill badge-source">{alert['ingestion_source']}</span></div>
-            <div><span style="color:#64748B;">Risk Level:</span><br><b style="color:{'#FF3366' if alert['risk_level']=='High' else '#FFAA00'};">[{alert['risk_level'].upper()}]</b></div>
-            <div><span style="color:#64748B;">Threat Score:</span><br><b style="color:#F8FAFC;">{alert['threat_score']:.1f} / 10.0</b></div>
+            <div><span style="color:#64748B;">Risk Level:</span><br><b style="color:{'#FF3366' if alert.get('risk_level')=='High' else '#FFAA00'};">[{str(alert.get('risk_level') or 'LOW').upper()}]</b></div>
+            <div><span style="color:#64748B;">Threat Score:</span><br><b style="color:#F8FAFC;">{float(alert.get('threat_score') or 0.0):.1f} / 10.0</b></div>
         </div>
     </div>
     """, unsafe_allow_html=True)

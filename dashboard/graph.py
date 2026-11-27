@@ -375,6 +375,8 @@ def plot_entity_graph(
     G: nx.Graph,
     title: str = "Cross-Channel Link Analysis Graph",
     label_mode: str = "smart",
+    *args,
+    **kwargs
 ) -> go.Figure:
     """
     Generate interactive Plotly Graph of the entity network with smart decluttering.
