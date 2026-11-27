@@ -73,6 +73,8 @@ with col_left:
     source_metadata = json.loads(alert.get('source_metadata_json') or '{}')
     if source_metadata:
         st.write('Original sender:', source_metadata.get('sender_name') or source_metadata.get('author') or 'Not supplied')
+        if source_metadata.get('sender_id'):
+            st.write('Export sender account ID:', source_metadata['sender_id'])
         if source_metadata.get('forwarded_from'):
             st.write('Forwarded from:', source_metadata['forwarded_from'])
         if source_metadata.get('edited_at'):
