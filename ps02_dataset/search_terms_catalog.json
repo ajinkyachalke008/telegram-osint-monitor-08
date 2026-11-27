@@ -426,6 +426,72 @@
         "account compromised"
       ],
       "regional_aliases": {}
+    },
+    {
+      "id": "weapons_firearm_context",
+      "label": "Weapons and firearm references (context only)",
+      "purpose": "Neutral vocabulary for reviewing weapons-related mentions in public-safety, news, prevention, incident or other context. A match does not indicate possession, sale, intent, illegality or wrongdoing.",
+      "high_context_phrases": [
+        "country-made pistol",
+        "country made pistol",
+        "country-made firearm",
+        "country made firearm",
+        "unlicensed firearm",
+        "illegal firearm",
+        "firearm recovered",
+        "shots fired",
+        "gunshot injury"
+      ],
+      "broad_terms": [
+        "gun",
+        "guns",
+        "firearm",
+        "firearms",
+        "weapon",
+        "weapons",
+        "arms",
+        "pistol",
+        "revolver",
+        "rifle",
+        "shotgun",
+        "handgun",
+        "ammunition",
+        "ammo",
+        "bullet",
+        "bullets",
+        "cartridge",
+        "knife",
+        "blade"
+      ],
+      "regional_aliases": {
+        "hi_hinglish": [
+          "desi katta",
+          "katta",
+          "tamancha",
+          "bandook",
+          "banduk",
+          "hathiyar",
+          "asla",
+          "desi pistol"
+        ],
+        "mr": [
+          "gavti katta",
+          "gavthi katta",
+          "banduk",
+          "bandook",
+          "chaku",
+          "talwar"
+        ]
+      },
+      "interpretation": "Context-only. Require human review of surrounding context. Do not score or infer a sale, threat, possession, offence or intent from any single term.",
+      "excluded_from_this_catalogue": [
+        "coded transaction terms",
+        "pricing or quantity phrases",
+        "buyer or seller solicitation phrases",
+        "delivery or procurement language",
+        "weapon-use instructions",
+        "evasion or concealment language"
+      ]
     }
   ],
   "sources": [

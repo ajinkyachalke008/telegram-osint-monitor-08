@@ -328,6 +328,20 @@ Do not infer fraud from terms such as `investment`, `crypto`, `profit`, `loan` o
 
 Treat these as highly sensitive categories. The demo should show only aggregate category counts or a redacted text match, never intimate imagery or personal victim details.
 
+## J. Weapons and firearm references (context only)
+
+The existing legacy project lexicon already contains common terms such as:
+
+- English: `pistol`, `revolver`, `country made pistol`, `rifle`, `shotgun`, `ammo`, `bullets`, `cartridge`
+- Hindi/Hinglish: `desi katta`, `katta`, `tamancha`, `bandook`, `hathiyar`, `asla`, `desi pistol`
+- Marathi variants present in the legacy lexicon: `gavti katta`, `banduk`, `chaku`, `talwar`
+
+The machine-readable PS02 catalogue includes a **context-only** subset of ordinary object names and neutral incident/public-safety phrases. It includes `gun`, `firearm`, `weapon`, `pistol`, `revolver`, `rifle`, `shotgun`, `ammunition`, `bullet`, `cartridge`, `knife`, `blade`, `desi katta`, `katta`, `tamancha`, `bandook`, `banduk`, `hathiyar`, `asla`, `desi pistol`, and `gavti/gavthi katta`.
+
+**Interpretation warning:** these words can appear in news, education, fiction, sports, safety campaigns, reports of incidents, legal discussions or unrelated everyday conversation. A match is only a mention. It does not establish a weapon sale, possession, threat, intent, illegal conduct or the identity of an author.
+
+Do not add coded sales language, price/quantity phrases, buyer/seller solicitations, acquisition or delivery instructions, concealment/evasion terms, or instructions for weapon use. Keep this category visibly marked **Context only** and do not assign a severity or risk score.
+
 ## Suggested search UX behaviour
 
 - Default suggestions should favour the higher-context multi-word phrases above.
