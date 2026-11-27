@@ -49,7 +49,7 @@ class PostRecord:
 @dataclass
 class IdentifierRecord:
     identifier_id: str
-    type: str  # UPI, Phone, BankAccount, Crypto, Username, IFSC, Location
+    type: str  # UPI, Phone, BankAccount, TelegramAccount, Crypto, Username, IFSC, Location
     raw_value: str
     normalized_value: str
     channel_count: int = 1
