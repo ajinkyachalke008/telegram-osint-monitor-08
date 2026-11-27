@@ -1,5 +1,0 @@
-# Optional Multilingual Embeddings Extension (PyTorch + Sentence-Transformers)
-# Note: First-run loading will download sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2 (~470 MB) from HuggingFace Hub.
--r requirements.txt
-torch>=2.0.0
-sentence-transformers>=2.2.0
