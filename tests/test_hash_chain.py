@@ -61,3 +61,22 @@ def test_hash_chain_tamper_detection(temp_db):
     valid, msg, broken_idx = verify_evidence_chain(blocks)
     assert valid is False
     assert "Tampering detected at block 2" in msg
+
+
+
+def test_hash_chain_binds_media_and_source_metadata_hashes(temp_db):
+    post = PostRecord(platform="Telegram", channel_id="ch_media", message_id="1",
+                      timestamp_utc="2026-11-27T10:00:00Z", raw_text="Original source text")
+    assert temp_db.insert_post(post) is True
+    media_hash = "a" * 64
+    metadata_hash = "b" * 64
+    block = build_chained_evidence_block(
+        temp_db, post.post_uid, post.channel_id, post.message_id, post.timestamp_utc,
+        post.raw_text, media_sha256=media_hash, source_metadata_sha256=metadata_hash,
+    )
+    assert media_hash in block.canonical_json
+    assert metadata_hash in block.canonical_json
+    temp_db.record_evidence_block(block)
+    valid, message, count = verify_evidence_chain(temp_db.get_all_evidence_blocks())
+    assert valid is True
+    assert count == 1
