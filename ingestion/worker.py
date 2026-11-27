@@ -48,10 +48,9 @@ class IngestionWorker:
         # Extract and score the combined text while retaining the original raw evidence.
         extracted = extract_all_entities(post.normalized_text, channel_handle=post.channel_id)
         if post.media_hash:
-            extracted.setdefault('media_sha256', []).append(post.media_hash)
-            extracted.setdefault('all_flat', []).append({
-                'value': post.media_hash, 'type': 'MediaSHA256', 'source': 'media'
-            })
+            # Preserve exact media identity for audit/campaign analysis without
+            # treating a reused image as a person/account identifier.
+            extracted['media_sha256'] = [post.media_hash]
         score_res = self.scorer.score(post.normalized_text, identifiers=extracted)
         post.category = score_res.primary_category or "Clean"
         post.risk_level = score_res.risk_level
