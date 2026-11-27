@@ -127,7 +127,9 @@ def build_chained_evidence_block(
     channel: str,
     message_id: Union[int, str],
     timestamp: Union[str, datetime],
-    text: str
+    text: str,
+    media_sha256: Optional[str] = None,
+    source_metadata_sha256: Optional[str] = None,
 ) -> EvidenceBlock:
     """
     Construct a new EvidenceBlock chained cryptographically to the prior block:
@@ -141,6 +143,11 @@ def build_chained_evidence_block(
         "text": text or "",
         "timestamp_utc": ts_utc,
     }
+    # Optional integrity references preserve backward compatibility for older blocks.
+    if media_sha256:
+        core_tuple["media_sha256"] = str(media_sha256)
+    if source_metadata_sha256:
+        core_tuple["source_metadata_sha256"] = str(source_metadata_sha256)
     canonical_str = canonical_json(core_tuple)
 
     # Fetch latest block from database
