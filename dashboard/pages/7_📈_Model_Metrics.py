@@ -6,10 +6,16 @@ import json
 from pathlib import Path
 import streamlit as st
 import pandas as pd
+import plotly.express as px
+
+from dashboard.provenance_banner import render_provenance_banner
+from dashboard.theme import inject_theme, apply_plotly_theme
 
 st.set_page_config(page_title="Model Metrics | telegram-osint-monitor-08", page_icon="📈", layout="wide")
 
-from dashboard.provenance_banner import render_provenance_banner
+# Inject Master Theme
+inject_theme()
+
 render_provenance_banner(page_title="Model Metrics", active_stream="VERIFIED-SYNTHETIC")
 
 st.title("📈 Machine Learning Performance & Validation Benchmarks (R2)")
@@ -34,7 +40,13 @@ if data:
     default_model = data.get("active_pipeline_default", "Model A")
     risk_notice = data.get("real_data_risk", "")
 
-    st.info(f"🕒 **Last Evaluation Timestamp:** `{timestamp}` | **Benchmark Split:** `{dataset_name}` ({sample_count} samples) | **Pipeline Default:** `{default_model}`")
+    st.markdown(f"""
+    <div style="background-color: #0C1220; border: 1px solid #1A263D; border-radius: 6px; padding: 10px 16px; margin-bottom: 16px; font-size: 12.5px; color: #94A3B8;">
+        🕒 <b>Last Evaluation:</b> <code style="color:#E2E8F0;">{timestamp}</code> &nbsp;|&nbsp; 
+        <b>Benchmark Split:</b> <code style="color:#E2E8F0;">{dataset_name}</code> ({sample_count} samples) &nbsp;|&nbsp; 
+        <b>Pipeline Default:</b> <span style="color:#00E5FF; font-weight:700;">{default_model}</span>
+    </div>
+    """, unsafe_allow_html=True)
 
     # High-level Metrics Row
     m_a = data.get("model_a_tfidf", {})
@@ -53,7 +65,7 @@ if data:
     st.markdown("---")
 
     # Real-Data Statistical Risk Notice
-    st.warning(f"⚠️ **REAL-DATA RISK (STATISTICAL MODEL vs DETERMINISTIC):**\n\n{risk_notice}\n\n"
+    st.warning(f"⚠️ **REAL-DATA STATISTICAL RISK DECLARATION:**\n\n{risk_notice}\n\n"
                "• In operational deployment, model predictions constitute **investigative leads**, not automated evidence.\n"
                "• True real-world accuracy on uncurated slang, voice notes, and evasion phrasing may be lower than synthetic benchmarks.\n"
                "• Human officer verification is mandatory before action.")
@@ -97,11 +109,4 @@ if data:
                 "Support (Samples)": int(ra.get("support", 0))
             })
 
-    st.dataframe(pd.DataFrame(table_rows), use_container_width=True)
-
-    with st.expander("📄 Full Markdown Documentation (docs/METRICS.md)"):
-        if METRICS_MD.exists():
-            st.markdown(METRICS_MD.read_text(encoding="utf-8"))
-else:
-    st.warning("⚠️ Dynamic evaluation results file `data/model_evaluation_results.json` not found.\n\n"
-               "Execute `python eval/evaluate_model.py` in the workspace terminal to benchmark models and generate dynamic metrics.")
+    st.dataframe(pd.DataFrame(table_rows), use_container_width=True, hide_index=True)

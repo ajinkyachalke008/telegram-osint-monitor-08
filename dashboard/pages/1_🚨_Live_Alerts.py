@@ -15,46 +15,28 @@ from core.db import Database
 from core.models import now_utc_iso
 from dashboard.provenance_banner import render_provenance_banner
 from dashboard.demo_sidebar import render_demo_maintenance_sidebar
+from dashboard.theme import inject_theme
 
 st.set_page_config(page_title="Live Alerts | telegram-osint-monitor-08", page_icon="🚨", layout="wide")
 
-st.markdown("""
-<style>
-    .threat-card-high {
-        background-color: #231215; border-left: 5px solid #FF3366;
-        padding: 16px; border-radius: 8px; margin-bottom: 14px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-    }
-    .threat-card-med {
-        background-color: #242013; border-left: 5px solid #FFAA00;
-        padding: 16px; border-radius: 8px; margin-bottom: 14px;
-    }
-    .threat-card-low {
-        background-color: #14221A; border-left: 5px solid #00CC88;
-        padding: 16px; border-radius: 8px; margin-bottom: 14px;
-    }
-    .badge-pill {
-        display: inline-block; padding: 2px 7px; border-radius: 10px;
-        font-size: 11px; font-weight: bold; margin-right: 5px; margin-bottom: 3px;
-    }
-    .badge-upi { background-color: #3E2723; color: #FFE082; border: 1px solid #FFE082; }
-    .badge-phone { background-color: #372023; color: #FF8A80; border: 1px solid #FF8A80; }
-    .badge-crypto { background-color: #261738; color: #EA80FC; border: 1px solid #EA80FC; }
-    .badge-user { background-color: #102A43; color: #82B1FF; border: 1px solid #82B1FF; }
-    .badge-source { background-color: #1C2833; color: #B0BEC5; border: 1px solid #455A64; }
-</style>
-""", unsafe_allow_html=True)
+# Inject Master Theme
+inject_theme()
 
 # Standard Provenance Banner
 render_provenance_banner(page_title="Live Alerts", active_stream="VERIFIED-SYNTHETIC")
 
 st.title("🚨 Live Threat Alerts & Triage Workflow")
-st.caption("Actionable illegal trade detections across public channels with 5-second live streaming auto-refresh.")
+st.caption("Actionable illegal trade detections across public broadcast channels with 5-second streaming auto-refresh.")
 
 db = Database()
 
 # Sidebar Filters
-st.sidebar.header("🔍 Alert Filters")
+st.sidebar.markdown("""
+<div style="padding-bottom:8px; border-bottom:1px solid #1E2B45; margin-bottom:12px;">
+    <span style="font-weight:700; color:#00E5FF; font-size:12px; text-transform:uppercase; letter-spacing:0.06em;">🔍 ALERT FILTERS</span>
+</div>
+""", unsafe_allow_html=True)
+
 risk_filter = st.sidebar.multiselect(
     "Risk Level", ["High", "Medium", "Low"], default=["High", "Medium"]
 )
@@ -62,7 +44,7 @@ status_filter = st.sidebar.selectbox(
     "Workflow Status", ["All", "new", "reviewing", "confirmed", "false_positive"], index=0
 )
 category_filter = st.sidebar.selectbox(
-    "Category",
+    "Threat Category",
     ["All", "drugs", "arms", "bank_account", "atm_card", "sim_card", "fake_documents", "net_banking_kit"],
     index=0
 )
@@ -130,9 +112,26 @@ def render_live_feed(r_filter, s_filter, c_filter):
                 entry["channels"].append(a["channel_id"])
             entry["all_alerts"].append(a)
 
-    col_meta1, col_meta2 = st.columns([2, 1])
+    # Top KPI Metrics Strip
+    high_count = sum(1 for a in alerts if a["risk_level"] == "High")
+    med_count = sum(1 for a in alerts if a["risk_level"] == "Medium")
+    new_status_count = sum(1 for a in alerts if a["status"] == "new")
+
+    mk1, mk2, mk3, mk4 = st.columns(4)
+    with mk1:
+        st.metric("Total Filtered Alerts", f"{len(alerts)}")
+    with mk2:
+        st.metric("Critical High Risk", f"{high_count}", delta="Priority Triage", delta_color="inverse")
+    with mk3:
+        st.metric("Medium Risk Alerts", f"{med_count}")
+    with mk4:
+        st.metric("Unreviewed (New)", f"{new_status_count}", delta=f"{len(grouped_cards)} Deduplicated")
+
+    st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
+
+    col_meta1, col_meta2 = st.columns([3, 1])
     with col_meta1:
-        st.markdown(f"**Found {len(alerts)} alerts ({len(grouped_cards)} deduplicated cards) matching active filters.** &nbsp; *(Auto-refresh active: checks every 5s)*")
+        st.markdown(f"<span style='color:#94A3B8; font-size:13px;'>Showing <b>{len(alerts)}</b> raw detections grouped into <b>{len(grouped_cards)}</b> cross-channel campaigns.</span>", unsafe_allow_html=True)
     with col_meta2:
         if alerts:
             df_export = pd.DataFrame([{
@@ -147,7 +146,7 @@ def render_live_feed(r_filter, s_filter, c_filter):
                 "evidence_hash": a.get("current_hash")
             } for a in alerts])
             csv_data = df_export.to_csv(index=False).encode("utf-8")
-            st.download_button("📥 Export Alerts (CSV)", csv_data, "threat_alerts.csv", "text/csv")
+            st.download_button("📥 Export Alerts (CSV)", csv_data, "threat_alerts.csv", "text/csv", use_container_width=True)
 
     st.divider()
 
@@ -158,6 +157,7 @@ def render_live_feed(r_filter, s_filter, c_filter):
     for card in grouped_cards:
         alert = card["primary"]
         card_class = "threat-card-high" if alert["risk_level"] == "High" else "threat-card-med" if alert["risk_level"] == "Medium" else "threat-card-low"
+        risk_color = "#FF3366" if alert["risk_level"] == "High" else "#FFAA00" if alert["risk_level"] == "Medium" else "#00ADB5"
         post_uid = alert["post_uid"]
         other_channels = [ch for ch in card["channels"] if ch != alert["channel_id"]]
 
@@ -165,99 +165,82 @@ def render_live_feed(r_filter, s_filter, c_filter):
         idents = db.get_post_identifiers(post_uid)
 
         with st.container():
+            cross_badge = ""
+            if other_channels:
+                cross_badge = f'<span style="background-color:rgba(255, 51, 102, 0.16); color:#FF80AA; border:1px solid rgba(255, 51, 102, 0.4); padding:2px 7px; border-radius:4px; font-weight:700; font-size:11px; margin-left:6px;">🔁 CROSS-CHANNEL (+{len(other_channels)} channels)</span>'
+
+            # Identifiers HTML
+            ident_htmls = []
+            for i in idents:
+                itype = i["type"]
+                ival = i["normalized_value"]
+                badge_class = "badge-upi" if "UPI" in itype else "badge-phone" if "Phone" in itype else "badge-crypto" if "Crypto" in itype else "badge-user"
+                ident_htmls.append(f'<span class="badge-pill {badge_class}">{itype}: {html.escape(ival)}</span>')
+            
+            ident_block = f"<div style='margin-top:10px;'>{' '.join(ident_htmls)}</div>" if ident_htmls else ""
+
+            # Evidence block link
+            ev_html = ""
+            if alert.get("current_hash"):
+                ev_html = f"""
+                <div style="margin-top:8px; font-size:11.5px; color:#64748B; font-family:'JetBrains Mono',monospace;">
+                    🔒 Block #{alert.get('block_height')} &bull; SHA-256: <span style="color:#38BDF8;">{alert.get('current_hash')[:16]}...{alert.get('current_hash')[-8:]}</span>
+                </div>
+                """
+
             st.markdown(f"""
             <div class="{card_class}">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <span><b>📢 Channel:</b> {html.escape(str(alert['channel_id']))} &nbsp;|&nbsp; <b>Platform:</b> {html.escape(str(alert['platform']))} &nbsp;|&nbsp; <b>Time:</b> {alert['timestamp_utc']}</span>
-                    <span>
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
+                    <div>
+                        <span style="font-weight:700; color:#F8FAFC; font-size:13.5px;">📢 {html.escape(str(alert['channel_id']))}</span>
+                        <span style="color:#64748B; font-size:12px; margin: 0 4px;">&bull;</span>
+                        <span style="color:#94A3B8; font-size:12px;">{html.escape(str(alert['platform']))}</span>
+                        <span style="color:#64748B; font-size:12px; margin: 0 4px;">&bull;</span>
+                        <span style="color:#64748B; font-size:12px; font-family:'JetBrains Mono',monospace;">{alert['timestamp_utc']}</span>
+                        {cross_badge}
+                    </div>
+                    <div>
                         <span class="badge-pill badge-source">{alert['ingestion_source']}</span>
-                        <span style="font-weight:bold; color:{'#FF3366' if alert['risk_level'] == 'High' else '#FFAA00'};">[{alert['risk_level'].upper()}]</span>
-                    </span>
+                        <span style="background-color:rgba({255 if alert['risk_level']=='High' else 255 if alert['risk_level']=='Medium' else 0}, {51 if alert['risk_level']=='High' else 170 if alert['risk_level']=='Medium' else 173}, {102 if alert['risk_level']=='High' else 0 if alert['risk_level']=='Medium' else 181}, 0.16); color:{risk_color}; border:1px solid {risk_color}; padding:2px 8px; border-radius:4px; font-weight:700; font-size:11px; letter-spacing:0.04em;">
+                            [{alert['risk_level'].upper()}]
+                        </span>
+                    </div>
                 </div>
-                <div style="margin-top:8px; font-size:15px;">
+                <div style="margin-top:10px; font-size:14px; color:#E2E8F0; line-height:1.45; background-color:rgba(0,0,0,0.22); padding:10px 12px; border-radius:6px; border:1px solid rgba(255,255,255,0.04);">
                     {html.escape(alert['raw_text'])}
                 </div>
-                <div style="margin-top:8px;">
-                    <b>Category:</b> {alert['category']} &nbsp;|&nbsp; <b>Threat Score:</b> {alert['threat_score']:.1f}/10 &nbsp;|&nbsp; <b>Status:</b> <code>{alert['status']}</code>
-                </div>
+                {ident_block}
+                {ev_html}
             </div>
             """, unsafe_allow_html=True)
 
-            # Cross-channel indicator for duplicate ads across multiple channels
-            if other_channels:
-                num_other = len(other_channels)
-                channel_links = []
-                for ch in other_channels:
-                    ch_clean = str(ch).strip()
-                    if ch_clean.startswith("http://") or ch_clean.startswith("https://"):
-                        ch_url = ch_clean
-                        ch_label = ch_clean.split("/")[-1]
-                    elif ch_clean.startswith("t.me/"):
-                        ch_url = f"https://{ch_clean}"
-                        ch_label = ch_clean
-                    elif ch_clean.startswith("@"):
-                        ch_url = f"https://t.me/{ch_clean[1:]}"
-                        ch_label = ch_clean
-                    else:
-                        ch_url = f"https://t.me/{ch_clean}"
-                        ch_label = f"@{ch_clean}"
-                    channel_links.append(f'<a href="{ch_url}" target="_blank" style="color:#00ADB5; text-decoration:underline; font-weight:bold;">{html.escape(ch_label)}</a>')
+            # Triage action toolbar
+            btn_col1, btn_col2, btn_col3 = st.columns([1, 1, 2])
+            with btn_col1:
+                new_st = st.selectbox(
+                    "Status",
+                    ["new", "reviewing", "confirmed", "false_positive"],
+                    index=["new", "reviewing", "confirmed", "false_positive"].index(alert["status"]),
+                    key=f"status_{alert['alert_id']}",
+                    label_visibility="collapsed"
+                )
+                if new_st != alert["status"]:
+                    db.update_alert_status(alert["alert_id"], new_st, notes="Updated via Live Alerts UI")
+                    st.toast(f"Updated alert {alert['alert_id']} to '{new_st}'", icon="✅")
+                    st.rerun()
 
-                also_posted_html = f"""
-                <div style="margin-top:6px; margin-bottom:8px; font-size:13px; color:#FFE082; background-color:#2A2315; padding:6px 10px; border-radius:5px; border-left:3px solid #FFAA00;">
-                    🔁 <b>Also posted in {num_other} channel{'s' if num_other > 1 else ''}:</b> {' • '.join(channel_links)}
-                </div>
-                """
-                st.markdown(also_posted_html, unsafe_allow_html=True)
-
-            # Identifiers row
-            if idents:
-                pills_html = "<div><b>Extracted Identifiers:</b> "
-                for i in idents:
-                    itype = i["type"]
-                    val = i["normalized_value"]
-                    bclass = "badge-upi" if itype == "UPI" else "badge-phone" if itype == "Phone" else "badge-crypto" if "Crypto" in itype else "badge-user"
-                    cross_note = " 🚨(2+ Chans)" if i.get("cross_channel") else ""
-                    pills_html += f'<span class="badge-pill {bclass}">{itype}: {html.escape(val)}{cross_note}</span> '
-                pills_html += "</div>"
-                st.markdown(pills_html, unsafe_allow_html=True)
-
-            # Evidence block summary
-            if alert.get("current_hash"):
-                st.caption(f"🔒 **Evidence Block #{alert.get('block_height')}:** `{alert['current_hash']}`")
-
-            # Analyst Workflow Action
-            with st.expander(f"⚙️ Triage & Analyst Action for Alert {alert['alert_id']}"):
-                act_col1, act_col2, act_col3 = st.columns([1, 2, 1])
-                with act_col1:
-                    new_status = st.selectbox(
-                        "Update Status",
-                        ["new", "reviewing", "confirmed", "false_positive"],
-                        index=["new", "reviewing", "confirmed", "false_positive"].index(alert["status"]),
-                        key=f"status_{alert['alert_id']}"
-                    )
-                with act_col2:
-                    analyst_notes = st.text_input(
-                        "Analyst Notes",
-                        value=alert.get("analyst_notes") or "",
-                        key=f"notes_{alert['alert_id']}"
-                    )
-                with act_col3:
-                    st.write("")
-                    st.write("")
-                    if st.button("Save Verdict", key=f"btn_{alert['alert_id']}"):
-                        for a_rec in card["all_alerts"]:
-                            db.update_alert_status(a_rec["alert_id"], new_status, analyst_notes)
-                            db.log_audit("alert_status_change", {
-                                "alert_id": a_rec["alert_id"],
-                                "old_status": a_rec["status"],
-                                "new_status": new_status,
-                                "notes": analyst_notes
-                            })
-                        st.success(f"Status updated to '{new_status}' (applied to {len(card['all_alerts'])} alert{'s' if len(card['all_alerts']) > 1 else ''})")
-                        st.rerun()
-
-            st.write("")
+            with btn_col2:
+                notes_input = st.text_input(
+                    "Triage Notes",
+                    value=alert.get("notes") or "",
+                    key=f"notes_{alert['alert_id']}",
+                    placeholder="Add triage notes...",
+                    label_visibility="collapsed"
+                )
+                if notes_input != (alert.get("notes") or "") and st.button("Save", key=f"btn_save_{alert['alert_id']}"):
+                    db.update_alert_status(alert["alert_id"], alert["status"], notes=notes_input)
+                    st.toast(f"Notes saved for alert {alert['alert_id']}", icon="💾")
+                    st.rerun()
 
 
 render_live_feed(risk_filter, status_filter, category_filter)

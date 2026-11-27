@@ -7,7 +7,8 @@ Constructs multi-relational NetworkX graphs linking:
 
 Calculates centrality (degree, betweenness), persists edges to SQLite WAL DB,
 identifies cross-channel syndicates (actors operating in 2+ channels),
-generates detailed Seller Profiles, and renders interactive Plotly visualizations.
+generates detailed Seller Profiles, and renders interactive Plotly visualizations
+with smart decluttered labeling and elite cyber-command canvas styling.
 """
 from typing import List, Dict, Any, Tuple, Optional
 import json
@@ -16,7 +17,7 @@ import plotly.graph_objects as go
 
 from core.db import Database
 
-# Color palette for node types
+# Coherent color palette for node types
 NODE_COLORS = {
     "Channel": "#00ADB5",           # Teal
     "UPI": "#FFD369",               # Gold / Yellow
@@ -24,11 +25,11 @@ NODE_COLORS = {
     "Crypto (ETH/EVM)": "#9C27B0",  # Purple
     "Crypto (BTC)": "#F7931A",      # Bitcoin Orange
     "Crypto (TRX/TRC20)": "#E91E63",# Deep Pink / Tron
-    "Username": "#2196F3",          # Blue
-    "IFSC": "#4CAF50",              # Green
+    "Username": "#3B82F6",          # Vibrant Blue
+    "IFSC": "#10B981",              # Emerald Green
     "Location": "#8BC34A",          # Light Green
-    "Post": "#607D8B",              # Blue Grey
-    "Cross-Channel": "#E50914",     # Red alert
+    "Post": "#475569",              # Slate Grey
+    "Cross-Channel": "#FF3366",     # Crimson Red Alert
 }
 
 
@@ -51,7 +52,7 @@ def build_entity_graph(posts: List[Dict[str, Any]]) -> nx.Graph:
 
         # Add Channel node
         if not G.has_node(channel):
-            G.add_node(channel, node_type="Channel", label=channel, size=22, color=NODE_COLORS["Channel"])
+            G.add_node(channel, node_type="Channel", label=channel, size=24, color=NODE_COLORS["Channel"])
 
         # Add Post node
         post_label = f"Msg #{post.get('post_id')} ({category})"
@@ -96,7 +97,7 @@ def build_entity_graph(posts: List[Dict[str, Any]]) -> nx.Graph:
                 identifier_channels[val] = set()
             identifier_channels[val].add(channel)
 
-            color = NODE_COLORS.get(etype, "#FFC107")
+            color = NODE_COLORS.get(etype, "#FFD369")
 
             if not G.has_node(node_id):
                 G.add_node(
@@ -121,7 +122,7 @@ def build_entity_graph(posts: List[Dict[str, Any]]) -> nx.Graph:
         node_id = f"id_{val}"
         if len(chans) >= 2 and G.has_node(node_id):
             G.nodes[node_id]["cross_channel"] = True
-            G.nodes[node_id]["size"] = 24  # Larger node size
+            G.nodes[node_id]["size"] = 26  # Prominent node size
             G.nodes[node_id]["color"] = NODE_COLORS["Cross-Channel"]  # Red Alert highlight
             G.nodes[node_id]["badge"] = f"CRITICAL: Active in {len(chans)} Channels"
         elif G.has_node(node_id):
@@ -181,7 +182,7 @@ def load_graph_from_db(db: Database) -> nx.Graph:
         if u not in G.nodes or not G.nodes[u].get("node_type"):
             G.nodes[u]["node_type"] = "Channel"
             G.nodes[u]["label"] = u
-            G.nodes[u]["size"] = 22
+            G.nodes[u]["size"] = 24
             G.nodes[u]["color"] = NODE_COLORS["Channel"]
 
     # Decorate identifier nodes from DB
@@ -199,8 +200,8 @@ def load_graph_from_db(db: Database) -> nx.Graph:
                 G.nodes[node_id]["channel_count"] = r["channel_count"]
                 is_cross = bool(r["cross_channel"])
                 G.nodes[node_id]["cross_channel"] = is_cross
-                G.nodes[node_id]["color"] = NODE_COLORS["Cross-Channel"] if is_cross else NODE_COLORS.get(r["type"], "#FFC107")
-                G.nodes[node_id]["size"] = 24 if is_cross else 14
+                G.nodes[node_id]["color"] = NODE_COLORS["Cross-Channel"] if is_cross else NODE_COLORS.get(r["type"], "#FFD369")
+                G.nodes[node_id]["size"] = 26 if is_cross else 14
                 linked_ch = [n for n in G.neighbors(node_id) if G.nodes[n].get("node_type") == "Channel"]
                 G.nodes[node_id]["channels"] = linked_ch
 
@@ -370,15 +371,34 @@ def get_cross_channel_identifiers(G: nx.Graph) -> List[Dict[str, Any]]:
     return cross_actors
 
 
-def plot_entity_graph(G: nx.Graph, title: str = "Cross-Channel Link Analysis Graph") -> go.Figure:
-    """Generate interactive Plotly Graph of the entity network."""
+def plot_entity_graph(
+    G: nx.Graph,
+    title: str = "Cross-Channel Link Analysis Graph",
+    label_mode: str = "smart",
+) -> go.Figure:
+    """
+    Generate interactive Plotly Graph of the entity network with smart decluttering.
+    
+    label_mode options:
+      - 'smart': Labels displayed only for Cross-Channel actors and key Channel hubs (avoids label overlap).
+      - 'cross_only': Labels displayed strictly for Cross-Channel Syndicate actors.
+      - 'all': Labels on all nodes.
+      - 'hover_only': All labels hidden on canvas; rich data visible on hover.
+    """
     if len(G.nodes) == 0:
         fig = go.Figure()
-        fig.update_layout(title="No entity nodes to display.")
+        fig.update_layout(
+            title="No entity nodes to display.",
+            paper_bgcolor="#0A0F1D",
+            plot_bgcolor="#0A0F1D",
+            font=dict(color="#94A3B8")
+        )
         return fig
 
-    # Layout using Spring layout
-    pos = nx.spring_layout(G, k=0.45, iterations=50, seed=42)
+    # Layout using Spring layout with tuned repulsion (k) and iterations for spaciousness
+    num_nodes = len(G.nodes)
+    repulsion_k = max(0.65, 3.2 / (num_nodes ** 0.42))
+    pos = nx.spring_layout(G, k=repulsion_k, iterations=75, seed=42)
 
     # Edge traces
     edge_x, edge_y = [], []
@@ -390,7 +410,7 @@ def plot_entity_graph(G: nx.Graph, title: str = "Cross-Channel Link Analysis Gra
 
     edge_trace = go.Scatter(
         x=edge_x, y=edge_y,
-        line=dict(width=1, color="rgba(150, 150, 150, 0.45)"),
+        line=dict(width=1.2, color="rgba(0, 173, 181, 0.24)"),
         hoverinfo="none",
         mode="lines"
     )
@@ -402,41 +422,66 @@ def plot_entity_graph(G: nx.Graph, title: str = "Cross-Channel Link Analysis Gra
         x, y = pos[node]
         node_x.append(x)
         node_y.append(y)
-        node_colors.append(data.get("color", "#999"))
+        node_colors.append(data.get("color", "#94A3B8"))
         node_sizes.append(data.get("size", 12))
 
         ntype = data.get("node_type", "Node")
         lbl = data.get("label", node)
+        is_cross = bool(data.get("cross_channel"))
         
-        # Display text on node for cross-channel or channels
-        if data.get("cross_channel") or ntype == "Channel":
-            node_text.append(f"<b>{lbl}</b>")
-        else:
-            node_text.append("")
+        # Smart label decluttering logic
+        display_label = ""
+        if label_mode == "smart":
+            if is_cross:
+                display_label = f"<b>🚨 {lbl}</b>"
+            elif ntype == "Channel" and G.degree(node) >= 2:
+                short_ch = lbl if len(lbl) <= 16 else f"{lbl[:14]}.."
+                display_label = f"<b>{short_ch}</b>"
+        elif label_mode == "cross_only":
+            if is_cross:
+                display_label = f"<b>🚨 {lbl}</b>"
+        elif label_mode == "all":
+            short_lbl = lbl if len(lbl) <= 18 else f"{lbl[:16]}.."
+            display_label = f"{short_lbl}"
 
-        # Detailed hover tooltip
-        if data.get("cross_channel"):
+        node_text.append(display_label)
+
+        # Detailed, polished hover tooltip
+        if is_cross:
             chans = "<br> • ".join(data.get("channels", []))
             hover = (
-                f"🚨 <b>CROSS-CHANNEL ACTOR</b><br>"
-                f"<b>Identifier:</b> {lbl}<br>"
+                f"🚨 <b>CROSS-CHANNEL SYNDICATE ACTOR</b><br>"
+                f"━━━━━━━━━━━━━━━━━━━━━━━━━━<br>"
+                f"<b>Identifier:</b> <code>{lbl}</code><br>"
                 f"<b>Type:</b> {ntype}<br>"
-                f"<b>Channel Count:</b> {data.get('channel_count')}<br>"
+                f"<b>Operating In:</b> <b>{data.get('channel_count')} Channels</b><br>"
                 f"<b>Betweenness Centrality:</b> {data.get('betweenness_centrality', 0.0):.4f}<br>"
-                f"<b>Appears In:</b><br> • {chans}"
+                f"<b>Associated Channels:</b><br> • {chans}"
             )
         elif ntype == "Channel":
-            hover = f"📢 <b>Telegram Channel</b><br><b>Name:</b> {lbl}<br><b>Degree:</b> {G.degree(node)}"
+            hover = (
+                f"📢 <b>Telegram Channel Hub</b><br>"
+                f"━━━━━━━━━━━━━━━━━━━━━━━━━━<br>"
+                f"<b>Channel Title:</b> {lbl}<br>"
+                f"<b>Connected Posts / Identifiers:</b> {G.degree(node)}"
+            )
         elif ntype == "Post":
             hover = (
-                f"📝 <b>Post</b><br>"
+                f"📝 <b>Post Message</b><br>"
+                f"━━━━━━━━━━━━━━━━━━━━━━━━━━<br>"
                 f"<b>Channel:</b> {data.get('channel')}<br>"
                 f"<b>Category:</b> {data.get('category')}<br>"
-                f"<b>Risk:</b> {data.get('risk')}<br>"
-                f"<b>Preview:</b> {data.get('text', '')}"
+                f"<b>Risk Level:</b> {data.get('risk')}<br>"
+                f"<b>Text Preview:</b> {data.get('text', '')}"
             )
         else:
-            hover = f"🔍 <b>Identifier:</b> {lbl}<br><b>Type:</b> {ntype}<br><b>Channel:</b> {', '.join(data.get('channels', []))}"
+            hover = (
+                f"🔍 <b>Identifier Node</b><br>"
+                f"━━━━━━━━━━━━━━━━━━━━━━━━━━<br>"
+                f"<b>Value:</b> <code>{lbl}</code><br>"
+                f"<b>Type:</b> {ntype}<br>"
+                f"<b>Channel:</b> {', '.join(data.get('channels', []))}"
+            )
 
         node_hover.append(hover)
 
@@ -450,23 +495,32 @@ def plot_entity_graph(G: nx.Graph, title: str = "Cross-Channel Link Analysis Gra
         marker=dict(
             color=node_colors,
             size=node_sizes,
-            line=dict(width=2, color="#FFFFFF"),
-            opacity=0.92,
+            line=dict(width=2, color="#0A0F1D"),
+            opacity=0.94,
+        ),
+        textfont=dict(
+            family='Inter, -apple-system, sans-serif',
+            size=11,
+            color="#E2E8F0"
         )
     )
 
     fig = go.Figure(
         data=[edge_trace, node_trace],
         layout=go.Layout(
-            title=dict(text=title, font=dict(size=18, color="#FFFFFF")),
+            title=dict(
+                text=title,
+                font=dict(family='Inter, sans-serif', size=16, color="#F8FAFC")
+            ),
             showlegend=False,
             hovermode="closest",
-            margin=dict(b=20, l=10, r=10, t=50),
+            margin=dict(b=20, l=15, r=15, t=45),
             xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
             yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-            plot_bgcolor="#11151C",
-            paper_bgcolor="#11151C",
+            plot_bgcolor="#0A0F1D",
+            paper_bgcolor="#0A0F1D",
             font=dict(color="#ECEFF1"),
+            height=580,
         )
     )
     return fig

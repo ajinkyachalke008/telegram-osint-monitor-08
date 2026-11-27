@@ -12,14 +12,19 @@ import plotly.express as px
 
 from core.db import Database
 from addons.extractors import extract_locations
+from dashboard.provenance_banner import render_provenance_banner
+from dashboard.theme import inject_theme, apply_plotly_theme
 
 st.set_page_config(page_title="Geographic Map | telegram-osint-monitor-08", page_icon="🗺️", layout="wide")
 
-from dashboard.provenance_banner import render_provenance_banner
+# Inject Master Theme
+inject_theme()
+
+# Standard Provenance Banner
 render_provenance_banner(page_title="Geographic Map", active_stream="VERIFIED-SYNTHETIC")
 
 st.title("🗺️ Geographic Distribution & Hotspot Mapping")
-st.caption("Spatial visualization of extracted Indian locations, cybercrime hotspots (Mewat, Jamtara), and PIN codes.")
+st.caption("Spatial visualization of extracted Indian locations, regional cybercrime hubs (Mewat, Jamtara), and geographic threat density.")
 
 db = Database()
 
@@ -46,6 +51,7 @@ with db.get_connection() as conn:
     rows = conn.execute("SELECT raw_text, category, risk_level FROM posts").fetchall()
 
 geo_counts = {}
+all_categories = set()
 for r in rows:
     text = r["raw_text"]
     locs = extract_locations(text)
@@ -62,6 +68,7 @@ for r in rows:
                 }
             geo_counts[lname]["count"] += 1
             geo_counts[lname]["categories"].add(r["category"])
+            all_categories.add(r["category"])
 
 if not geo_counts:
     st.info("No geographic locations detected in current post database.")
@@ -75,7 +82,24 @@ else:
             "Mentions": v["count"],
             "Categories": ", ".join(v["categories"])
         })
-    df_geo = pd.DataFrame(plot_data)
+    df_geo = pd.DataFrame(plot_data).sort_values("Mentions", ascending=False)
+
+    # Top KPI Metrics Strip
+    top_city = df_geo.iloc[0]["City"] if not df_geo.empty else "N/A"
+    top_mentions = df_geo.iloc[0]["Mentions"] if not df_geo.empty else 0
+    total_mentions = df_geo["Mentions"].sum()
+
+    gk1, gk2, gk3, gk4 = st.columns(4)
+    with gk1:
+        st.metric("Total Regional Hubs", f"{len(df_geo)}")
+    with gk2:
+        st.metric("Geographic Mentions", f"{total_mentions:,}")
+    with gk3:
+        st.metric("Top Hotspot", f"{top_city}", delta=f"{top_mentions} mentions", delta_color="inverse")
+    with gk4:
+        st.metric("Categories Spanned", f"{len(all_categories)}")
+
+    st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
 
     fig = px.scatter_geo(
         df_geo,
@@ -85,20 +109,28 @@ else:
         hover_name="City",
         hover_data={"Mentions": True, "Categories": True, "Latitude": False, "Longitude": False},
         color="Mentions",
-        color_continuous_scale="Reds",
+        color_continuous_scale=["#1E3A5F", "#00ADB5", "#FF3366"],
         scope="asia",
         template="plotly_dark",
-        title="Detected Trade Activity across Indian Geographic Hubs"
+        title="Detected Illicit Trade Activity across Indian Geographic Hubs"
     )
     fig.update_geos(
         center=dict(lat=21.5937, lon=78.9629),
-        projection_scale=4.5,
+        projection_scale=4.6,
         visible=True,
-        showland=True, landcolor="#1B263B",
-        showcountries=True, countrycolor="#415A77"
+        showland=True, landcolor="#0F172A",
+        showocean=True, oceancolor="#080C14",
+        showcountries=True, countrycolor="#334155",
+        showsubunits=True, subunitcolor="#1E293B"
     )
-    fig.update_layout(margin=dict(l=0, r=0, t=40, b=0), height=550)
+    fig.update_layout(
+        margin=dict(l=0, r=0, t=40, b=0),
+        height=540,
+        paper_bgcolor="#0A0F1D",
+        plot_bgcolor="#0A0F1D"
+    )
     st.plotly_chart(fig, use_container_width=True)
 
-    st.subheader("📍 Location Frequency Breakdown")
-    st.dataframe(df_geo.sort_values(by="Mentions", ascending=False), use_container_width=True)
+    st.markdown("---")
+    st.subheader("📊 Regional Hotspots & Crime Categories Breakdown")
+    st.dataframe(df_geo[["City", "Mentions", "Categories"]], use_container_width=True, hide_index=True)

@@ -29,6 +29,7 @@ import streamlit as st
 from ps02_dataset.preflight import audit
 from ps02_dataset.importer import run_dry_run, run_import
 from ps02_dataset.store import ParticipantDatasetStore, DEFAULT_PARTICIPANT_DB_PATH
+from dashboard.theme import inject_theme, apply_plotly_theme
 
 st.set_page_config(
     page_title="PS02 Dataset Insights | telegram-osint-monitor-08",
@@ -36,50 +37,20 @@ st.set_page_config(
     layout="wide"
 )
 
-# Custom Styling
-st.markdown("""
-<style>
-    .kpi-card {
-        background: linear-gradient(135deg, #10192e 0%, #16243d 100%);
-        border: 1px solid #1e3a5f;
-        border-radius: 8px;
-        padding: 16px 20px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.25);
-        text-align: center;
-    }
-    .kpi-title {
-        color: #94A3B8;
-        font-size: 12px;
-        text-transform: uppercase;
-        letter-spacing: 0.08em;
-        font-weight: 600;
-        margin-bottom: 6px;
-    }
-    .kpi-value {
-        color: #00ADB5;
-        font-size: 26px;
-        font-weight: 700;
-        line-height: 1.1;
-    }
-    .kpi-subtitle {
-        color: #64748B;
-        font-size: 11.5px;
-        margin-top: 4px;
-    }
-</style>
-""", unsafe_allow_html=True)
+# Inject Master Theme
+inject_theme()
 
 # 1. Official Header & Provenance Notice
 st.markdown("""
-<div style="background-color: #0b1528; border: 1.5px solid #00ADB5; padding: 14px 20px; border-radius: 8px; margin-bottom: 14px; color: #ECEFF1; box-shadow: 0 4px 14px rgba(0, 173, 181, 0.15);">
+<div style="background-color: #0B1322; border: 1.5px solid #00ADB5; padding: 16px 22px; border-radius: 8px; margin-bottom: 16px; color: #ECEFF1; box-shadow: 0 4px 18px rgba(0, 173, 181, 0.2);">
     <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap: 10px;">
         <div>
-            <span style="background-color: #00ADB5; color: #0b1528; font-weight: 800; font-size: 11px; padding: 3px 8px; border-radius: 4px; letter-spacing: 0.1em; text-transform: uppercase;">OFFICIAL COMMITTEE DATASET</span>
-            <h2 style="margin: 6px 0 2px 0; color: #FFFFFF; font-size: 1.5rem;">PS02 Hackathon Participant Dataset Intelligence &amp; Preflight Audit</h2>
+            <span style="background-color: #00ADB5; color: #080C14; font-weight: 800; font-size: 11px; padding: 3px 8px; border-radius: 4px; letter-spacing: 0.08em; text-transform: uppercase;">OFFICIAL COMMITTEE DATASET</span>
+            <h2 style="margin: 6px 0 2px 0; color: #FFFFFF; font-size: 1.45rem;">PS02 Hackathon Participant Dataset Intelligence &amp; Preflight Audit</h2>
             <p style="margin: 0; color: #94A3B8; font-size: 13px;">Offline Ingestion &bull; Isolated SQLite Store (<code>data/participant_dataset.db</code>) &bull; RFC-8785 Proof of Custody &bull; 100% Privacy Compliant</p>
         </div>
         <div style="text-align:right;">
-            <span style="background-color: #059669; color: #FFFFFF; padding: 5px 12px; border-radius: 6px; font-weight: 600; font-size: 12px; display:inline-block;">
+            <span style="background-color: rgba(16, 185, 129, 0.16); color: #34D399; border: 1px solid rgba(16, 185, 129, 0.4); padding: 5px 12px; border-radius: 6px; font-weight: 700; font-size: 12px; display:inline-block;">
                 🛡️ AIR-GAP SECURE (ZERO CLOUD)
             </span>
         </div>
@@ -89,7 +60,7 @@ st.markdown("""
 
 # Privacy & Isolation Callout
 st.markdown("""
-<div style="background-color: rgba(16, 185, 129, 0.10); border-left: 4px solid #10B981; padding: 9px 14px; border-radius: 4px; margin-bottom: 16px; font-size: 12.5px; color: #D1FAE5;">
+<div style="background-color: rgba(16, 185, 129, 0.10); border-left: 4px solid #10B981; padding: 10px 16px; border-radius: 4px; margin-bottom: 18px; font-size: 12.5px; color: #D1FAE5;">
     🔒 <b>Statutory Privacy &amp; Ethical Guardrail:</b> Aggregate statistics only. No raw message texts, usernames, personal phone numbers, UPI identifiers, or individual citizen profiles are stored or displayed from the committee dataset. All analytics shown on this page derive exclusively from the official committee participant archive (<code>data/participant_dataset.db</code>), completely separated from synthetic replay data in <code>data/osint_monitor.db</code>.
 </div>
 """, unsafe_allow_html=True)
@@ -110,7 +81,11 @@ for candidate in DEFAULT_ZIP_PATHS:
 
 # Sidebar: Dataset Source Selection & Controls
 with st.sidebar:
-    st.header("⚙️ Dataset Intake Controls")
+    st.markdown("""
+    <div style="padding-bottom:8px; border-bottom:1px solid #1E2B45; margin-bottom:12px;">
+        <span style="font-weight:700; color:#00E5FF; font-size:12px; text-transform:uppercase; letter-spacing:0.06em;">⚙️ DATASET INTAKE</span>
+    </div>
+    """, unsafe_allow_html=True)
     source_mode = st.radio("Intake Method", ["Local Workspace File", "Custom File Upload"], index=0)
     
     selected_source_path: Path = None
@@ -129,7 +104,6 @@ with st.sidebar:
     else:
         uploaded_file = st.file_uploader("Upload Participant Dataset ZIP", type=["zip"])
         if uploaded_file is not None:
-            # Save uploaded bytes to a safe local temp path in data/participant_input/
             save_dir = Path("data/participant_input")
             save_dir.mkdir(parents=True, exist_ok=True)
             temp_path = save_dir / uploaded_file.name
@@ -139,9 +113,9 @@ with st.sidebar:
             st.success(f"Uploaded and staged: `{uploaded_file.name}`")
 
     st.markdown("---")
-    st.subheader("⚡ Action Pipeline")
-    btn_preflight = st.button("🔍 1. Run Preflight Audit", use_container_width=True, type="secondary")
-    btn_dry_run = st.button("👁️ 2. Dry-Run Preview (0 DB Writes)", use_container_width=True, type="secondary")
+    st.markdown("<b style='color:#00E5FF; font-size:12px; text-transform:uppercase; letter-spacing:0.06em;'>⚡ Action Pipeline</b>", unsafe_allow_html=True)
+    btn_preflight = st.button("🔍 1. Run Preflight Audit", use_container_width=True)
+    btn_dry_run = st.button("👁️ 2. Dry-Run Preview (0 DB Writes)", use_container_width=True)
     btn_import = st.button("💾 3. Safe Transactional Import", use_container_width=True, type="primary")
 
     st.markdown("---")
@@ -153,7 +127,6 @@ if "last_audit" not in st.session_state:
 if "last_dry_run" not in st.session_state:
     st.session_state.last_dry_run = None
 if "active_batch_id" not in st.session_state:
-    # Auto-load latest batch if DB has records
     latest_b = store.get_latest_batch()
     st.session_state.active_batch_id = latest_b["batch_id"] if latest_b else None
 
@@ -199,9 +172,8 @@ if btn_import:
             except Exception as e:
                 st.error(f"Import failed: {e}")
 
-# If we don't have an active batch yet but detected_zip exists, auto-import or auto-load
+# If we don't have an active batch yet but detected_zip exists, auto-load or auto-import
 if not st.session_state.active_batch_id and detected_zip and detected_zip.exists():
-    # Run initial import to populate dashboard on first launch
     try:
         imp_res = run_import(detected_zip, store=store)
         st.session_state.active_batch_id = imp_res["batch_id"]
@@ -212,20 +184,20 @@ if not st.session_state.active_batch_id and detected_zip and detected_zip.exists
 # Render Preflight Audit & Dry-Run Notice Banner if present
 if st.session_state.last_audit:
     aud = st.session_state.last_audit
-    status_color = "#10B981" if aud.get("passed") else "#EF4444"
-    status_text = "PREFLIGHT AUDIT PASSED (100% STRUCTURE & HASH MATCH)" if aud.get("passed") else "PREFLIGHT AUDIT FOUND ISSUES"
+    status_color = "#10B981" if aud.get("passed") else "#FF3366"
+    status_text = "PREFLIGHT AUDIT PASSED (100% STRUCTURE & MANIFEST MATCH)" if aud.get("passed") else "PREFLIGHT AUDIT FOUND ISSUES"
     st.markdown(f"""
-    <div style="background-color: #111e38; border-left: 5px solid {status_color}; padding: 12px 16px; border-radius: 6px; margin-bottom: 16px; display:flex; justify-content:space-between; align-items:center;">
+    <div style="background-color: #0E1628; border-left: 4px solid {status_color}; padding: 12px 18px; border-radius: 6px; margin-bottom: 18px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
         <div>
             <b style="color: {status_color}; font-size: 13.5px;">{status_text}</b><br/>
             <span style="font-size: 12px; color: #94A3B8;">
-                Archive SHA-256: <code>{aud.get('archive_metadata', {}).get('sha256', 'N/A')[:24]}...</code> &bull;
-                Size: {aud.get('archive_metadata', {}).get('size_bytes', 0)/(1024*1024):.2f} MB &bull;
+                Archive SHA-256: <code style="color:#00E5FF;">{aud.get('archive_metadata', {}).get('sha256', 'N/A')[:24]}...</code> &bull;
+                Size: <b>{aud.get('archive_metadata', {}).get('size_bytes', 0)/(1024*1024):.2f} MB</b> &bull;
                 Audited at: {aud.get('timestamp_ist', '')}
             </span>
         </div>
         <div>
-            <span style="background-color: #1e3a5f; color: #E2E8F0; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight:600;">
+            <span style="background-color: rgba(0, 173, 181, 0.15); color: #00E5FF; padding: 4px 10px; border-radius: 4px; font-size: 12px; font-weight:700;">
                 Findings: {len(aud.get('findings', []))}
             </span>
         </div>
@@ -259,58 +231,17 @@ lexicon_terms_count = sum(c["count"] for c in lexicon_cats)
 k1, k2, k3, k4, k5, k6 = st.columns(6)
 
 with k1:
-    st.markdown(f"""
-    <div class="kpi-card">
-        <div class="kpi-title">Total Ingested Records</div>
-        <div class="kpi-value">{total_messages_posts:,}</div>
-        <div class="kpi-subtitle">{tg_count:,} TG &bull; {social_count:,} Social</div>
-    </div>
-    """, unsafe_allow_html=True)
-
+    st.metric("Total Ingested Records", f"{total_messages_posts:,}", delta=f"{tg_count} TG &bull; {social_count} Soc")
 with k2:
-    st.markdown(f"""
-    <div class="kpi-card">
-        <div class="kpi-title">Telegram Exports</div>
-        <div class="kpi-value">{len(tg_channels)} Channels</div>
-        <div class="kpi-subtitle">199 Photos &bull; 13 Service</div>
-    </div>
-    """, unsafe_allow_html=True)
-
+    st.metric("Telegram Exports", f"{len(tg_channels)} Channels", delta="199 Photos Attached")
 with k3:
-    st.markdown(f"""
-    <div class="kpi-card">
-        <div class="kpi-title">Social Platforms</div>
-        <div class="kpi-value">{len(social_platforms)} Networks</div>
-        <div class="kpi-subtitle">92 Image Attachments</div>
-    </div>
-    """, unsafe_allow_html=True)
-
+    st.metric("Social Platforms", f"{len(social_platforms)} Networks", delta="92 Images Attached")
 with k4:
-    st.markdown(f"""
-    <div class="kpi-card">
-        <div class="kpi-title">Poster Hashes Verified</div>
-        <div class="kpi-value" style="color: #10B981;">{verified_posters_count} / {total_posters}</div>
-        <div class="kpi-subtitle">100% SHA-256 Validated</div>
-    </div>
-    """, unsafe_allow_html=True)
-
+    st.metric("Poster Manifest Match", f"{verified_posters_count} / {total_posters}", delta="100% SHA-256 Match", delta_color="normal")
 with k5:
-    st.markdown(f"""
-    <div class="kpi-card">
-        <div class="kpi-title">Slang Lexicon</div>
-        <div class="kpi-value">{lexicon_terms_count} Patterns</div>
-        <div class="kpi-subtitle">{len(lexicon_cats)} Crime Categories</div>
-    </div>
-    """, unsafe_allow_html=True)
-
+    st.metric("Configured Lexicon", f"{lexicon_terms_count} Patterns", delta=f"{len(lexicon_cats)} Categories")
 with k6:
-    st.markdown(f"""
-    <div class="kpi-card">
-        <div class="kpi-title">Timezone Standard</div>
-        <div class="kpi-value" style="color: #38BDF8;">IST (+05:30)</div>
-        <div class="kpi-subtitle">Asia/Kolkata Preserved</div>
-    </div>
-    """, unsafe_allow_html=True)
+    st.metric("Timezone Standard", "IST (+05:30)", delta="Asia/Kolkata")
 
 st.markdown("<div style='height: 16px;'></div>", unsafe_allow_html=True)
 
@@ -342,14 +273,8 @@ with tab1:
                 color_discrete_sequence=["#00ADB5", "#3B82F6", "#8B5CF6", "#EC4899", "#10B981", "#F59E0B"],
                 title="Records by Platform / Network"
             )
-            fig_bar.update_layout(
-                paper_bgcolor="rgba(0,0,0,0)",
-                plot_bgcolor="rgba(0,0,0,0)",
-                font_color="#E2E8F0",
-                xaxis_title="Platform",
-                yaxis_title="Total Messages / Posts",
-                showlegend=False
-            )
+            apply_plotly_theme(fig_bar, height=360, showgrid=True)
+            fig_bar.update_layout(showlegend=False)
             fig_bar.update_traces(textposition="outside")
             st.plotly_chart(fig_bar, use_container_width=True)
 
@@ -363,9 +288,8 @@ with tab1:
                 hole=0.45,
                 title="Ingestion Share Distribution"
             )
+            apply_plotly_theme(fig_pie, height=360)
             fig_pie.update_layout(
-                paper_bgcolor="rgba(0,0,0,0)",
-                font_color="#E2E8F0",
                 legend=dict(orientation="h", yanchor="bottom", y=-0.2, xanchor="center", x=0.5)
             )
             st.plotly_chart(fig_pie, use_container_width=True)
@@ -410,7 +334,6 @@ with tab2:
 
     if timeline_data:
         df_tl = pd.DataFrame(timeline_data)
-        # Parse hour_bucket_ist into datetime for time series plotting
         df_tl["datetime_ist"] = pd.to_datetime(df_tl["hour_bucket_ist"])
         df_tl = df_tl.sort_values("datetime_ist")
 
@@ -423,14 +346,8 @@ with tab2:
             markers=True,
             title="Activity Volume Progression Over Time (IST)"
         )
-        fig_time.update_layout(
-            paper_bgcolor="rgba(0,0,0,0)",
-            plot_bgcolor="rgba(0,0,0,0)",
-            font_color="#E2E8F0",
-            xaxis_title="Timestamp (IST)",
-            yaxis_title="Record Count",
-            hovermode="x unified"
-        )
+        apply_plotly_theme(fig_time, height=360, showgrid=True)
+        fig_time.update_layout(hovermode="x unified")
         st.plotly_chart(fig_time, use_container_width=True)
 
         # Day of week aggregation
@@ -450,13 +367,7 @@ with tab2:
             color_discrete_map={"Telegram": "#00ADB5", "SocialMedia": "#F59E0B"},
             title="Weekly Communication Rhythms"
         )
-        fig_dow.update_layout(
-            paper_bgcolor="rgba(0,0,0,0)",
-            plot_bgcolor="rgba(0,0,0,0)",
-            font_color="#E2E8F0",
-            xaxis_title="Day of Week",
-            yaxis_title="Total Records"
-        )
+        apply_plotly_theme(fig_dow, height=320, showgrid=True)
         st.plotly_chart(fig_dow, use_container_width=True)
 
 # ----------------- TAB 3: Evidence & Poster Hash Manifest -----------------
@@ -476,7 +387,6 @@ with tab3:
 
     if posters_data:
         df_posters = pd.DataFrame(posters_data)
-        # Format status badge
         df_posters["Verification Status"] = df_posters["status"].apply(
             lambda s: "✅ MANIFEST SHA-256 MATCH" if s == "verified" else ("❌ HASH MISMATCH" if s == "mismatch" else "⚠️ MISSING FILE")
         )
@@ -517,17 +427,11 @@ with tab4:
             y="count",
             text="count",
             color="Category Display",
-            color_discrete_sequence=px.colors.qualitative.Dark24,
+            color_discrete_sequence=["#00ADB5", "#3B82F6", "#8B5CF6", "#F59E0B", "#10B981", "#EC4899"],
             title="Configured Lexicon Terms by Target Category"
         )
-        fig_lex.update_layout(
-            paper_bgcolor="rgba(0,0,0,0)",
-            plot_bgcolor="rgba(0,0,0,0)",
-            font_color="#E2E8F0",
-            xaxis_title="Configured Category",
-            yaxis_title="Lexicon Terms Count",
-            showlegend=False
-        )
+        apply_plotly_theme(fig_lex, height=340, showgrid=True)
+        fig_lex.update_layout(showlegend=False)
         fig_lex.update_traces(textposition="outside")
         st.plotly_chart(fig_lex, use_container_width=True)
 

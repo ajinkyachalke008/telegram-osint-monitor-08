@@ -16,14 +16,18 @@ from addons.financial_detector import FinancialAdDetector
 from addons.pdf_exporter import generate_evidence_pdf
 from addons.ocr_extractor import OCRExtractor
 from dashboard.provenance_banner import render_provenance_banner
+from dashboard.theme import inject_theme
 
 st.set_page_config(page_title="Alert Detail & Hash Ledger | telegram-osint-monitor-08", page_icon="🔍", layout="wide")
+
+# Inject Master Theme
+inject_theme()
 
 # Standard Provenance Banner
 render_provenance_banner(page_title="Alert Detail", active_stream="VERIFIED-SYNTHETIC")
 
 st.title("🔍 Forensic Alert Detail & Evidence Seal Verifier")
-st.caption("RFC-8785 canonical evidence inspection, cryptographic hash verification, and Section 63 BSA 2023 evidence package export.")
+st.caption("RFC-8785 canonical evidence inspection, cryptographic hash verification, and Section 63 BSA evidence package export.")
 
 db = Database()
 fin_detector = FinancialAdDetector()
@@ -55,24 +59,40 @@ if not alerts:
     st.warning("No alerts available in database. Run ingestion or synthetic replay first.")
     st.stop()
 
+# Alert Selector Card
+st.markdown("""
+<div style="background-color:#0D1424; border:1px solid #1E2B45; border-radius:8px; padding:14px 18px; margin-bottom:16px;">
+    <span style="font-size:11.5px; font-weight:700; color:#00E5FF; text-transform:uppercase; letter-spacing:0.06em;">TARGET INVESTIGATION RECORD</span>
+</div>
+""", unsafe_allow_html=True)
+
 alert_options = {f"{a['alert_id']} | [{a['risk_level']}] {a['category']} ({a['channel_id']})": a for a in alerts}
-selected_key = st.selectbox("Select Alert Record to Inspect", list(alert_options.keys()))
+selected_key = st.selectbox("Select Alert Record to Inspect", list(alert_options.keys()), label_visibility="collapsed")
 alert = alert_options[selected_key]
 
 st.divider()
 
-col_left, col_right = st.columns([1, 1])
+col_left, col_right = st.columns([1, 1], gap="large")
 
 with col_left:
     st.subheader("📄 Raw Post & Metadata")
-    st.markdown(f"**Post UID:** `{alert['post_uid']}`")
-    st.markdown(f"**Channel / Source:** `{alert['channel_id']}` ({alert['platform']})")
-    st.markdown(f"**Timestamp (UTC):** `{alert['timestamp_utc']}`")
-    st.markdown(f"**Provenance:** `{alert['ingestion_source']}`")
-    st.markdown(f"**Risk Level:** `{alert['risk_level']}` | **Threat Score:** `{alert['threat_score']:.1f}/10`")
     
-    st.markdown("#### Message Text")
-    st.text_area("Content", alert["raw_text"], height=130, disabled=True)
+    # Metadata Card
+    st.markdown(f"""
+    <div class="intel-card" style="padding:14px 18px; margin-bottom:14px;">
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; font-size:12.5px;">
+            <div><span style="color:#64748B;">Post UID:</span><br><code style="color:#E2E8F0;">{alert['post_uid']}</code></div>
+            <div><span style="color:#64748B;">Channel / Source:</span><br><b style="color:#00ADB5;">{alert['channel_id']}</b> ({alert['platform']})</div>
+            <div><span style="color:#64748B;">Timestamp (UTC):</span><br><span style="font-family:'JetBrains Mono',monospace; color:#94A3B8;">{alert['timestamp_utc']}</span></div>
+            <div><span style="color:#64748B;">Data Provenance:</span><br><span class="badge-pill badge-source">{alert['ingestion_source']}</span></div>
+            <div><span style="color:#64748B;">Risk Level:</span><br><b style="color:{'#FF3366' if alert['risk_level']=='High' else '#FFAA00'};">[{alert['risk_level'].upper()}]</b></div>
+            <div><span style="color:#64748B;">Threat Score:</span><br><b style="color:#F8FAFC;">{alert['threat_score']:.1f} / 10.0</b></div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    st.markdown("#### Message Content")
+    st.text_area("Content", alert["raw_text"], height=130, disabled=True, label_visibility="collapsed")
 
     # Financial Signal Extraction
     fin_res = fin_detector.detect(alert["raw_text"])
@@ -106,14 +126,30 @@ with col_right:
     if not alert.get("current_hash"):
         st.warning("No evidence block sealed for this post.")
     else:
-        st.markdown(f"**Evidence Block Height:** `#{alert['block_height']}`")
-        st.markdown(f"**Generated UTC:** `{alert['generated_at_utc']}`")
-        st.markdown(f"**Previous Hash:** `{alert['prev_hash']}`")
-        st.markdown(f"**Current Hash:** `{alert['current_hash']}`")
-        st.markdown(f"**Ledger Chain-Head:** `<code>{chain_head_hash}</code>` (Block #{chain_head_block})")
+        # Fixed literal code tag defect and long hash wrapping
+        st.markdown(f"""
+        <div class="intel-card" style="padding:14px 18px; margin-bottom:14px;">
+            <div style="font-size:12px; color:#94A3B8; margin-bottom:4px;">
+                <b>EVIDENCE BLOCK HEIGHT:</b> <span style="color:#00E5FF; font-weight:700;">#{alert['block_height']}</span> &bull; 
+                <b>GENERATED (UTC):</b> <span style="font-family:'JetBrains Mono',monospace;">{alert['generated_at_utc']}</span>
+            </div>
+            <div style="margin-top:8px;">
+                <span style="color:#64748B; font-size:11px; text-transform:uppercase; letter-spacing:0.04em;">Previous Hash:</span>
+                <div class="hash-container">{alert['prev_hash']}</div>
+            </div>
+            <div style="margin-top:4px;">
+                <span style="color:#64748B; font-size:11px; text-transform:uppercase; letter-spacing:0.04em;">Current Sealed Hash:</span>
+                <div class="hash-container" style="color:#34D399; border-color:rgba(16,185,129,0.3);">{alert['current_hash']}</div>
+            </div>
+            <div style="margin-top:4px;">
+                <span style="color:#64748B; font-size:11px; text-transform:uppercase; letter-spacing:0.04em;">Ledger Chain-Head Hash:</span>
+                <div class="hash-container" style="color:#00E5FF;">{chain_head_hash}</div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
 
         # Live Verification Action
-        if st.button("🛡️ Verify Cryptographic Seal Live"):
+        if st.button("🛡️ Verify Cryptographic Seal Live", use_container_width=True, type="primary"):
             c_json = alert.get("canonical_json", "")
             payload_str = f"{c_json}:{alert['prev_hash']}"
             computed_hash = hashlib.sha256(payload_str.encode("utf-8")).hexdigest()
@@ -131,7 +167,7 @@ with col_right:
             st.code(alert.get("canonical_json") or "{}")
 
         st.divider()
-        st.subheader("📄 Section 63 BSA 2023 Evidence Package")
+        st.subheader("📄 Section 63 BSA Evidence Package")
         idents = db.get_post_identifiers(alert["post_uid"])
         pdf_bytes = generate_evidence_pdf(
             alert=alert,
@@ -146,7 +182,7 @@ with col_right:
             chain_head_hash=chain_head_hash,
         )
         st.download_button(
-            label="📥 Export Section 63 BSA 2023 Evidence Package (PDF)",
+            label="📥 Export Section 63 BSA Evidence Package (PDF)",
             data=pdf_bytes,
             file_name=f"evidence_package_{alert['alert_id']}.pdf",
             mime="application/pdf",

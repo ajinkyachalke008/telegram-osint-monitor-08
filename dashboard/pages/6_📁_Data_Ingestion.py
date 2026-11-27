@@ -14,14 +14,31 @@ import pandas as pd
 from core.db import Database
 from ingestion.adapters import CSVJSONImporter
 from ingestion.worker import PipelineWorker
+from dashboard.provenance_banner import render_provenance_banner
+from dashboard.theme import inject_theme
 
 st.set_page_config(page_title="Data Ingestion | telegram-osint-monitor-08", page_icon="📁", layout="wide")
 
-from dashboard.provenance_banner import render_provenance_banner
+# Inject Master Theme
+inject_theme()
+
 render_provenance_banner(page_title="Data Ingestion", active_stream="IMPORTED")
 
 st.title("📁 Multi-Platform Threat Data Ingestion (R1)")
 st.caption("Upload CSV or JSON dumps from Twitter, WhatsApp, darknet forums, or Telegram for pipeline ingestion.")
+
+# Visual Pipeline Stages
+st.markdown("""
+<div style="background-color: #0C1220; border: 1px solid #1A263D; border-radius: 8px; padding: 12px 18px; margin-bottom: 20px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; font-size: 12.5px;">
+        <span style="color:#00E5FF; font-weight:700;">1. Select Data Dump</span> &bull; 
+        <span style="color:#94A3B8;">2. Schema Preview</span> &bull; 
+        <span style="color:#94A3B8;">3. Column Mapping</span> &bull; 
+        <span style="color:#94A3B8;">4. Dry-Run Validation</span> &bull; 
+        <span style="color:#94A3B8;">5. Ingest &amp; Seal Evidence</span>
+    </div>
+</div>
+""", unsafe_allow_html=True)
 
 db = Database()
 worker = PipelineWorker(db=db)
@@ -39,7 +56,7 @@ if uploaded_file is not None:
 
         st.subheader("📋 Upload Preview")
         st.dataframe(df.head(10), use_container_width=True)
-        st.markdown(f"**Total Records in File:** {len(df)}")
+        st.markdown(f"**Total Records in File:** `{len(df):,}`")
 
         # Column mapping configuration
         st.subheader("🗺️ Column Mapping")
@@ -57,37 +74,27 @@ if uploaded_file is not None:
         # Dry Run & Ingest Actions
         b_col1, b_col2 = st.columns([1, 4])
         with b_col1:
-            run_dry = st.button("🔍 Dry Run Validation")
+            run_dry = st.button("🔍 Dry Run Validation", use_container_width=True)
         with b_col2:
-            run_ingest = st.button("🚀 Ingest into Unified Database & Pipeline")
+            run_ingest = st.button("🚀 Process & Ingest to Evidence Ledger", type="primary", use_container_width=True)
+
+        mapping = {
+            "platform": col_plat,
+            "source": col_src,
+            "post_id": col_id,
+            "timestamp": col_time,
+            "text": col_text
+        }
 
         if run_dry:
-            st.info("Performing dry-run validation...")
-            valid_count = 0
-            for _, row in df.iterrows():
-                if str(row.get(col_text, "")).strip():
-                    valid_count += 1
-            st.success(f"Dry run complete: {valid_count} of {len(df)} records are valid for pipeline processing.")
+            with st.spinner("Validating dump records without writing to database..."):
+                res = importer.import_dataframe(df, mapping=mapping, dry_run=True)
+                st.info(f"**Dry Run Validation Complete:** {res.get('processed', 0)} records validated ({res.get('valid', 0)} compliant, {res.get('skipped', 0)} skipped).")
 
         if run_ingest:
-            with st.spinner("Processing posts through Normalization -> ML Classifier -> Financial Detector -> Evidence Hash Chain..."):
-                ingested = 0
-                for _, row in df.iterrows():
-                    text = str(row.get(col_text, "")).strip()
-                    if not text:
-                        continue
-                    worker.process_raw_post(
-                        platform=str(row.get(col_plat, "imported")),
-                        channel_id=str(row.get(col_src, "uploaded_source")),
-                        message_id=str(row.get(col_id, f"imp_{ingested+1}")),
-                        timestamp_utc=str(row.get(col_time, "")),
-                        raw_text=text,
-                        ingestion_source="IMPORTED"
-                    )
-                    ingested += 1
-                db.log_audit("csv_json_ingest", {"filename": uploaded_file.name, "records": ingested})
-                st.success(f"Successfully ingested and processed {ingested} threat records into SQLite ledger!")
-                st.balloons()
+            with st.spinner("Executing pipeline worker ingestion and RFC-8785 evidence sealing..."):
+                res = importer.import_dataframe(df, mapping=mapping, dry_run=False)
+                st.success(f"🎉 **Ingestion Succeeded:** {res.get('processed', 0)} posts parsed, classified, and sealed into evidence ledger.")
 
     except Exception as e:
-        st.error(f"Error reading uploaded file: {e}")
+        st.error(f"Failed to parse uploaded file: {e}")
