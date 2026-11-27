@@ -70,6 +70,11 @@ if dataset_root_value:
         c2.metric("Social posts", f"{audit['social_posts']:,}", f"{audit['social_photo_references']} image refs")
         c3.metric("Unique image files", audit["unique_image_hashes"], f"{audit['jpeg_file_count']} stored copies")
 
+        activity_a, activity_b, activity_c = st.columns(3)
+        activity_a.metric("Forwarded Telegram posts", audit["telegram_forwarded_posts"])
+        activity_b.metric("Edited Telegram posts", audit["telegram_edited_posts"])
+        activity_c.metric("Empty-text Telegram posts", audit["telegram_empty_text_posts"])
+
         if audit["warnings"]:
             for warning in audit["warnings"]:
                 st.warning(warning)
