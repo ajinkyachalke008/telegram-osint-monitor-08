@@ -122,7 +122,11 @@ Use safe ZIP/path validation helpers already present in `ps02_dataset/preflight.
 
 ## 7. Keyword expansion
 
-Use the committee starter lexicon as a reference, and keep the search-term groups transparent and editable in one clearly named project config/module. Include categories that reflect the README's dataset description (for example, drugs, arms, fake documents, bank-account sale, ATM-card sale and SIM-card sale), but never imply that a category label is ground truth.
+Use the committee starter lexicon as a separate source artefact. Use the new [PS02 Search-Term Catalogue](PS02_SEARCH_TERMS_CATALOG.md) for the additional consumer-fraud and digital-safety search suggestions. It covers general fraud/forgery, phishing and impersonation, OTP/KYC, UPI/QR/card fraud, fake documents, job/loan/task scams, investment/lottery scams, marketplace scams, and extortion/malware reports.
+
+Implement these as transparent, editable search aliases in a dedicated PS02 configuration/module. Keep exact and expanded matches separate. Generic one-word terms must be labelled broad and must not produce an automatic risk score. Show matched phrase and category only; do not label authors/accounts/channels as guilty or fraudulent.
+
+Do not simply copy every existing entry from `addons/lexicon.yaml` into the new feature. That file includes more aggressive coded-word terminology intended for the legacy pipeline. Do not expand weapons/drugs slang, coded trading language, evasion phrases, pricing, quantities, delivery methods, concealment or bypass instructions. Retain the committee's 37-row CSV unchanged and do not claim the new aliases are official committee terms.
 
 For a phrase such as `fake Aadhaar card`:
 1. Exact mode should honestly report zero literal phrase matches if there are none.
