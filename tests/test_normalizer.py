@@ -60,3 +60,25 @@ def test_full_evasion_normalization():
     assert "khata" in normalized
     assert "[EMOJI_BANK]" in normalized
     assert "9 8 7 6 5 4 3 2 1 0" in normalized
+
+
+
+def test_ps02_leetspeak_and_dotted_acronyms_are_normalized_safely():
+    text = "g@nja ch@ras p!st0l Ch1tta A.T.M 9876543210 @partyking_jpr partyking.jpr@ybl"
+    normalized = normalize_text(text)
+    assert "ganja" in normalized
+    assert "charas" in normalized
+    assert "pistol" in normalized
+    assert "Chitta" in normalized
+    assert "ATM" in normalized
+    assert "9876543210" in normalized
+    assert "@partyking_jpr" in normalized
+    assert "partyking.jpr@ybl" in normalized
+
+
+def test_ps02_compound_emoji_semantics_are_preserved_for_scoring():
+    normalized = normalize_text("🍀😮‍💨")
+    assert "[EMOJI_DRUG_CODE_CANNABIS]" in normalized
+    from addons.scorer import RuleScorer
+    result = RuleScorer().score(normalized)
+    assert any(term["term"] == "[EMOJI_DRUG_CODE_CANNABIS]" for term in result.matched_terms)
