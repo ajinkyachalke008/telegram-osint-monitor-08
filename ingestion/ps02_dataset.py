@@ -12,13 +12,13 @@ import json
 import os
 import zipfile
 from collections import Counter
-from datetime import datetime, timezone
-from pathlib import Path, PurePosixPath
+from datetime import datetime, timezone, timedelta
+from pathlib import Path, PurePosixPath, PureWindowsPath
 from typing import Any, Dict, Iterator, List, Optional, Tuple
 from zoneinfo import ZoneInfo
 
 PROVENANCE = "HACKATHON_SAMPLE"
-IST = ZoneInfo("Asia/Kolkata")
+IST = timezone(timedelta(hours=5, minutes=30), name="IST")
 MAX_ARCHIVE_BYTES = 250 * 1024 * 1024
 
 
@@ -38,7 +38,8 @@ def safe_child(base: Path, relative: str) -> Path:
     """Resolve a dataset-relative path and reject traversal outside its root."""
     normalized = str(relative or "").replace("\\", "/").strip()
     rel = PurePosixPath(normalized)
-    if not normalized or rel.is_absolute() or any(part in ("", ".", "..") for part in rel.parts):
+    win_rel = PureWindowsPath(normalized)
+    if not normalized or rel.is_absolute() or win_rel.is_absolute() or win_rel.drive or any(part in ("", ".", "..") for part in rel.parts):
         raise PS02DatasetError("Unsafe dataset-relative path.")
     root = base.resolve()
     target = (root / Path(*rel.parts)).resolve()
