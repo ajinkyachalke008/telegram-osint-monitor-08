@@ -2,6 +2,8 @@
 
 **Purpose:** a transparent starter vocabulary for the local PS02 demo's *search suggestions* and explainable keyword matching. This is not a criminality classifier, an allegation list, or a substitute for investigator review.
 
+Machine-readable copy: [`ps02_dataset/search_terms_catalog.json`](../ps02_dataset/search_terms_catalog.json). The JSON keeps high-context phrases, broad terms and Hindi/Hinglish aliases in separate fields.
+
 ## Use rules
 
 1. Treat every hit as a **text match only**. Never label a person, account, channel, post or author as criminal, fraudulent or guilty from a keyword.
