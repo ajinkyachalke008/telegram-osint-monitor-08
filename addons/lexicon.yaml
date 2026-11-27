@@ -35,6 +35,8 @@ categories:
       - high quality maal
       - stuff available
       - score maal
+      - doda post
+      - party saman
     slang_marathi:
       - gard
       - charas
@@ -65,9 +67,6 @@ categories:
       - "[EMOJI_DRUG_CODE_MDMA]"
       - "[EMOJI_DRUG_CODE_SUPPLIER]"
       - "[EMOJI_DRUG_CODE_POTENCY]"
-    slang_hinglish:
-      - doda post
-      - party saman
 
   arms:
     label: "Illegal Weapons & Ammunition"
