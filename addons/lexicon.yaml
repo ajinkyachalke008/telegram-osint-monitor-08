@@ -60,6 +60,14 @@ categories:
       - "🍄"
       - "💨"
       - "🧪"
+      - "[EMOJI_DRUG_CODE_CANNABIS]"
+      - "[EMOJI_DRUG_CODE_COCAINE]"
+      - "[EMOJI_DRUG_CODE_MDMA]"
+      - "[EMOJI_DRUG_CODE_SUPPLIER]"
+      - "[EMOJI_DRUG_CODE_POTENCY]"
+    slang_hinglish:
+      - doda post
+      - party saman
 
   arms:
     label: "Illegal Weapons & Ammunition"
@@ -112,6 +120,8 @@ categories:
       - brass rounds
       - direct delivery bihar
       - up delivery
+      - '6.35 bore'
+      - '7.65 bore'
     emojis:
       - "🔫"
       - "🗡️"
@@ -161,6 +171,8 @@ categories:
       - all india valid
       - 100% qr scan passing
       - instant soft copy
+      - PVC print and edit
+      - verified type certificate
     emojis:
       - "🪪"
       - "📄"
@@ -222,6 +234,8 @@ categories:
       - p2p merchant account
       - crypto deposit khata
       - cyber safe account
+      - corporate account for rent
+      - account freeze free
     emojis:
       - "🏦"
       - "🏛️"
@@ -307,6 +321,8 @@ categories:
       - fresh activation
       - tele verification done
       - non-blocking sim
+      - eKYC done SIM
+      - virtual number for OTP
     emojis:
       - "📲"
       - "📶"
