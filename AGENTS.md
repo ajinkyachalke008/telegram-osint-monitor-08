@@ -114,3 +114,7 @@ Apply this section only when the user explicitly asks for a full or thorough cod
 
 <!-- ai-rulebook:end-rule tests -->
 <!-- ai-rulebook:end -->
+
+## PS02 hackathon task handoff
+
+For work on the PS02 committee dataset or the next-day hackathon demo, read `docs/ANTIGRAVITY_HACKATHON_HANDOFF.md` first, then `docs/PS02_DATASET_PROFILE.json`, `docs/PS02_DATASET_ACCEPTANCE_CHECKLIST.md`, and `docs/PS02_HACKATHON_DEMO_RUNBOOK.md`. Preserve the existing application and keep participant data local; the detailed scope and acceptance criteria are in the handoff.
