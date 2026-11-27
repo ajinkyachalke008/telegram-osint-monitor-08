@@ -90,7 +90,7 @@ st.divider()
 
 # Graph Visualization
 st.subheader("🌐 Interactive Entity Knowledge Graph")
-st.caption("Drag, zoom, and hover on nodes. Red nodes represent actors identified across 2 or more channels.")
+st.caption("Drag, zoom and hover on nodes. Red nodes represent identifiers observed in 2+ source names; they are not confirmed people or shared operators.")
 fig = plot_entity_graph(G, title="OSINT Cross-Channel Entity Network")
 st.plotly_chart(fig, use_container_width=True)
 
@@ -150,7 +150,7 @@ with tab4:
     st.subheader('Forwarded-From Source Mentions')
     st.caption('Telegram Desktop export metadata records a forwarded_from source label. These are unverified source mentions, not authenticated forwarding chains or proof that two operators are the same.')
     with db.get_connection() as conn:
-        forward_rows = conn.execute("SELECT channel_id, message_id, timestamp_utc, source_metadata_json FROM posts WHERE ingestion_source = 'HACKATHON_SAMPLE' ORDER BY timestamp_utc DESC").fetchall()
+        forward_rows = conn.execute("SELECT channel_id, message_id, timestamp_utc, source_metadata_json FROM posts WHERE (? = 'All sources' OR ingestion_source = ?) ORDER BY timestamp_utc DESC", (source_filter, source_filter)).fetchall()
     forward_records = []
     for row in forward_rows:
         try:
