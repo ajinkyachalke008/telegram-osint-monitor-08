@@ -7,6 +7,7 @@ Runs text normalization, identifier extraction, threat scoring,
 evidence hash-chaining, and alert generation.
 """
 import logging
+import re
 import sys
 import time
 from pathlib import Path
@@ -60,6 +61,16 @@ class IngestionWorker:
         inserted = self.db.insert_post(post)
         if not inserted:
             return False  # Already processed
+
+        # Telegram Desktop user IDs are source-account identifiers, not real-world identities.
+        # Only accept the explicit export schema and numeric user IDs; channel IDs remain
+        # represented by the channel node and are not duplicated as sender accounts.
+        if metadata.get("schema") == "telegram_desktop_export":
+            sender_id = str(metadata.get("sender_id") or "").strip()
+            if re.fullmatch(r"user\d{3,24}", sender_id, flags=re.IGNORECASE):
+                extracted.setdefault("all_flat", []).append({
+                    "value": sender_id.lower(), "type": "TelegramAccount", "source": "telegram_metadata"
+                })
 
         # 2. Persist & Link Identifiers (excluding channel's own handle)
         channel_slug = post.channel_id.strip().lower().lstrip('@')
