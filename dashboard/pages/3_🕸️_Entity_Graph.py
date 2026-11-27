@@ -105,15 +105,15 @@ with tab1:
         df_cross = pd.DataFrame(cross_actors)
         st.dataframe(df_cross, use_container_width=True)
     else:
-        st.info("No cross-channel actors identified in the current sample.")
+        st.info("No identifiers are currently shared across two or more selected sources.")
 
 with tab2:
     st.subheader("Candidate Connected Components")
     if syndicates:
         for syn in syndicates:
-            with st.expander(f"Syndicate {syn['syndicate_id']} | Risk: {syn['risk_tier']} | {syn['channel_count']} Channels | {syn['total_nodes']} Nodes"):
+            with st.expander(f"Candidate connected group {syn['syndicate_id']} | Heuristic label (not verified): {syn['risk_tier']} | {syn['channel_count']} Channels | {syn['total_nodes']} Nodes"):
                 st.markdown(f"**Channels Involved:** `{', '.join(syn['channels'])}`")
-                st.markdown(f"**Total Identifiers:** `{syn['identifier_count']}` (Cross-Channel Actors: `{syn['cross_channel_actors']}`)")
+                st.markdown(f"**Total Identifiers:** `{syn['identifier_count']}` (Shared identifiers: `{syn['cross_channel_actors']}`)")
                 st.markdown(f"**Posts Linked:** `{syn['post_count']}`")
     else:
         st.info("No clustered syndicates found.")
