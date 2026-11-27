@@ -35,3 +35,27 @@ def test_bank_account_candidate_links_telegram_and_social_sources_in_graph():
     assert node["cross_channel"] is True
     assert set(node["channels"]) == {"Telegram:channel_s5", "Facebook:corp_ac_supply"}
 
+
+
+
+def test_telegram_desktop_sender_accounts_are_linked_across_group_sources(tmp_path):
+    from core.db import Database
+    from core.models import ChannelRecord
+    from ingestion.worker import IngestionWorker
+
+    db = Database(tmp_path / "ps02-sender-accounts.db")
+    channel_a = "Telegram:group_08"
+    channel_b = "Telegram:group_09"
+    db.upsert_channel(ChannelRecord(channel_id=channel_a, title="Synthetic Group 08"))
+    db.upsert_channel(ChannelRecord(channel_id=channel_b, title="Synthetic Group 09"))
+    worker = IngestionWorker(db=db)
+    metadata = {"schema": "telegram_desktop_export", "sender_id": "user987654321", "sender_name": "Sample Member", "provenance": "HACKATHON_SAMPLE"}
+
+    assert worker.process_raw_post("Telegram [PS02:test]", channel_a, "1", "2026-10-01T10:00:00Z", "Sample post one", "HACKATHON_SAMPLE", source_metadata=metadata)
+    assert worker.process_raw_post("Telegram [PS02:test]", channel_b, "2", "2026-10-01T11:00:00Z", "Sample post two", "HACKATHON_SAMPLE", source_metadata=metadata)
+
+    linked = [item for item in db.list_cross_channel_identifiers() if item.get("type") == "TelegramAccount"]
+    assert len(linked) == 1
+    assert linked[0]["normalized_value"] == "user987654321"
+    assert channel_a in linked[0]["linked_channels"]
+    assert channel_b in linked[0]["linked_channels"]
