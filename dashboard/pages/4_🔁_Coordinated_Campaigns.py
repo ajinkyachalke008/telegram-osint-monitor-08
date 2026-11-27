@@ -10,7 +10,7 @@ import streamlit as st
 import pandas as pd
 
 from core.db import Database
-from dashboard.similarity import find_text_ad_clusters, find_exact_image_clusters
+from dashboard.similarity import find_text_ad_clusters, find_exact_image_clusters, find_image_clusters, IMAGEHASH_AVAILABLE
 
 st.set_page_config(page_title="Coordinated Campaigns | telegram-osint-monitor-08", page_icon="🔁", layout="wide")
 
@@ -91,3 +91,29 @@ else:
                  'Timestamp': post.get('timestamp'), 'Text excerpt': str(post.get('text') or '')[:180]}
                 for post in image_cluster['posts']
             ]), use_container_width=True, hide_index=True)
+
+
+st.divider()
+st.subheader('🧬 Visual Similarity Candidates (pHash)')
+st.caption('Perceptual-hash candidates are only a shortlist for human image comparison. A low Hamming distance does not establish the same advertiser or campaign.')
+phash_threshold = st.sidebar.slider('Visual candidate distance (pHash)', min_value=0, max_value=16, value=7, step=1)
+if not IMAGEHASH_AVAILABLE:
+    st.warning('Perceptual image matching is unavailable because imagehash/Pillow is not installed. Exact SHA-256 reuse remains available.')
+else:
+    visual_clusters = find_image_clusters(posts, max_hamming_distance=phash_threshold)
+    if not visual_clusters:
+        st.info('No visual-similarity candidates found at this threshold.')
+    else:
+        st.markdown(f'**{len(visual_clusters)} visual candidate groups** at Hamming distance ≤ {phash_threshold}. Review each pair manually.')
+        for visual_cluster in visual_clusters:
+            label = 'MULTI-SOURCE CANDIDATE' if visual_cluster['cross_channel'] else 'SAME-SOURCE CANDIDATE'
+            with st.expander(f"{visual_cluster['cluster_id']} · {label} · {visual_cluster['image_count']} posts"):
+                st.markdown(f"**Sources:** {', '.join(visual_cluster['channels'])}")
+                image_path = visual_cluster.get('sample_image')
+                if image_path and Path(image_path).is_file():
+                    st.image(image_path, width=280)
+                st.dataframe(pd.DataFrame([
+                    {'Source': post.get('source'), 'Post ID': post.get('post_id'),
+                     'Timestamp': post.get('timestamp'), 'Text excerpt': str(post.get('text') or '')[:150]}
+                    for post in visual_cluster['posts']
+                ]), use_container_width=True, hide_index=True)
