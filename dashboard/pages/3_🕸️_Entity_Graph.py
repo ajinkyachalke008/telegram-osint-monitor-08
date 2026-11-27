@@ -36,7 +36,7 @@ with db.get_connection() as conn:
         SELECT p.post_uid, p.channel_id as source, p.message_id as post_id, p.raw_text as text,
                p.category as primary_category, p.risk_level
         FROM posts p
-        ORDER BY p.timestamp_utc DESC LIMIT 200
+        ORDER BY p.timestamp_utc DESC LIMIT 5000
         """
     ).fetchall()
 
