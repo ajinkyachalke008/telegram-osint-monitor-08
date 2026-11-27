@@ -29,6 +29,8 @@ def render_provenance_banner(page_title: str = "", active_stream: str = None):
                 badges_html.append(f'<span style="background-color:#1E88E5; color:#E3F2FD; padding:2px 7px; border-radius:4px; font-weight:bold; font-size:11px;">IMPORTED ({count} posts)</span>')
             elif source == "LIVE":
                 badges_html.append(f'<span style="background-color:#00897B; color:#E0F2F1; padding:2px 7px; border-radius:4px; font-weight:bold; font-size:11px;">LIVE ({count} posts)</span>')
+            elif source == "HACKATHON_SAMPLE":
+                badges_html.append(f'<span style="background-color:#6B4EFF; color:#FFFFFF; padding:2px 7px; border-radius:4px; font-weight:bold; font-size:11px;">HACKATHON_SAMPLE ({count} posts)</span>')
             else:
                 badges_html.append(f'<span style="background-color:#4A5568; color:#ECEFF1; padding:2px 7px; border-radius:4px; font-weight:bold; font-size:11px;">{source} ({count} posts)</span>')
     else:

@@ -42,6 +42,7 @@ with db.get_connection() as conn:
         """
         SELECT a.alert_id, a.post_uid, a.category, a.risk_level, a.threat_score, a.status,
                p.channel_id, p.platform, p.message_id, p.timestamp_utc, p.raw_text, p.ingestion_source,
+               p.media_path, p.media_hash, p.source_metadata_json,
                e.evidence_id, e.canonical_json, e.current_hash, e.prev_hash, e.block_height, e.generated_at_utc
         FROM alerts a
         JOIN posts p ON a.post_uid = p.post_uid
@@ -69,6 +70,25 @@ with col_left:
     st.markdown(f"**Channel / Source:** `{alert['channel_id']}` ({alert['platform']})")
     st.markdown(f"**Timestamp (UTC):** `{alert['timestamp_utc']}`")
     st.markdown(f"**Provenance:** `{alert['ingestion_source']}`")
+    source_metadata = json.loads(alert.get('source_metadata_json') or '{}')
+    if source_metadata:
+        st.write('Original sender:', source_metadata.get('sender_name') or source_metadata.get('author') or 'Not supplied')
+        if source_metadata.get('sender_id'):
+            st.write('Export sender account ID:', source_metadata['sender_id'])
+        if source_metadata.get('forwarded_from'):
+            st.write('Forwarded from:', source_metadata['forwarded_from'])
+        if source_metadata.get('edited_at'):
+            st.write('Edited at (source timezone):', source_metadata['edited_at'])
+        with st.expander('Source metadata, OCR and attachment integrity'):
+            st.json({key: value for key, value in source_metadata.items() if key != 'text_entities'})
+            if source_metadata.get('text_entities'):
+                st.caption('Preserved Telegram text entity segments:', len(source_metadata['text_entities']))
+            st.write('Stored media SHA-256:', alert.get('media_hash') or 'No media')
+            if source_metadata.get('ocr_text'):
+                st.text_area('OCR analysis text', source_metadata['ocr_text'], height=140, disabled=True)
+            media_path = alert.get('media_path')
+            if media_path and Path(media_path).is_file():
+                st.image(media_path, caption='Original imported attachment', use_container_width=True)
     st.markdown(f"**Risk Level:** `{alert['risk_level']}` | **Threat Score:** `{alert['threat_score']:.1f}/10`")
     
     st.markdown("#### Message Text")

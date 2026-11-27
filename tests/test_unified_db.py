@@ -1,5 +1,6 @@
 """Unit tests for Workstream A Unified SQLite Database."""
 import tempfile
+import json
 from pathlib import Path
 import pytest
 
@@ -209,3 +210,31 @@ def test_inject_scripted_demo_post(temp_db):
         ident_row = conn.execute("SELECT * FROM identifiers WHERE identifier_id = 'upi:mule.syndicate@ybl'").fetchone()
         assert ident_row is not None
 
+
+
+
+def test_source_metadata_json_is_persisted(temp_db):
+    post = PostRecord(
+        platform="Telegram [PS02:abc12345]",
+        channel_id="Telegram:channel123",
+        message_id="22",
+        timestamp_utc="2026-10-01T12:00:00Z",
+        raw_text="Synthetic sample",
+        ingestion_source="HACKATHON_SAMPLE",
+        source_metadata={"provenance": "HACKATHON_SAMPLE", "sender_id": "user123", "forwarded_from": "Sample Source"},
+    )
+    assert temp_db.insert_post(post) is True
+    stored = temp_db.get_post(post.post_uid)
+    metadata = json.loads(stored["source_metadata_json"])
+    assert metadata["provenance"] == "HACKATHON_SAMPLE"
+    assert metadata["forwarded_from"] == "Sample Source"
+
+
+def test_reset_db_drops_real_edge_and_feedback_tables(temp_db):
+    temp_db.reset_db()
+    with temp_db.get_connection() as conn:
+        tables = {row["name"] for row in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+    assert "entities_edges" in tables
+    assert "feedback" in tables
+    assert "edges" not in tables
+    assert temp_db.list_posts() == []

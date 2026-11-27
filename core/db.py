@@ -46,6 +46,10 @@ class Database:
             if SCHEMA_PATH.exists():
                 schema_sql = SCHEMA_PATH.read_text(encoding="utf-8")
                 conn.executescript(schema_sql)
+            # Migrate databases created before source metadata was introduced.
+            post_columns = {row['name'] for row in conn.execute('PRAGMA table_info(posts)').fetchall()}
+            if 'source_metadata_json' not in post_columns:
+                conn.execute("ALTER TABLE posts ADD COLUMN source_metadata_json TEXT NOT NULL DEFAULT '{}' ")
             conn.commit()
 
     def init_db(self):
@@ -56,7 +60,7 @@ class Database:
         """Wipe all database tables and recreate clean schema."""
         with self._lock, self.get_connection() as conn:
             conn.execute("PRAGMA foreign_keys = OFF")
-            tables = ["alerts", "post_identifiers", "evidence", "identifiers", "posts", "edges", "channels", "audit_log"]
+            tables = ["feedback", "alerts", "post_identifiers", "evidence", "identifiers", "posts", "entities_edges", "channels", "audit_log"]
             for t in tables:
                 conn.execute(f"DROP TABLE IF EXISTS {t}")
             conn.commit()
@@ -117,16 +121,17 @@ class Database:
             cur = conn.execute(
                 """
                 INSERT INTO posts(post_uid, platform, channel_id, message_id, timestamp_utc,
-                                  raw_text, normalized_text, media_path, media_hash,
+                                  raw_text, normalized_text, media_path, media_hash, source_metadata_json,
                                   category, risk_level, threat_score, ingestion_source, created_at)
-                VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(platform, channel_id, message_id) DO NOTHING
                 """,
                 (
                     post.post_uid, post.platform, post.channel_id, str(post.message_id),
                     post.timestamp_utc, post.raw_text, post.normalized_text,
-                    post.media_path, post.media_hash, post.category, post.risk_level,
-                    post.threat_score, post.ingestion_source, post.created_at
+                    post.media_path, post.media_hash,
+                    json.dumps(post.source_metadata or {}, ensure_ascii=False, sort_keys=True, default=str),
+                    post.category, post.risk_level, post.threat_score, post.ingestion_source, post.created_at
                 )
             )
             inserted = cur.rowcount > 0

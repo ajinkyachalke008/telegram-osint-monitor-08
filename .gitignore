@@ -30,3 +30,9 @@ Thumbs.db
 .agent-cache/
 .vscode/
 .idea/
+
+# User-supplied hackathon datasets and extracted runtime copies
+data/imported_datasets/
+data/ps02/
+PS02_demo_data/
+PS02_demo_data-*.zip

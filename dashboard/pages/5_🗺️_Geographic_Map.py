@@ -9,6 +9,7 @@ for p in [Path(__file__).resolve().parent, Path(__file__).resolve().parent.paren
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+import json
 
 from core.db import Database
 from addons.extractors import extract_locations
@@ -19,9 +20,15 @@ from dashboard.provenance_banner import render_provenance_banner
 render_provenance_banner(page_title="Geographic Map", active_stream="VERIFIED-SYNTHETIC")
 
 st.title("🗺️ Geographic Distribution & Hotspot Mapping")
-st.caption("Spatial visualization of extracted Indian locations, cybercrime hotspots (Mewat, Jamtara), and PIN codes.")
+st.caption("Reported city mentions and social-post location tags. These are not device GPS, IP geolocation or verified sender locations.")
 
 db = Database()
+with db.get_connection() as conn:
+    source_rows = conn.execute("SELECT ingestion_source, COUNT(*) AS total FROM posts GROUP BY ingestion_source").fetchall()
+source_counts = {row["ingestion_source"]: row["total"] for row in source_rows}
+source_options = ["All sources"] + sorted(source_counts)
+default_source = "HACKATHON_SAMPLE" if "HACKATHON_SAMPLE" in source_counts else "All sources"
+source_filter = st.selectbox("Dataset / provenance filter", source_options, index=source_options.index(default_source))
 
 # Known Indian Hotspot coordinates
 KNOWN_LOCATIONS = {
@@ -38,19 +45,34 @@ KNOWN_LOCATIONS = {
     "lucknow": {"lat": 26.8467, "lon": 80.9462, "name": "Lucknow"},
     "indore": {"lat": 22.7196, "lon": 75.8577, "name": "Indore"},
     "surat": {"lat": 21.1702, "lon": 72.8311, "name": "Surat"},
-    "chandigarh": {"lat": 30.7333, "lon": 76.7794, "name": "Chandigarh"}
+    "chandigarh": {"lat": 30.7333, "lon": 76.7794, "name": "Chandigarh"},
+    "alwar": {"lat": 27.5530, "lon": 76.6346, "name": "Alwar"},
+    "ajmer": {"lat": 26.4499, "lon": 74.6399, "name": "Ajmer"},
+    "bikaner": {"lat": 28.0229, "lon": 73.3119, "name": "Bikaner"},
+    "jodhpur": {"lat": 26.2389, "lon": 73.0243, "name": "Jodhpur"},
+    "kota": {"lat": 25.2138, "lon": 75.8648, "name": "Kota"},
+    "sikar": {"lat": 27.6094, "lon": 75.1398, "name": "Sikar"},
+    "udaipur": {"lat": 24.5854, "lon": 73.7125, "name": "Udaipur"},
+    "bharatpur": {"lat": 27.2152, "lon": 77.5030, "name": "Bharatpur"}
 }
 
 # Fetch locations from posts
 with db.get_connection() as conn:
-    rows = conn.execute("SELECT raw_text, category, risk_level FROM posts").fetchall()
+    rows = conn.execute("SELECT raw_text, category, risk_level, source_metadata_json FROM posts WHERE (? = 'All sources' OR ingestion_source = ?)", (source_filter, source_filter)).fetchall()
 
 geo_counts = {}
 for r in rows:
-    text = r["raw_text"]
-    locs = extract_locations(text)
-    for loc in locs:
-        lname = loc["name"].lower()
+    metadata = json.loads(r["source_metadata_json"] or "{}")
+    mentioned = {loc["name"].lower() for loc in extract_locations(r["raw_text"])}
+    # Social post location tags are structured source metadata, not inferred GPS.
+    location_tag = str(metadata.get("location_tag") or "").strip().lower()
+    if location_tag in KNOWN_LOCATIONS:
+        mentioned.add(location_tag)
+    elif location_tag.endswith(", rajasthan"):
+        city_tag = location_tag.rsplit(",", 1)[0].strip()
+        if city_tag in KNOWN_LOCATIONS:
+            mentioned.add(city_tag)
+    for lname in mentioned:
         if lname in KNOWN_LOCATIONS:
             if lname not in geo_counts:
                 geo_counts[lname] = {
@@ -88,7 +110,7 @@ else:
         color_continuous_scale="Reds",
         scope="asia",
         template="plotly_dark",
-        title="Detected Trade Activity across Indian Geographic Hubs"
+        title="Reported Location Mentions across Indian Geographic Hubs"
     )
     fig.update_geos(
         center=dict(lat=21.5937, lon=78.9629),

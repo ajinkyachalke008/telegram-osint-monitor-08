@@ -3,6 +3,7 @@
 Extracts:
 - Validated UPI IDs (checked against real NPCI / PSP bank handle registry)
 - Indian phone numbers (handles +91, 10-digit formats, Devanagari numerals, and obfuscated number words)
+- Context-labelled bank-account number candidates (not ownership validation)
 - IFSC Codes (Indian Financial System Code)
 - Cryptocurrency wallets with Base58Check / hex verification (BTC, ETH/EVM, TRX/TRC20, Solana)
 - Telegram @usernames & t.me invite / channel links
@@ -98,6 +99,12 @@ B58_ALPHABET = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
 # Regexes
 RE_UPI_CANDIDATE = re.compile(r"\b([a-zA-Z0-9.\-_]{2,64})@([a-zA-Z0-9.\-_]{2,32})\b")
 RE_IFSC = re.compile(r"\b([A-Z]{4})0([A-Z0-9]{6})\b", re.IGNORECASE)
+# Extract only numbers immediately introduced by an account-number context.
+RE_BANK_ACCOUNT = re.compile(
+    r"\b(?:a\s*/\s*c|a\.?c\.?|bank\s+account|account(?:\s+(?:number|no\.?))?)"
+    r"\s*(?:(?:number|no\.?)\s*)?[:#-]?\s*([0-9][0-9\s-]{7,25}[0-9])\b",
+    re.IGNORECASE,
+)
 RE_USERNAME = re.compile(r"(?<![\w@./])@([A-Za-z][A-Za-z0-9_]{3,31})\b")
 RE_TME_LINK = re.compile(r"(?:https?://)?(?:t\.me|telegram\.me)/(?:joinchat/|\+)?([A-Za-z0-9_-]{4,64})", re.IGNORECASE)
 RE_PINCODE = re.compile(r"\b([1-9][0-9]{5})\b")
@@ -207,6 +214,28 @@ def extract_indian_phones(text: str) -> List[str]:
         if canonical not in seen:
             seen.add(canonical)
             found.append(canonical)
+    return found
+
+
+def extract_bank_accounts(text: str) -> List[str]:
+    """Extract account-number candidates only when explicitly context-labelled.
+
+    This does not validate account ownership or whether the number is active.
+    Ten-digit Indian mobile-shaped values are excluded to reduce false matches.
+    """
+    if not text:
+        return []
+    found = []
+    seen = set()
+    for match in RE_BANK_ACCOUNT.finditer(text):
+        digits = re.sub(r"\D", "", match.group(1))
+        if not 9 <= len(digits) <= 18:
+            continue
+        if len(digits) == 10 and digits[0] in "6789":
+            continue
+        if digits not in seen:
+            seen.add(digits)
+            found.append(digits)
     return found
 
 
@@ -354,7 +383,7 @@ def extract_all_entities(text: str, source: str = "text", channel_handle: Option
     """
     if not text:
         return {
-            "upis": [], "phones": [], "ifscs": [], "crypto_wallets": [],
+            "upis": [], "phones": [], "bank_accounts": [], "ifscs": [], "crypto_wallets": [],
             "usernames": [], "tme_links": [], "locations": [], "prices": [],
             "all_flat": []
         }
@@ -376,6 +405,7 @@ def extract_all_entities(text: str, source: str = "text", channel_handle: Option
 
     upis = extract_upis(text)
     phones = extract_indian_phones(text)
+    bank_accounts = extract_bank_accounts(text)
     ifscs = extract_ifsc_codes(text)
     cryptos = extract_crypto_wallets(text)
     locations = extract_locations(text)
@@ -407,6 +437,8 @@ def extract_all_entities(text: str, source: str = "text", channel_handle: Option
         all_flat.append({"value": u, "type": "UPI", "source": source})
     for p in phones:
         all_flat.append({"value": p, "type": "Phone", "source": source})
+    for account in bank_accounts:
+        all_flat.append({"value": account, "type": "BankAccount", "source": source})
     for i in ifscs:
         all_flat.append({"value": i, "type": "IFSC", "source": source})
     for addr, net, valid in cryptos:
@@ -421,6 +453,7 @@ def extract_all_entities(text: str, source: str = "text", channel_handle: Option
     return {
         "upis": upis,
         "phones": phones,
+        "bank_accounts": bank_accounts,
         "ifscs": ifscs,
         "crypto_wallets": cryptos,
         "usernames": usernames,

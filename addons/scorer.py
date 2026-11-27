@@ -261,6 +261,8 @@ class RuleScorer:
         if identifiers and total_score > 0:
             if identifiers.get("upis") or identifiers.get("crypto_wallets"):
                 total_score += 1.5  # Direct payment channel present
+            if identifiers.get("bank_accounts"):
+                total_score += 1.5  # Context-labelled bank account candidate present
             if identifiers.get("phones"):
                 total_score += 1.0  # Contact channel present
 

@@ -39,6 +39,7 @@ class PostRecord:
     ingestion_source: str = "LIVE"  # 'LIVE', 'IMPORTED', 'SIMULATED'
     created_at: str = field(default_factory=now_utc_iso)
     post_uid: str = ""
+    source_metadata: Dict[str, Any] = field(default_factory=dict)
 
     def __post_init__(self):
         if not self.post_uid:
@@ -48,7 +49,7 @@ class PostRecord:
 @dataclass
 class IdentifierRecord:
     identifier_id: str
-    type: str  # 'UPI', 'Phone', 'Crypto', 'Username', 'IFSC', 'Location'
+    type: str  # UPI, Phone, BankAccount, TelegramAccount, Crypto, Username, IFSC, Location
     raw_value: str
     normalized_value: str
     channel_count: int = 1

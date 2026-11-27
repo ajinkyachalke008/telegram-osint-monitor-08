@@ -35,10 +35,11 @@ CREATE TABLE IF NOT EXISTS posts (
     normalized_text TEXT NOT NULL,
     media_path TEXT,
     media_hash TEXT,
+    source_metadata_json TEXT NOT NULL DEFAULT '{}',
     category TEXT DEFAULT 'Clean',
     risk_level TEXT DEFAULT 'Clean',
     threat_score REAL DEFAULT 0.0,
-    ingestion_source TEXT NOT NULL, -- 'LIVE', 'IMPORTED', 'SIMULATED'
+    ingestion_source TEXT NOT NULL, -- LIVE / IMPORTED / SIMULATED / VERIFIED-SYNTHETIC / HACKATHON_SAMPLE
     created_at TEXT NOT NULL,
     UNIQUE(platform, channel_id, message_id)
 );
@@ -50,7 +51,7 @@ CREATE INDEX IF NOT EXISTS ix_posts_category ON posts(category);
 -- 3. Identifiers Table
 CREATE TABLE IF NOT EXISTS identifiers (
     identifier_id TEXT PRIMARY KEY, -- e.g. "upi:demo.seller@ybl"
-    type TEXT NOT NULL,             -- "UPI", "Phone", "Crypto", "Username", "IFSC", "Location"
+    type TEXT NOT NULL,             -- "UPI", "Phone", "BankAccount", "TelegramAccount", "Crypto", "Username", "IFSC", "Location"
     raw_value TEXT NOT NULL,
     normalized_value TEXT NOT NULL,
     channel_count INTEGER DEFAULT 1,
