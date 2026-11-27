@@ -23,6 +23,12 @@ st.title("🗺️ Geographic Distribution & Hotspot Mapping")
 st.caption("Reported city mentions and social-post location tags. These are not device GPS, IP geolocation or verified sender locations.")
 
 db = Database()
+with db.get_connection() as conn:
+    source_rows = conn.execute("SELECT ingestion_source, COUNT(*) AS total FROM posts GROUP BY ingestion_source").fetchall()
+source_counts = {row["ingestion_source"]: row["total"] for row in source_rows}
+source_options = ["All sources"] + sorted(source_counts)
+default_source = "HACKATHON_SAMPLE" if "HACKATHON_SAMPLE" in source_counts else "All sources"
+source_filter = st.selectbox("Dataset / provenance filter", source_options, index=source_options.index(default_source))
 
 # Known Indian Hotspot coordinates
 KNOWN_LOCATIONS = {
@@ -52,7 +58,7 @@ KNOWN_LOCATIONS = {
 
 # Fetch locations from posts
 with db.get_connection() as conn:
-    rows = conn.execute("SELECT raw_text, category, risk_level, source_metadata_json FROM posts").fetchall()
+    rows = conn.execute("SELECT raw_text, category, risk_level, source_metadata_json FROM posts WHERE (? = 'All sources' OR ingestion_source = ?)", (source_filter, source_filter)).fetchall()
 
 geo_counts = {}
 for r in rows:
