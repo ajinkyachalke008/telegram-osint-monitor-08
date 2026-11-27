@@ -189,3 +189,9 @@ def test_import_into_worker_keeps_hackathon_provenance_and_excludes_references(t
     assert {row["ingestion_source"] for row in worker.records} == {"HACKATHON_SAMPLE"}
     assert len(worker.db.channels) == 2
     assert worker.db.audit_entries[0][0] == "ps02_dataset_import"
+
+
+
+def test_safe_child_rejects_windows_drive_paths(tmp_path):
+    with pytest.raises(PS02DatasetError):
+        safe_child(tmp_path, r"C:\\Windows\\system.ini")
