@@ -39,3 +39,7 @@ Thumbs.db
 .agent-cache/
 .vscode/
 .idea/
+
+# PS02 hackathon participant archive and extracted source data (keep local; never commit)
+PS02_demo_data*/
+data/participant/

@@ -1,0 +1,85 @@
+{
+  "dataset_id": "PS02_demo_data",
+  "profile_version": 1,
+  "source_description": "Hackathon participant dataset supplied for the PS02 demonstration",
+  "audit_date": "2026-11-27",
+  "audit_scope": "Previously performed offline structural inventory of the participant archive; not an authenticity, attribution, or ground-truth assessment",
+  "provenance_label_for_ui": "HACKATHON PROVIDED DATASET · LOCAL · UNVERIFIED",
+  "recommended_local_staging_path": "data/participant/PS02_demo_data/",
+  "raw_dataset_must_be_committed": false,
+  "counts": {
+    "telegram": {
+      "json_exports": 13,
+      "message_records": 1500,
+      "service_records": 13,
+      "photo_references": 199,
+      "empty_text_message_records": 63,
+      "edit_metadata_records": 40,
+      "forwarded_records": 42
+    },
+    "social_media": {
+      "csv_posts": 350,
+      "platform_counts": {
+        "Instagram": 126,
+        "Facebook": 88,
+        "X": 48,
+        "YouTube comment": 36,
+        "ShareChat": 52
+      },
+      "observed_columns": [
+        "post_id",
+        "platform",
+        "author",
+        "posted_at_ist",
+        "text",
+        "hashtags",
+        "image_file",
+        "location_tag",
+        "likes",
+        "comments"
+      ]
+    },
+    "images": {
+      "social_image_files": 92,
+      "poster_files": 18,
+      "poster_sha256_index_rows": 18,
+      "poster_sha256_matches": 18
+    },
+    "lexicon": {
+      "rows": 37
+    },
+    "derived_totals": {
+      "content_records_excluding_telegram_service_records": 1850,
+      "definition": "1500 Telegram message records + 350 social posts"
+    }
+  },
+  "overlap_notes": [
+    "Empty-text, edit-metadata, forwarded, and photo-reference counts are attributes/references and may overlap; do not add them as disjoint records.",
+    "The 13 Telegram service records are not included in the 1850 content-record total."
+  ],
+  "validation_status": {
+    "poster_integrity": "18 of 18 supplied poster files matched the supplied SHA-256 index in the previous audit",
+    "participant_archive_structure": "Previously inventoried; rerun preflight on the laptop archive before the demo",
+    "judge_answer_key_present": false,
+    "verified_ground_truth_labels_present": false,
+    "model_accuracy_claims_supported_by_this_archive": false,
+    "real_world_authenticity_or_attribution_established": false
+  },
+  "demo_rules": {
+    "read_locally": true,
+    "show_aggregate_metrics_only": true,
+    "show_author_or_account_names": false,
+    "show_raw_message_text": false,
+    "show_contact_or_payment_identifiers": false,
+    "show_exact_location_tags": false,
+    "build_person_or_identity_profiles": false,
+    "build_cross_platform_identity_links": false,
+    "export_row_level_records": false,
+    "mix_with_synthetic_sample_data": false
+  },
+  "limitations": [
+    "Aggregate structural counts do not prove the truth of any post, account, identity, location, allegation, or suspected activity.",
+    "The absence of a judge-only answer key means performance metrics or correct linkage claims cannot be calculated from this archive alone.",
+    "Poster hash matches establish that the files match the supplied index, not who created the files or whether their contents are authentic."
+  ]
+}
