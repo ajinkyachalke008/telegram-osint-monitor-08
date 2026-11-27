@@ -106,7 +106,7 @@ def test_flatten_telegram_text_preserves_entity_segment_order():
 
 def test_timestamp_conversion_uses_epoch_and_ist():
     assert to_utc_iso("2026-10-01T12:00:00") == "2026-10-01T06:30:00Z"
-    assert to_utc_iso("1790856000", unix_epoch=True) == "2026-10-01T00:00:00Z"
+    assert to_utc_iso("1790856000", unix_epoch=True) == "2026-10-01T12:00:00Z"
 
 
 def test_safe_child_rejects_path_traversal(tmp_path):
