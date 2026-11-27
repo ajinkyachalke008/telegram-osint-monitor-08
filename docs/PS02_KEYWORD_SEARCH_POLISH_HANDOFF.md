@@ -126,7 +126,9 @@ Use the committee starter lexicon as a separate source artefact. Use the new [PS
 
 Implement these as transparent, editable search aliases in a dedicated PS02 configuration/module. Keep exact and expanded matches separate. Generic one-word terms must be labelled broad and must not produce an automatic risk score. Show matched phrase and category only; do not label authors/accounts/channels as guilty or fraudulent.
 
-Do not simply copy every existing entry from `addons/lexicon.yaml` into the new feature. That file includes more aggressive coded-word terminology intended for the legacy pipeline. Do not expand weapons/drugs slang, coded trading language, evasion phrases, pricing, quantities, delivery methods, concealment or bypass instructions. Retain the committee's 37-row CSV unchanged and do not claim the new aliases are official committee terms.
+Do not simply copy every entry from `addons/lexicon.yaml` into the new feature. The PS02 catalogue now includes a narrow **context-only weapons vocabulary** consisting of ordinary object names and neutral incident phrases, including `gun`, `firearm`, `pistol`, `revolver`, `rifle`, `shotgun`, `ammunition`, `desi katta`, `katta`, `tamancha`, `bandook`, `banduk`, `hathiyar`, `asla`, `desi pistol`, and `gavti katta`. These matches must never be labelled as illegal trading or scored as suspicious by themselves.
+
+Do not copy coded transaction terms, pricing/quantity phrases, buyer/seller solicitations, procurement/delivery language, concealment/evasion phrases or weapon-use instructions from the legacy YAML. Do not expand operational drug-trade terminology. Retain the committee's 37-row CSV unchanged and do not claim these new aliases are official committee terms.
 
 For a phrase such as `fake Aadhaar card`:
 1. Exact mode should honestly report zero literal phrase matches if there are none.
