@@ -8,6 +8,7 @@ for p in [Path(__file__).resolve().parent, Path(__file__).resolve().parent.paren
 
 import streamlit as st
 import pandas as pd
+import json
 
 from core.db import Database
 from dashboard.graph import (
@@ -82,7 +83,7 @@ st.plotly_chart(fig, use_container_width=True)
 st.divider()
 
 # Tabs for Dossiers & Syndicates
-tab1, tab2, tab3 = st.tabs(["🚨 Cross-Channel Actors", "👥 Connected Syndicates", "👤 Seller Dossier Lookup"])
+tab1, tab2, tab3, tab4 = st.tabs(["🚨 Cross-Channel Actors", "👥 Connected Syndicates", "👤 Seller Dossier Lookup", "↪️ Forwarded-From Evidence"])
 
 with tab1:
     st.subheader("Identified Cross-Channel Actors")
@@ -129,3 +130,29 @@ with tab3:
                         st.info("No co-occurring identifiers found.")
             else:
                 st.warning(profile.get("summary", "Not found."))
+
+
+with tab4:
+    st.subheader('Forwarded-From Source Mentions')
+    st.caption('Telegram Desktop export metadata records a forwarded_from source label. These are unverified source mentions, not authenticated forwarding chains or proof that two operators are the same.')
+    with db.get_connection() as conn:
+        forward_rows = conn.execute("SELECT channel_id, message_id, timestamp_utc, source_metadata_json FROM posts WHERE ingestion_source = 'HACKATHON_SAMPLE' ORDER BY timestamp_utc DESC").fetchall()
+    forward_records = []
+    for row in forward_rows:
+        try:
+            metadata = json.loads(row['source_metadata_json'] or '{}')
+        except (TypeError, json.JSONDecodeError):
+            metadata = {}
+        forwarded_from = metadata.get('forwarded_from')
+        if forwarded_from:
+            forward_records.append({
+                'Receiving source': row['channel_id'],
+                'Message ID': row['message_id'],
+                'Timestamp (UTC)': row['timestamp_utc'],
+                'Reported forwarded-from': str(forwarded_from),
+            })
+    if forward_records:
+        st.metric('Forwarded messages with source labels', len(forward_records))
+        st.dataframe(pd.DataFrame(forward_records), use_container_width=True, hide_index=True)
+    else:
+        st.info('No forwarded-from metadata is available in the current hackathon sample.')
