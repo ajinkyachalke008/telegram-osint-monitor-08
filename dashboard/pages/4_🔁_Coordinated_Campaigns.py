@@ -72,13 +72,13 @@ else:
         is_cross = len(channels) >= 2
         header_badge = "CROSS-SOURCE TEMPLATE CANDIDATE" if is_cross else "LOCAL REPEATED CONTENT"
 
-        with st.expander(f"Campaign #{idx:02d}: {header_badge} ({post_count} posts across {len(channels)} channels)"):
-            st.markdown(f"**Channels Involved:** `{', '.join(channels)}`")
-            st.markdown(f"**Total Ad Instances:** `{post_count}`")
+        with st.expander(f"Similarity group #{idx:02d}: {header_badge} ({post_count} posts across {len(channels)} channels)"):
+            st.markdown(f"**Sources represented:** `{', '.join(channels)}`")
+            st.markdown(f"**Posts in group:** `{post_count}`")
             st.markdown("#### Representative Ad Copy Template")
             st.code(sample_text)
 
-            st.markdown("#### Matched Posts Instances")
+            st.markdown("#### Matched post records")
             matched_posts = cl.get("posts", [])
             for mp in matched_posts[:5]:
                 st.caption(f"• **{mp.get('source')}** (Msg #{mp.get('post_id')} | {mp.get('timestamp')}): {mp.get('text')[:100]}...")
