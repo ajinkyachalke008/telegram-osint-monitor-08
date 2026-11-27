@@ -42,6 +42,7 @@ with db.get_connection() as conn:
         """
         SELECT a.alert_id, a.post_uid, a.category, a.risk_level, a.threat_score, a.status,
                p.channel_id, p.platform, p.message_id, p.timestamp_utc, p.raw_text, p.ingestion_source,
+               p.media_path, p.media_hash, p.source_metadata_json,
                e.evidence_id, e.canonical_json, e.current_hash, e.prev_hash, e.block_height, e.generated_at_utc
         FROM alerts a
         JOIN posts p ON a.post_uid = p.post_uid
