@@ -3,6 +3,7 @@
 Extracts:
 - Validated UPI IDs (checked against real NPCI / PSP bank handle registry)
 - Indian phone numbers (handles +91, 10-digit formats, Devanagari numerals, and obfuscated number words)
+- Context-labelled bank-account number candidates (not ownership validation)
 - IFSC Codes (Indian Financial System Code)
 - Cryptocurrency wallets with Base58Check / hex verification (BTC, ETH/EVM, TRX/TRC20, Solana)
 - Telegram @usernames & t.me invite / channel links
