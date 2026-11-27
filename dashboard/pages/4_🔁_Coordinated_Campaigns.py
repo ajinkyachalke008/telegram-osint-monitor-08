@@ -22,7 +22,19 @@ st.caption("Text and media similarity surface repeated-content candidates for hu
 
 db = Database()
 
-# Sidebar threshold
+with db.get_connection() as conn:
+    source_rows = conn.execute("SELECT ingestion_source, COUNT(*) AS total FROM posts GROUP BY ingestion_source").fetchall()
+source_counts = {row["ingestion_source"]: row["total"] for row in source_rows}
+source_options = ["All sources"] + sorted(source_counts)
+default_source = "HACKATHON_SAMPLE" if "HACKATHON_SAMPLE" in source_counts else "All sources"
+source_filter = st.selectbox(
+    "Dataset / provenance filter",
+    source_options,
+    index=source_options.index(default_source),
+    help="Compare posts within the selected source class; choose All sources only for deliberate cross-source analysis.",
+)
+
+# Sidebar thresholds
 threshold = st.sidebar.slider("MinHash Jaccard Similarity Threshold", 0.40, 0.95, 0.65, 0.05)
 
 # Load posts
@@ -33,8 +45,10 @@ with db.get_connection() as conn:
                p.category as primary_category, p.risk_level, p.timestamp_utc as timestamp,
                p.media_path as image_path, p.media_hash
         FROM posts p
+        WHERE (? = 'All sources' OR p.ingestion_source = ?)
         ORDER BY p.timestamp_utc DESC LIMIT 5000
-        """
+        """,
+        (source_filter, source_filter),
     ).fetchall()
     posts = [dict(r) for r in rows]
 
