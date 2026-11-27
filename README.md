@@ -9,7 +9,7 @@ A research and hackathon demonstration for **public-source, multi-platform threa
 - Telegram Desktop JSON export ingestion and generic CSV/JSON import.
 - Public Telegram preview and local TGSherlock read-only adapters.
 - Unicode normalization, Hindi/English number normalization, homoglyph handling, and rule-based threat scoring.
-- Candidate extraction for phones, context-labelled bank-account numbers, UPI-style identifiers, IFSCs, cryptocurrency addresses, Telegram handles/links, location mentions and prices.
+- Candidate extraction for phones, context-labelled bank-account numbers, Telegram export account IDs, UPI-style identifiers, IFSCs, cryptocurrency addresses, Telegram handles/links, location mentions and prices.
 - SQLite storage, source provenance, shared-identifier linking, alerts and a SHA-256 evidence chain.
 - Streamlit dashboard for alerts, evidence review, entity graph, text similarity, geographic mentions, data ingestion, metrics, responsible use and channel discovery.
 - Optional OCR through Tesseract (English, Hindi and Marathi, where language packs are installed).
