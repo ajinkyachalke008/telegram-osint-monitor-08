@@ -128,8 +128,14 @@ def collapse_spaced_letters(text: str) -> str:
 
 
 def map_threat_emojis(text: str) -> str:
-    for glyph, token in sorted(EMOJI_TOKEN_MAP.items(), key=lambda item: len(item[0]), reverse=True):
+    # Replace recognized multi-emoji codes with a single semantic marker so a
+    # component glyph is not accidentally scored again as a second signal.
+    compound_keys = {"🍀😮‍💨", "👃😛❄️", "💊🍬"}
+    for glyph in sorted(compound_keys, key=len, reverse=True):
         if glyph in text:
+            text = text.replace(glyph, EMOJI_TOKEN_MAP[glyph].strip())
+    for glyph, token in sorted(EMOJI_TOKEN_MAP.items(), key=lambda item: len(item[0]), reverse=True):
+        if glyph not in compound_keys and glyph in text:
             text = text.replace(glyph, f"{glyph}{token}")
     return text
 
