@@ -10,6 +10,7 @@ import logging
 import sys
 import time
 from pathlib import Path
+from typing import Optional
 
 # Add project root to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -20,7 +21,7 @@ from core.normalizer import normalize_text
 from ingestion.adapters import TGSherlockAdapter, TGQPreviewAdapter
 from addons.extractors import extract_all_entities
 from addons.scorer import RuleScorer
-from addons.evidence import build_chained_evidence_block
+from addons.evidence import build_chained_evidence_block, hash_media_file, canonical_json, compute_sha256
 from discovery.finder import WATCHLIST_FILE
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
@@ -28,18 +29,29 @@ log = logging.getLogger("ingestion.worker")
 
 
 class IngestionWorker:
-    def __init__(self, db: Optional[Database] = None):
+    def __init__(self, db: Optional[Database] = None, scorer: Optional[RuleScorer] = None):
         self.db = db or Database()
         self.tg_adapter = TGSherlockAdapter()
         self.tgq_adapter = TGQPreviewAdapter()
-        self.scorer = RuleScorer()
+        self.scorer = scorer or RuleScorer()
 
     def process_and_persist_post(self, post: PostRecord) -> bool:
         """Run normalization, extraction, scoring, hash-chaining, and persistence."""
-        post.normalized_text = normalize_text(post.raw_text)
+        metadata = post.source_metadata or {}
+        # OCR/hashtags supplement analysis text only; original raw_text remains unchanged.
+        supplemental_text = metadata.get('analysis_text') or metadata.get('ocr_text') or ''
+        analysis_input = '\n'.join(part for part in (post.raw_text or '', str(supplemental_text)) if part)
+        post.normalized_text = normalize_text(analysis_input)
+        if not post.media_hash and post.media_path:
+            post.media_hash = hash_media_file(post.media_path)
 
-        # Extraction & Scoring (pass channel_id to exclude channel's own handle as a seller)
+        # Extract and score the combined text while retaining the original raw evidence.
         extracted = extract_all_entities(post.normalized_text, channel_handle=post.channel_id)
+        if post.media_hash:
+            extracted.setdefault('media_sha256', []).append(post.media_hash)
+            extracted.setdefault('all_flat', []).append({
+                'value': post.media_hash, 'type': 'MediaSHA256', 'source': 'media'
+            })
         score_res = self.scorer.score(post.normalized_text, identifiers=extracted)
         post.category = score_res.primary_category or "Clean"
         post.risk_level = score_res.risk_level
@@ -82,8 +94,11 @@ class IngestionWorker:
             self.db.upsert_edge(post.channel_id, ident_id, "mentions")
 
         # 3. Hash Chained Evidence
+        metadata_hash = compute_sha256(canonical_json(metadata)) if metadata else None
         ev_block = build_chained_evidence_block(
-            self.db, post.post_uid, post.channel_id, post.message_id, post.timestamp_utc, post.raw_text
+            self.db, post.post_uid, post.channel_id, post.message_id, post.timestamp_utc, post.raw_text,
+            media_sha256=post.media_hash,
+            source_metadata_sha256=metadata_hash,
         )
         self.db.record_evidence_block(ev_block)
 
@@ -111,7 +126,10 @@ class IngestionWorker:
         message_id: str,
         timestamp_utc: str,
         raw_text: str,
-        ingestion_source: str = "IMPORTED"
+        ingestion_source: str = "IMPORTED",
+        media_path: Optional[str] = None,
+        media_hash: Optional[str] = None,
+        source_metadata: Optional[dict] = None,
     ) -> bool:
         """Construct PostRecord from raw fields and process through pipeline."""
         post = PostRecord(
@@ -120,7 +138,10 @@ class IngestionWorker:
             message_id=str(message_id),
             timestamp_utc=timestamp_utc or now_utc_iso(),
             raw_text=raw_text,
-            ingestion_source=ingestion_source
+            media_path=media_path,
+            media_hash=media_hash,
+            ingestion_source=ingestion_source,
+            source_metadata=source_metadata or {},
         )
         return self.process_and_persist_post(post)
 
