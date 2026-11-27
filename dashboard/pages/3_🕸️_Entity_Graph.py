@@ -25,8 +25,8 @@ st.set_page_config(page_title="Entity Graph | telegram-osint-monitor-08", page_i
 from dashboard.provenance_banner import render_provenance_banner
 render_provenance_banner(page_title="Entity Graph", active_stream="VERIFIED-SYNTHETIC")
 
-st.title("🕸️ Cross-Channel Entity Knowledge Graph & Profiling")
-st.caption("Multi-relational NetworkX graph linking Telegram channels, payment identifiers, and seller profiles.")
+st.title("🕸️ Cross-Source Entity Links & Identifier Analysis")
+st.caption("Multi-relational graph of source records and extracted identifiers. Shared values are correlation leads, not proof of common ownership or identity.")
 
 db = Database()
 
@@ -68,9 +68,9 @@ with kcol1:
 with kcol2:
     st.metric("Total Inter-Entity Edges", len(G.edges))
 with kcol3:
-    st.metric("Cross-Channel Actors", len(cross_actors), delta="CRITICAL: >= 2 Channels")
+    st.metric("Shared Identifiers", len(cross_actors), delta="Seen in 2+ sources")
 with kcol4:
-    st.metric("Connected Syndicates", len(syndicates))
+    st.metric("Candidate Connected Clusters", len(syndicates))
 
 st.divider()
 
@@ -83,10 +83,10 @@ st.plotly_chart(fig, use_container_width=True)
 st.divider()
 
 # Tabs for Dossiers & Syndicates
-tab1, tab2, tab3, tab4 = st.tabs(["🚨 Cross-Channel Actors", "👥 Connected Syndicates", "👤 Seller Dossier Lookup", "↪️ Forwarded-From Evidence"])
+tab1, tab2, tab3, tab4 = st.tabs(["🚨 Shared Identifiers", "👥 Candidate Clusters", "👤 Identifier Profiles", "↪️ Forwarded-From Evidence"])
 
 with tab1:
-    st.subheader("Identified Cross-Channel Actors")
+    st.subheader("Identifiers Seen Across Multiple Sources")
     if cross_actors:
         df_cross = pd.DataFrame(cross_actors)
         st.dataframe(df_cross, use_container_width=True)
@@ -94,7 +94,7 @@ with tab1:
         st.info("No cross-channel actors identified in the current sample.")
 
 with tab2:
-    st.subheader("Connected Campaign Syndicates")
+    st.subheader("Candidate Connected Components")
     if syndicates:
         for syn in syndicates:
             with st.expander(f"Syndicate {syn['syndicate_id']} | Risk: {syn['risk_tier']} | {syn['channel_count']} Channels | {syn['total_nodes']} Nodes"):
@@ -105,7 +105,7 @@ with tab2:
         st.info("No clustered syndicates found.")
 
 with tab3:
-    st.subheader("Deep Seller Profile Dossier")
+    st.subheader("Identifier Context Profile")
     # All identifiers list for search
     all_ident_values = [d.get("value") for n, d in G.nodes(data=True) if d.get("node_type") not in ("Channel", "Post") and d.get("value")]
     if all_ident_values:
