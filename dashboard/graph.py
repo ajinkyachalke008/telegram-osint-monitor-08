@@ -27,6 +27,7 @@ NODE_COLORS = {
     "Username": "#2196F3",          # Blue
     "IFSC": "#4CAF50",              # Green
     "BankAccount": "#D4A72C",        # Gold
+    "TelegramAccount": "#7C5CFC",      # Purple: platform account reference
     "Location": "#8BC34A",          # Light Green
     "Post": "#607D8B",              # Blue Grey
     "Cross-Channel": "#E50914",     # Red alert
