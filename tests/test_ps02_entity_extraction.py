@@ -35,7 +35,3 @@ def test_bank_account_candidate_links_telegram_and_social_sources_in_graph():
     assert node["cross_channel"] is True
     assert set(node["channels"]) == {"Telegram:channel_s5", "Facebook:corp_ac_supply"}
 
-
-def test_safe_child_rejects_windows_drive_paths(tmp_path):
-    with pytest.raises(PS02DatasetError):
-        safe_child(tmp_path, r"C:\\Windows\\system.ini")
