@@ -100,8 +100,8 @@ RE_UPI_CANDIDATE = re.compile(r"\b([a-zA-Z0-9.\-_]{2,64})@([a-zA-Z0-9.\-_]{2,32}
 RE_IFSC = re.compile(r"\b([A-Z]{4})0([A-Z0-9]{6})\b", re.IGNORECASE)
 # Extract only numbers immediately introduced by an account-number context.
 RE_BANK_ACCOUNT = re.compile(
-    r"\\b(?:a\\s*/\\s*c|a\\.?c\\.?|bank\\s+account|account(?:\\s+(?:number|no\\.?))?)"
-    r"\\s*(?:(?:number|no\\.?)\\s*)?[:#-]?\\s*([0-9][0-9\\s-]{7,25}[0-9])\\b",
+    r"\b(?:a\s*/\s*c|a\.?c\.?|bank\s+account|account(?:\s+(?:number|no\.?))?)"
+    r"\s*(?:(?:number|no\.?)\s*)?[:#-]?\s*([0-9][0-9\s-]{7,25}[0-9])\b",
     re.IGNORECASE,
 )
 RE_USERNAME = re.compile(r"(?<![\w@./])@([A-Za-z][A-Za-z0-9_]{3,31})\b")
@@ -227,7 +227,7 @@ def extract_bank_accounts(text: str) -> List[str]:
     found = []
     seen = set()
     for match in RE_BANK_ACCOUNT.finditer(text):
-        digits = re.sub(r"\\D", "", match.group(1))
+        digits = re.sub(r"\D", "", match.group(1))
         if not 9 <= len(digits) <= 18:
             continue
         if len(digits) == 10 and digits[0] in "6789":
