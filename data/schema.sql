@@ -39,7 +39,7 @@ CREATE TABLE IF NOT EXISTS posts (
     category TEXT DEFAULT 'Clean',
     risk_level TEXT DEFAULT 'Clean',
     threat_score REAL DEFAULT 0.0,
-    ingestion_source TEXT NOT NULL, -- 'LIVE', 'IMPORTED', 'SIMULATED'
+    ingestion_source TEXT NOT NULL, -- LIVE / IMPORTED / SIMULATED / VERIFIED-SYNTHETIC / HACKATHON_SAMPLE
     created_at TEXT NOT NULL,
     UNIQUE(platform, channel_id, message_id)
 );
