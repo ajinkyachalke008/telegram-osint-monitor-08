@@ -50,7 +50,7 @@ The dedicated adapter is `ingestion/ps02_dataset.py`. It:
 6. Preserves sender, source, forwarding, edits, text entities, hashtags, location tags, engagement counts, media paths, OCR status and the dataset fingerprint in `source_metadata_json`.
 7. Sends the original text and source metadata through the normal ingestion worker with provenance `HACKATHON_SAMPLE`.
 
-The worker uses OCR text and social hashtags as supplemental analysis input while preserving the original source text separately. Media SHA-256 is retained as a media signal and in the evidence payload; it is not inserted as a person/account identifier in the seller graph. Evidence blocks created for new records optionally bind the media SHA-256 and a hash of source metadata. Existing evidence payloads remain verifiable because the new fields are optional.
+The worker uses OCR text and social hashtags as supplemental analysis input while preserving the original source text separately. A context-labelled bank-account extractor recognises values immediately following labels such as `a/c` or `account number`, enabling the README-described PS01/PS02 candidate cross-link; it does not validate account ownership, account status or beneficial control. Media SHA-256 is retained as a media signal and in the evidence payload; it is not inserted as a person/account identifier in the seller graph. Evidence blocks created for new records optionally bind the media SHA-256 and a hash of source metadata. Existing evidence payloads remain verifiable because the new fields are optional.
 
 The posts table gains `source_metadata_json`. Existing SQLite databases are migrated on initialization using `PRAGMA table_info` plus `ALTER TABLE` when the column is missing. Re-import of the same archive is idempotent through the existing `(platform, channel_id, message_id)` uniqueness constraint.
 
@@ -58,8 +58,9 @@ The posts table gains `source_metadata_json`. Existing SQLite databases are migr
 
 - **PS02 Dataset Studio** (page 10) accepts the ZIP, validates and inventories it, exposes the starter lexicon for analyst reference, separates masked/reference records, and requires a deliberate import action.
 - Entity graph and coordinated-campaign pages now load up to 5,000 posts, covering the 1,850 primary sample instead of truncating at the prior 200/250 row caps.
-- Campaign analysis adds exact media SHA-256 reuse groups. It does not describe those groups as perceptual near-duplicates or proof of common ownership.
+- Campaign analysis adds exact media SHA-256 reuse groups and an adjustable pHash visual-candidate review. The pHash output is only a visual shortlist requiring manual comparison; neither exact nor perceptual matches establish common ownership.
 - Geographic mapping includes social `location_tag` source metadata and additional Rajasthan cities. The dashboard labels results as reported mentions/tags, not physical tracking.
+- The entity graph includes a separate forwarded-from evidence view. Forward labels are not added as identity edges or treated as authenticated source chains.
 - Alert detail displays selected source metadata, forwarding/edit context, OCR text and stored media digest.
 
 ## Normalization and starter lexicon
@@ -84,7 +85,7 @@ Alternatively, upload the ZIP in the Streamlit page **PS02 Dataset Studio** and 
 
 The uploaded package did not include the judge-only answer key. The README's advertised category/difficulty counts and seeded campaign links are dataset-design notes, not an available row-level ground-truth label file. Do not report precision, recall, F1, false-positive rate or official benchmark performance from this archive unless the authorized answer key is supplied and mapped carefully.
 
-The sample is useful for functional demonstration and regression tests, not independent operational validation. Shared phones, UPI-style values, usernames, forwarded content, text templates and identical image hashes are correlation signals, not proof that accounts share an operator. The sample itself warns that synthetic identifiers must not be contacted.
+The sample is useful for functional demonstration and regression tests, not independent operational validation. Shared phones, context-labelled bank-account candidates, UPI-style values, usernames, forwarded content, text templates and image hashes are correlation signals, not proof that accounts share an operator. The sample itself warns that synthetic identifiers must not be contacted.
 
 ## Known technical limits
 
