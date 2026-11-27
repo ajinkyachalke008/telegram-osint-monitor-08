@@ -7,7 +7,7 @@ Identifies coordinated criminal marketing across channels:
    to group duplicate payment screenshots, QR code posters, and flyer variants.
 """
 import re
-from typing import List, Dict, Any, Tuple, Optional
+from typing import List, Dict, Any, Tuple, Optional, Union
 from collections import defaultdict
 from pathlib import Path
 
@@ -229,3 +229,29 @@ def find_image_clusters(posts: List[Dict[str, Any]], max_hamming_distance: int =
 
     clusters.sort(key=lambda c: c["image_count"], reverse=True)
     return clusters
+
+
+
+def find_exact_image_clusters(posts: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Group posts that reference byte-identical media by SHA-256."""
+    groups = defaultdict(list)
+    for post in posts:
+        media_hash = str(post.get('media_hash') or '').strip().lower()
+        if len(media_hash) == 64 and all(ch in '0123456789abcdef' for ch in media_hash):
+            groups[media_hash].append(post)
+    results = []
+    for media_hash, matches in groups.items():
+        if len(matches) < 2:
+            continue
+        channels = sorted({str(post.get('source') or 'Unknown') for post in matches})
+        results.append({
+            'cluster_id': f'CAMP-SHA-{len(results) + 1:03d}',
+            'sha256': media_hash,
+            'post_count': len(matches),
+            'channels': channels,
+            'cross_channel': len(channels) > 1,
+            'sample_image': next((post.get('image_path') for post in matches if post.get('image_path')), None),
+            'posts': matches,
+        })
+    results.sort(key=lambda item: item['post_count'], reverse=True)
+    return results
