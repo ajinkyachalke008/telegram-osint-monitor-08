@@ -1,0 +1,449 @@
+{
+  "version": 1,
+  "purpose": "Local PS02 demo keyword suggestions and explainable text matching only; not a classifier or attribution system.",
+  "provenance": {
+    "starter_lexicon": "The supplied committee CSV contains 37 rows and must remain unchanged.",
+    "additional_catalogue": "Public fraud-awareness typologies summarized in docs/PS02_SEARCH_TERMS_CATALOG.md."
+  },
+  "rules": {
+    "automatic_risk_scoring": false,
+    "keyword_hit_means_verified_fraud": false,
+    "persist_raw_source_text": false,
+    "persist_sender_or_author_fields": false,
+    "allow_individual_sender_search": false,
+    "allow_identity_graphs": false,
+    "allow_contact_or_payment_identifier_search": false,
+    "exact_and_expanded_counts_must_be_separate": true,
+    "show_matched_phrase_and_category": true,
+    "generic_terms_are_broad": true
+  },
+  "categories": [
+    {
+      "id": "general_fraud_forgery",
+      "label": "General fraud, deception and forgery",
+      "high_context_phrases": [
+        "cyber fraud",
+        "online fraud",
+        "financial fraud",
+        "payment fraud",
+        "online scam",
+        "forged document",
+        "fake document",
+        "counterfeit document",
+        "identity theft",
+        "account takeover",
+        "unauthorised transaction",
+        "unauthorized transaction",
+        "fraudulent message",
+        "fake notification",
+        "fake advertisement"
+      ],
+      "broad_terms": [
+        "fraud",
+        "scam",
+        "cheating",
+        "deception",
+        "forgery",
+        "forged",
+        "fake",
+        "counterfeit",
+        "duplicate",
+        "impersonation"
+      ],
+      "regional_aliases": {
+        "hi_hinglish": [
+          "dhokha",
+          "thagi",
+          "jaalsaazi",
+          "nakli",
+          "farzi",
+          "jaali",
+          "jhootha message",
+          "nakli document",
+          "farzi kagaz",
+          "jaali dastavez",
+          "pehchaan ki chori"
+        ]
+      }
+    },
+    {
+      "id": "phishing_impersonation",
+      "label": "Phishing, spoofing and impersonation",
+      "high_context_phrases": [
+        "phishing",
+        "smishing",
+        "vishing",
+        "reverse phishing",
+        "spoofed email",
+        "fake bank message",
+        "fake bank call",
+        "fake customer care",
+        "fake customer support",
+        "customer care impersonation",
+        "bank impersonation",
+        "government official impersonation",
+        "police impersonation",
+        "social media impersonation",
+        "fake support number",
+        "fake helpline",
+        "fake login page",
+        "suspicious login link",
+        "digital arrest scam",
+        "business email compromise",
+        "email account takeover"
+      ],
+      "broad_terms": [
+        "unknown link",
+        "suspicious link",
+        "fake website",
+        "spoofed call",
+        "impersonation"
+      ],
+      "regional_aliases": {
+        "hi_hinglish": [
+          "bank ke naam par call",
+          "bank adhikari bankar",
+          "customer care bankar",
+          "police bankar dhamki",
+          "sarkari adhikari bankar",
+          "nakli customer care",
+          "fake helpline number"
+        ]
+      }
+    },
+    {
+      "id": "otp_kyc_credentials",
+      "label": "OTP, credentials and KYC-related scams",
+      "high_context_phrases": [
+        "OTP fraud",
+        "OTP scam",
+        "OTP sharing request",
+        "request to share OTP",
+        "PIN disclosure scam",
+        "CVV collection scam",
+        "password collection scam",
+        "credential theft",
+        "KYC update scam",
+        "fake KYC update",
+        "KYC reactivation scam",
+        "KYC verification link",
+        "account blocking threat",
+        "account unblocking scam",
+        "SIM blocking threat",
+        "fake bank verification",
+        "unauthorised app installation",
+        "unauthorized app installation",
+        "remote access scam",
+        "screen sharing scam",
+        "remote device access",
+        "fake video KYC"
+      ],
+      "broad_terms": [
+        "OTP",
+        "PIN",
+        "CVV",
+        "password",
+        "KYC",
+        "verification",
+        "account blocked"
+      ],
+      "regional_aliases": {
+        "hi_hinglish": [
+          "OTP maangna",
+          "OTP share karo",
+          "PIN batao",
+          "KYC update karo",
+          "KYC ke liye link",
+          "account band ho jayega",
+          "SIM band ho jayegi",
+          "account unblock karne ke naam par",
+          "bank verification ke naam par"
+        ]
+      }
+    },
+    {
+      "id": "upi_payment_card",
+      "label": "UPI, QR, card and digital-payment fraud",
+      "high_context_phrases": [
+        "UPI fraud",
+        "UPI scam",
+        "UPI collect request scam",
+        "fake collect request",
+        "QR code scam",
+        "fake QR code",
+        "payment request scam",
+        "fake payment screenshot",
+        "fake payment confirmation",
+        "false payment receipt",
+        "fake refund",
+        "refund scam",
+        "payment reversal scam",
+        "e-wallet fraud",
+        "digital wallet scam",
+        "card skimming",
+        "card cloning",
+        "debit card fraud",
+        "credit card fraud",
+        "SIM swap fraud",
+        "SIM cloning fraud",
+        "unauthorised debit",
+        "unauthorized debit",
+        "unauthorized transfer",
+        "unauthorised transfer"
+      ],
+      "broad_terms": [
+        "UPI",
+        "QR code",
+        "refund",
+        "payment",
+        "card",
+        "wallet",
+        "transfer"
+      ],
+      "regional_aliases": {
+        "hi_hinglish": [
+          "paise receive karne ke liye UPI PIN",
+          "paise lene ke liye PIN dalo",
+          "refund ke liye QR scan",
+          "jhootha payment proof",
+          "UPI collect request",
+          "galat payment confirmation"
+        ]
+      }
+    },
+    {
+      "id": "identity_document",
+      "label": "Identity-document and certificate fraud",
+      "high_context_phrases": [
+        "fake Aadhaar",
+        "fake Aadhar",
+        "forged Aadhaar",
+        "duplicate Aadhaar",
+        "fake PAN",
+        "forged PAN",
+        "duplicate PAN",
+        "fake voter ID",
+        "forged voter ID",
+        "fake driving licence",
+        "fake driving license",
+        "fake passport",
+        "fake government ID",
+        "counterfeit identity card",
+        "fake certificate",
+        "forged certificate",
+        "fake marksheet",
+        "forged marksheet",
+        "fake degree",
+        "forged degree",
+        "fake invoice",
+        "forged invoice",
+        "fake receipt",
+        "fake bank statement",
+        "forged bank statement",
+        "fabricated document"
+      ],
+      "broad_terms": [
+        "Aadhaar",
+        "Aadhar",
+        "PAN",
+        "voter ID",
+        "driving licence",
+        "passport",
+        "certificate",
+        "marksheet",
+        "degree",
+        "invoice"
+      ],
+      "regional_aliases": {
+        "hi_hinglish": [
+          "nakli Aadhaar",
+          "farzi Aadhaar",
+          "jaali Aadhaar card",
+          "nakli PAN card",
+          "farzi PAN",
+          "duplicate pahchan patra",
+          "nakli certificate",
+          "farzi marksheet",
+          "jaali dastavez"
+        ]
+      }
+    },
+    {
+      "id": "loan_job_advance_fee",
+      "label": "Loan, job, task and advance-fee scams",
+      "high_context_phrases": [
+        "online job fraud",
+        "fake job offer",
+        "recruitment scam",
+        "work from home scam",
+        "task scam",
+        "captcha job scam",
+        "fake data entry job",
+        "job registration fee scam",
+        "upfront job fee",
+        "security deposit job scam",
+        "advance fee fraud",
+        "advance payment scam",
+        "loan app fraud",
+        "fake loan app",
+        "instant loan scam",
+        "fake loan website",
+        "loan processing fee scam",
+        "loan approval fee",
+        "upfront loan fee",
+        "loan document forgery",
+        "recovery agent impersonation"
+      ],
+      "broad_terms": [
+        "job",
+        "recruitment",
+        "work from home",
+        "loan",
+        "processing fee",
+        "registration fee",
+        "security deposit"
+      ],
+      "regional_aliases": {
+        "hi_hinglish": [
+          "naukri ke naam par thagi",
+          "ghar baithe job scam",
+          "job registration fee",
+          "pehle payment karo",
+          "security deposit ke naam par",
+          "loan processing fee scam",
+          "loan dilane ke naam par paise"
+        ]
+      }
+    },
+    {
+      "id": "investment_lottery",
+      "label": "Investment, lottery and money-circulation scams",
+      "high_context_phrases": [
+        "investment scam",
+        "fake investment platform",
+        "fake trading app",
+        "guaranteed return scam",
+        "guaranteed profit claim",
+        "Ponzi scheme",
+        "pyramid scheme",
+        "money circulation scheme",
+        "multi-level marketing fraud",
+        "fake stock tip",
+        "crypto investment scam",
+        "fake crypto platform",
+        "lottery fraud",
+        "prize money scam",
+        "fake winner message",
+        "advance fee prize scam",
+        "recovery scam",
+        "refund recovery scam"
+      ],
+      "broad_terms": [
+        "investment",
+        "crypto",
+        "profit",
+        "lottery",
+        "prize",
+        "returns",
+        "trading"
+      ],
+      "regional_aliases": {
+        "hi_hinglish": [
+          "double paisa scheme",
+          "guaranteed munafa",
+          "pakka return",
+          "lottery lagi hai",
+          "inaam jeetne ka message",
+          "prize release fee",
+          "investment ke naam par thagi"
+        ]
+      }
+    },
+    {
+      "id": "marketplace_delivery",
+      "label": "Marketplace, delivery and consumer-purchase scams",
+      "high_context_phrases": [
+        "fake seller",
+        "counterfeit product",
+        "fake product listing",
+        "duplicate branded product",
+        "payment taken no delivery",
+        "non-delivery scam",
+        "fake order confirmation",
+        "fake delivery message",
+        "courier scam",
+        "parcel scam",
+        "customs fee scam",
+        "fake tracking link",
+        "fake refund request",
+        "marketplace impersonation",
+        "fake buyer payment proof",
+        "fraudulent advertisement"
+      ],
+      "broad_terms": [
+        "seller",
+        "product listing",
+        "delivery",
+        "courier",
+        "parcel",
+        "order confirmation",
+        "tracking link"
+      ],
+      "regional_aliases": {
+        "hi_hinglish": [
+          "nakli samaan",
+          "fake product",
+          "paise lekar delivery nahi",
+          "jhootha order confirmation",
+          "parcel ke naam par fraud",
+          "courier ke naam par thagi"
+        ]
+      }
+    },
+    {
+      "id": "extortion_malware",
+      "label": "Extortion, blackmail and malicious-software reports",
+      "high_context_phrases": [
+        "online blackmail",
+        "sextortion",
+        "ransom demand",
+        "ransomware",
+        "malware attack",
+        "malicious app",
+        "fake mobile app",
+        "account compromise",
+        "social media account takeover",
+        "data leak threat",
+        "threat to publish private material"
+      ],
+      "broad_terms": [
+        "extortion",
+        "blackmail",
+        "ransomware",
+        "malware",
+        "spyware",
+        "account hacked",
+        "account compromised"
+      ],
+      "regional_aliases": {}
+    }
+  ],
+  "sources": [
+    {
+      "name": "RBI Consumer Awareness — Cyber Threats and Frauds (28 January 2022)",
+      "url": "https://www.rbi.org.in/Scripts/BS_PressReleaseDisplay.aspx?prid=53185"
+    },
+    {
+      "name": "RBI Payments Banks — Digital Payment Security Controls Directions, 2026 (updated 1 October 2026)",
+      "url": "https://www.rbi.org.in/Scripts/BS_ViewMasDirections.aspx?id=13624"
+    },
+    {
+      "name": "National Cyber Crime Reporting Portal — crime categories",
+      "url": "https://cybercrime.gov.in/webform/crimecatdes.aspx"
+    },
+    {
+      "name": "I4C Cyber Crime Portal — awareness video categories",
+      "url": "https://cybercrime.gov.in/Webform/video-category.aspx"
+    }
+  ]
+}
