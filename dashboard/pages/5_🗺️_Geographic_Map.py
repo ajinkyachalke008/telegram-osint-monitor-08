@@ -62,6 +62,10 @@ for r in rows:
     location_tag = str(metadata.get("location_tag") or "").strip().lower()
     if location_tag in KNOWN_LOCATIONS:
         mentioned.add(location_tag)
+    elif location_tag.endswith(", rajasthan"):
+        city_tag = location_tag.rsplit(",", 1)[0].strip()
+        if city_tag in KNOWN_LOCATIONS:
+            mentioned.add(city_tag)
     for lname in mentioned:
         if lname in KNOWN_LOCATIONS:
             if lname not in geo_counts:
