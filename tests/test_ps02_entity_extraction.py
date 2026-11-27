@@ -1,0 +1,19 @@
+from addons.extractors import extract_all_entities
+
+
+def test_context_labelled_bank_account_is_extracted_for_cross_source_linking():
+    first = extract_all_entities("Ready stock: HDFC current a/c 50200087431926 (IFSC HDFC0004821) + kit.")
+    second = extract_all_entities("Ready stock: HDFC current a/c 50200087431926 + net banking.")
+
+    assert first["bank_accounts"] == ["50200087431926"]
+    assert second["bank_accounts"] == ["50200087431926"]
+    assert any(
+        item["type"] == "BankAccount" and item["value"] == "50200087431926"
+        for item in first["all_flat"]
+    )
+
+
+def test_bank_account_extraction_requires_account_context():
+    assert extract_all_entities("Reference number 50200087431926")["bank_accounts"] == []
+    # A ten-digit mobile-shaped value is not reclassified as a bank account.
+    assert extract_all_entities("A/C 9876543210")["bank_accounts"] == []
