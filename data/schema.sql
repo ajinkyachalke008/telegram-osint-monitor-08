@@ -35,6 +35,7 @@ CREATE TABLE IF NOT EXISTS posts (
     normalized_text TEXT NOT NULL,
     media_path TEXT,
     media_hash TEXT,
+    source_metadata_json TEXT NOT NULL DEFAULT '{}',
     category TEXT DEFAULT 'Clean',
     risk_level TEXT DEFAULT 'Clean',
     threat_score REAL DEFAULT 0.0,
