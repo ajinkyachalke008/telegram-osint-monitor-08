@@ -1,0 +1,271 @@
+{
+  "report_version": 1,
+  "scope": "aggregate_only_offline",
+  "timestamp_ist": "2026-11-27T15:10:13.877718+05:30",
+  "archive_metadata": {
+    "source_name": "PS02_demo_data-20261127T071007Z-1-001.zip",
+    "source_path": "C:\\Users\\AJINKYA CHALKE\\Desktop\\rajasthan hackthon ps2\\data\\participant_input\\PS02_demo_data-20261127T071007Z-1-001.zip",
+    "size_bytes": 28606071,
+    "sha256": "c0736ba6bd38febfc09ffb1f7b62939c7a6f9d6f85954d704140dd0e44fe7937"
+  },
+  "counts": {
+    "telegram_exports": 13,
+    "telegram_messages": 1500,
+    "telegram_service_records": 13,
+    "telegram_photo_references": 199,
+    "telegram_photos_found": 199,
+    "telegram_photos_missing": 0,
+    "telegram_empty_text_records": 63,
+    "telegram_forwarded_records": 42,
+    "telegram_reply_records": 0,
+    "telegram_edited_records": 40,
+    "telegram_channels_summary": [
+      {
+        "channel_folder": "ch02_Desert_Highway_Stuff",
+        "name": "Desert Highway Stuff",
+        "total_records": 91,
+        "messages": 90,
+        "services": 1,
+        "photos": 21
+      },
+      {
+        "channel_folder": "ch08_All_Services_24x7",
+        "name": "All Services 24x7 \ud83d\udcaf",
+        "total_records": 241,
+        "messages": 240,
+        "services": 1,
+        "photos": 28
+      },
+      {
+        "channel_folder": "ch04_PVC_Print_Hub_All_Documents",
+        "name": "PVC Print Hub - All Documents",
+        "total_records": 91,
+        "messages": 90,
+        "services": 1,
+        "photos": 27
+      },
+      {
+        "channel_folder": "ch12_Jaipur_Gym_Supplements",
+        "name": "Jaipur Gym & Supplements",
+        "total_records": 61,
+        "messages": 60,
+        "services": 1,
+        "photos": 14
+      },
+      {
+        "channel_folder": "ch01_Jaipur_Party_Supplies",
+        "name": "Jaipur Party Supplies \ud83c\udf41",
+        "total_records": 141,
+        "messages": 140,
+        "services": 1,
+        "photos": 32
+      },
+      {
+        "channel_folder": "ch10_Rajasthan_Job_Bank_Updates",
+        "name": "Rajasthan Job & Bank Updates",
+        "total_records": 121,
+        "messages": 120,
+        "services": 1,
+        "photos": 0
+      },
+      {
+        "channel_folder": "ch03_RJ_Desi_Tools_Store",
+        "name": "RJ Desi Tools Store",
+        "total_records": 71,
+        "messages": 70,
+        "services": 1,
+        "photos": 13
+      },
+      {
+        "channel_folder": "ch05_Current_Account_Rent_High_Limit",
+        "name": "Current Account Rent | High Limit",
+        "total_records": 121,
+        "messages": 120,
+        "services": 1,
+        "photos": 29
+      },
+      {
+        "channel_folder": "ch06_ATM_Kit_Wholesale_India",
+        "name": "ATM Kit Wholesale India",
+        "total_records": 91,
+        "messages": 90,
+        "services": 1,
+        "photos": 15
+      },
+      {
+        "channel_folder": "ch13_Old_Mobile_Buy_Sell_Jaipur",
+        "name": "Old Mobile Buy Sell Jaipur",
+        "total_records": 91,
+        "messages": 90,
+        "services": 1,
+        "photos": 0
+      },
+      {
+        "channel_folder": "ch11_Nasha_Mukt_Rajasthan_Abhiyan_Demo",
+        "name": "Nasha Mukt Rajasthan Abhiyan (Demo)",
+        "total_records": 61,
+        "messages": 60,
+        "services": 1,
+        "photos": 9
+      },
+      {
+        "channel_folder": "ch07_Pre_Activated_SIM_Store_RJ",
+        "name": "Pre-Activated SIM Store RJ",
+        "total_records": 71,
+        "messages": 70,
+        "services": 1,
+        "photos": 8
+      },
+      {
+        "channel_folder": "ch09_Raj_Students_Chill_Zone",
+        "name": "Raj Students Chill Zone",
+        "total_records": 261,
+        "messages": 260,
+        "services": 1,
+        "photos": 3
+      }
+    ],
+    "social_csv_files": 1,
+    "social_posts": 350,
+    "platform_counts": {
+      "Instagram": 126,
+      "Facebook": 88,
+      "X": 48,
+      "YouTube comment": 36,
+      "ShareChat": 52
+    },
+    "social_posts_with_image_ref": 92,
+    "social_image_refs_found": 92,
+    "social_image_refs_missing": 0,
+    "social_images_in_archive": 92,
+    "poster_index_rows": 18,
+    "poster_hashes_verified": 18,
+    "poster_hashes_mismatch": 0,
+    "poster_hashes_missing": 0,
+    "poster_details": [
+      {
+        "image": "P01.jpg",
+        "expected_sha256": "41c23f62790cee7292c02399598e8e95c99e1f8a4ce6e7d69e0b7b435dd8f352",
+        "actual_sha256": "41c23f62790cee7292c02399598e8e95c99e1f8a4ce6e7d69e0b7b435dd8f352",
+        "status": "verified"
+      },
+      {
+        "image": "P02.jpg",
+        "expected_sha256": "7699f9e0f355afebc3a5a7f6d831cf4996d288c0925170384de03b512e5c5cc2",
+        "actual_sha256": "7699f9e0f355afebc3a5a7f6d831cf4996d288c0925170384de03b512e5c5cc2",
+        "status": "verified"
+      },
+      {
+        "image": "P03.jpg",
+        "expected_sha256": "5f4b1bf84a50aaba4c78517e07c561aaa7f23c72f7e61d2d6f5a206d5f775537",
+        "actual_sha256": "5f4b1bf84a50aaba4c78517e07c561aaa7f23c72f7e61d2d6f5a206d5f775537",
+        "status": "verified"
+      },
+      {
+        "image": "P04.jpg",
+        "expected_sha256": "19bdf0a4c70caaf71cb51e39e48ec168567480d2a7e14cf195463ee0a4266a93",
+        "actual_sha256": "19bdf0a4c70caaf71cb51e39e48ec168567480d2a7e14cf195463ee0a4266a93",
+        "status": "verified"
+      },
+      {
+        "image": "P05.jpg",
+        "expected_sha256": "f3d8d75cbb3f8fee253dcb175d994a043648b5f2a23033eabc7a0fa5bf947326",
+        "actual_sha256": "f3d8d75cbb3f8fee253dcb175d994a043648b5f2a23033eabc7a0fa5bf947326",
+        "status": "verified"
+      },
+      {
+        "image": "P06.jpg",
+        "expected_sha256": "768c8b9763384a3160c9190604e95dc14a379e038acc3bf8cf08bdd8bba45ff0",
+        "actual_sha256": "768c8b9763384a3160c9190604e95dc14a379e038acc3bf8cf08bdd8bba45ff0",
+        "status": "verified"
+      },
+      {
+        "image": "P07.jpg",
+        "expected_sha256": "d01a49d098bf8c5644bace7cdb0f4b5335df4a7ed222587c745bad08c43421d1",
+        "actual_sha256": "d01a49d098bf8c5644bace7cdb0f4b5335df4a7ed222587c745bad08c43421d1",
+        "status": "verified"
+      },
+      {
+        "image": "P08.jpg",
+        "expected_sha256": "7e6ab50c624fd7af1fb3b6f546feb8d276b92d36cb5f2c9531d1f77508b7514b",
+        "actual_sha256": "7e6ab50c624fd7af1fb3b6f546feb8d276b92d36cb5f2c9531d1f77508b7514b",
+        "status": "verified"
+      },
+      {
+        "image": "P09.jpg",
+        "expected_sha256": "23043ac32b32b90149d321ec528d440c5664e56e61fb74154371bb88446e0585",
+        "actual_sha256": "23043ac32b32b90149d321ec528d440c5664e56e61fb74154371bb88446e0585",
+        "status": "verified"
+      },
+      {
+        "image": "P10.jpg",
+        "expected_sha256": "8380e172f7efc89da16cb089ab165fa470a2df042c71810c17ca8d1d26168107",
+        "actual_sha256": "8380e172f7efc89da16cb089ab165fa470a2df042c71810c17ca8d1d26168107",
+        "status": "verified"
+      },
+      {
+        "image": "P11.jpg",
+        "expected_sha256": "0a1c1bad84656e04a3dd96a700aedfe673e5ed2720ecbb43f5cab35870e163d7",
+        "actual_sha256": "0a1c1bad84656e04a3dd96a700aedfe673e5ed2720ecbb43f5cab35870e163d7",
+        "status": "verified"
+      },
+      {
+        "image": "P12.jpg",
+        "expected_sha256": "8459e87f709fc88485bf64a3e6ad6a1527c169da1e493dd5283a3692b638697c",
+        "actual_sha256": "8459e87f709fc88485bf64a3e6ad6a1527c169da1e493dd5283a3692b638697c",
+        "status": "verified"
+      },
+      {
+        "image": "P13.jpg",
+        "expected_sha256": "f295240f667a81fd079be9cc83b4caab74653ba6a89f019da15f73c6a061da09",
+        "actual_sha256": "f295240f667a81fd079be9cc83b4caab74653ba6a89f019da15f73c6a061da09",
+        "status": "verified"
+      },
+      {
+        "image": "P14.jpg",
+        "expected_sha256": "dea7eba7fb8fb7a0571aa45cabe76dd2ab496fc225914fc208a2c5b88d5864f6",
+        "actual_sha256": "dea7eba7fb8fb7a0571aa45cabe76dd2ab496fc225914fc208a2c5b88d5864f6",
+        "status": "verified"
+      },
+      {
+        "image": "P15.jpg",
+        "expected_sha256": "45d5c017737b3e01b7f47c4bd50fb71f3ca82a6af49a34d72469379dc40d9fd3",
+        "actual_sha256": "45d5c017737b3e01b7f47c4bd50fb71f3ca82a6af49a34d72469379dc40d9fd3",
+        "status": "verified"
+      },
+      {
+        "image": "P16.jpg",
+        "expected_sha256": "8dd4d4fed09480ebc528335ef27604fc2ee18060d59cc04b24cf6563dee6ddc6",
+        "actual_sha256": "8dd4d4fed09480ebc528335ef27604fc2ee18060d59cc04b24cf6563dee6ddc6",
+        "status": "verified"
+      },
+      {
+        "image": "P17.jpg",
+        "expected_sha256": "4ed66be5350154ecdd8c8afad6b582668a3b33dc9aa7b1a0bf72ed854e6aeafe",
+        "actual_sha256": "4ed66be5350154ecdd8c8afad6b582668a3b33dc9aa7b1a0bf72ed854e6aeafe",
+        "status": "verified"
+      },
+      {
+        "image": "P18.jpg",
+        "expected_sha256": "01ff64f4efec8b7a22a9e9b09ff1a2773162044a08cae35dc3a8803dd5ccbb77",
+        "actual_sha256": "01ff64f4efec8b7a22a9e9b09ff1a2773162044a08cae35dc3a8803dd5ccbb77",
+        "status": "verified"
+      }
+    ],
+    "poster_files": 18,
+    "lexicon_files": 1,
+    "lexicon_rows": 37,
+    "lexicon_categories": {
+      "drugs": 18,
+      "arms": 7,
+      "bank_account_sale": 6,
+      "atm_card_sale": 1,
+      "sim_card_sale": 3,
+      "fake_documents": 2
+    },
+    "total_message_and_post_records": 1850,
+    "total_raw_records": 1863
+  },
+  "findings": [],
+  "passed": true
+}

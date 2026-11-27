@@ -15,6 +15,8 @@ build/
 *.sqlite
 *.sqlite3
 *.db
+*.db-shm
+*.db-wal
 .env
 *.key
 *.pem
@@ -23,6 +25,13 @@ credentials.json
 # tgsherlock local data
 tgsherlock_data/
 local_data/
+
+# Participant dataset & archives
+data/participant_input/
+*.zip
+PS02_demo_data-*.zip
+PS02_demo_data.zip
+data/participant_dataset.db*
 
 # OS and IDE
 .DS_Store

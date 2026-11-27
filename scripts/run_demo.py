@@ -15,6 +15,9 @@ import subprocess
 import webbrowser
 from pathlib import Path
 
+# Enforce DEMO_MODE=1 for demonstration script
+os.environ["DEMO_MODE"] = "1"
+
 # Add project root to path
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(PROJECT_ROOT) not in sys.path:
@@ -31,11 +34,16 @@ def main():
     print(f"Project Root: {PROJECT_ROOT}")
     print(f"Database:     {DEFAULT_DB_PATH}")
 
-    # 1. Reset database and seed baseline demo records
-    print("\n[1/4] 🔄 Resetting database & seeding baseline demo records...")
+    # 1. Database initialization (preserves existing DB if --no-reset or NO_RESET=1)
+    no_reset = "--no-reset" in sys.argv or os.environ.get("NO_RESET") == "1"
     db = Database(DEFAULT_DB_PATH)
-    count = seed_demo_database(db=db, reset=True)
-    print(f"      ✅ Seeded {count} baseline posts with RFC-8785 SHA-256 evidence chain.")
+    if no_reset:
+        print("\n[1/4] 🛡️ Preserving existing database (--no-reset mode active)...")
+        print(f"      ✅ Database {DEFAULT_DB_PATH} preserved without reset.")
+    else:
+        print("\n[1/4] 🔄 Resetting database & seeding baseline demo records...")
+        count = seed_demo_database(db=db, reset=True)
+        print(f"      ✅ Seeded {count} baseline posts with RFC-8785 SHA-256 evidence chain.")
 
     # 2. Spawn background replay worker (one post every ~5s)
     print("\n[2/4] 📡 Starting streaming replay worker (1 post every ~5s)...")
@@ -48,6 +56,7 @@ def main():
     replay_proc = subprocess.Popen(
         replay_cmd,
         cwd=str(PROJECT_ROOT),
+        env=os.environ.copy(),
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         text=True
