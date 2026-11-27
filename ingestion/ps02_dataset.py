@@ -78,7 +78,8 @@ def safe_extract_zip(archive_path: Path | str, destination: Path | str,
             root = destination.resolve()
             for item in entries:
                 rel = PurePosixPath(item.filename.replace("\\", "/"))
-                if rel.is_absolute() or any(part == ".." for part in rel.parts):
+                win_rel = PureWindowsPath(item.filename)
+                if rel.is_absolute() or win_rel.is_absolute() or win_rel.drive or any(part in ("", ".", "..") for part in rel.parts):
                     raise PS02DatasetError("ZIP contains an unsafe member path.")
                 mode = (item.external_attr >> 16) & 0xFFFF
                 if (mode & 0o170000) == 0o120000:
