@@ -17,8 +17,8 @@ st.set_page_config(page_title="Coordinated Campaigns | telegram-osint-monitor-08
 from dashboard.provenance_banner import render_provenance_banner
 render_provenance_banner(page_title="Coordinated Campaigns", active_stream="VERIFIED-SYNTHETIC")
 
-st.title("🔁 Coordinated Marketing Campaigns & Repeated Ads")
-st.caption("MinHash Jaccard text similarity to uncover copy-pasted marketing templates and coordinated syndicates.")
+st.title("🔁 Repeated Content & Campaign Candidates")
+st.caption("Text and media similarity surface repeated-content candidates for human review; shared creatives do not prove common ownership or coordination.")
 
 db = Database()
 
@@ -45,7 +45,7 @@ if not posts:
 # Find clusters
 clusters = find_text_ad_clusters(posts, threshold=threshold)
 
-st.markdown(f"**Found {len(clusters)} coordinated ad clusters across monitored channels.**")
+st.markdown(f"**Found {len(clusters)} text-similarity candidate groups in the loaded records.**")
 
 if not clusters:
     st.info("No repeated ad clusters detected above the selected threshold.")
@@ -56,7 +56,7 @@ else:
         sample_text = cl.get("sample_text", "")
 
         is_cross = len(channels) >= 2
-        header_badge = "🚨 CROSS-CHANNEL CAMPAIGN" if is_cross else "LOCAL CHANNEL SPAM"
+        header_badge = "CROSS-SOURCE TEMPLATE CANDIDATE" if is_cross else "LOCAL REPEATED CONTENT"
 
         with st.expander(f"Campaign #{idx:02d}: {header_badge} ({post_count} posts across {len(channels)} channels)"):
             st.markdown(f"**Channels Involved:** `{', '.join(channels)}`")
