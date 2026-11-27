@@ -15,7 +15,6 @@ from collections import Counter
 from datetime import datetime, timezone, timedelta
 from pathlib import Path, PurePosixPath, PureWindowsPath
 from typing import Any, Dict, Iterator, List, Optional, Tuple
-from zoneinfo import ZoneInfo
 
 PROVENANCE = "HACKATHON_SAMPLE"
 IST = timezone(timedelta(hours=5, minutes=30), name="IST")
