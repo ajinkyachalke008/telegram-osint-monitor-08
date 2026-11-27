@@ -51,7 +51,7 @@ CREATE INDEX IF NOT EXISTS ix_posts_category ON posts(category);
 -- 3. Identifiers Table
 CREATE TABLE IF NOT EXISTS identifiers (
     identifier_id TEXT PRIMARY KEY, -- e.g. "upi:demo.seller@ybl"
-    type TEXT NOT NULL,             -- "UPI", "Phone", "BankAccount", "Crypto", "Username", "IFSC", "Location"
+    type TEXT NOT NULL,             -- "UPI", "Phone", "BankAccount", "TelegramAccount", "Crypto", "Username", "IFSC", "Location"
     raw_value TEXT NOT NULL,
     normalized_value TEXT NOT NULL,
     channel_count INTEGER DEFAULT 1,
