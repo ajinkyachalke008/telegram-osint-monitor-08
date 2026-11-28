@@ -16,6 +16,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from addons.extractors import extract_all_entities
 from addons.scorer import RuleScorer
 from addons.evidence import build_evidence_record
+from core.normalizer import normalize_text
 from discovery.finder import run_tgq_preview, WATCHLIST_FILE
 
 logging.basicConfig(
@@ -56,7 +57,8 @@ def poll_watchlist_once(channels: List[str], scorer: Optional[RuleScorer] = None
             if not text:
                 continue
             extracted = extract_all_entities(text)
-            res = sc.score(text, identifiers=extracted)
+            norm_text = normalize_text(text)
+            res = sc.score(norm_text, identifiers=extracted)
 
             if res.is_actionable:
                 alert = {

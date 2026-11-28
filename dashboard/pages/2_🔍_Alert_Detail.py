@@ -134,6 +134,73 @@ with col_left:
     st.markdown("#### Message Content")
     st.text_area("Content", alert.get("raw_text") or "", height=120, disabled=True, label_visibility="collapsed")
 
+    # Multilingual Forensic Intelligence & Script Analysis
+    from core.multilingual import normalize_multilingual, LanguageTag
+    from addons.scorer import RuleScorer
+    
+    raw_content = alert.get("raw_text") or ""
+    multi_res = normalize_multilingual(raw_content)
+    scorer = RuleScorer()
+    score_res = scorer.score(multi_res.normalized_text)
+
+    st.markdown("#### 🌐 Multilingual Forensic Intelligence & Script Analysis")
+    lang_code = multi_res.language.value if hasattr(multi_res.language, "value") else str(multi_res.language)
+    if lang_code in ("HI-LATN", "HI_LATN"):
+        lang_disp = "Hinglish (Romanised Hindi)"
+    elif lang_code == "HI":
+        lang_disp = "Hindi (Devanagari)"
+    elif lang_code == "EN":
+        lang_disp = "English"
+    else:
+        lang_disp = "Mixed / Code-Switching"
+
+    if isinstance(multi_res.detected_scripts, dict):
+        scripts_disp = ", ".join(f"{k.upper()}: {v:.1%}" for k, v in multi_res.detected_scripts.items() if v > 0)
+    elif isinstance(multi_res.detected_scripts, list):
+        scripts_disp = ", ".join(multi_res.detected_scripts)
+    else:
+        scripts_disp = "LATIN: 100.0%"
+    if not scripts_disp:
+        scripts_disp = "LATIN: 100.0%"
+
+    if score_res.advisory_context_type == "institutional_advisory":
+        adv_badge = "🛡️ Confirmed Institutional Advisory (Score Suppressed)"
+        badge_color = "#10B981"
+    elif score_res.advisory_context_type == "mixed_solicitation":
+        adv_badge = "⚠️ Advisory Quoted with Trade Solicitation (Not Suppressed)"
+        badge_color = "#EF4444"
+    elif getattr(multi_res, "is_awareness_or_negation", False):
+        adv_badge = "🛡️ Public Advisory / Warning Detected"
+        badge_color = "#10B981"
+    else:
+        adv_badge = "Active Broadcast Ad"
+        badge_color = "#F59E0B"
+
+    norm_str = ", ".join(multi_res.applied_normalizations) if multi_res.applied_normalizations else "None (Raw text matches canonical form)"
+
+    st.markdown(f"""
+    <div class="intel-card" style="padding:12px 16px; margin-bottom:12px; background:rgba(15, 23, 42, 0.6); border:1px solid #1E293B;">
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; font-size:12px;">
+            <div><span style="color:#64748B;">Detected Language:</span><br><b style="color:#38BDF8;">[{lang_code}] {lang_disp}</b></div>
+            <div><span style="color:#64748B;">Script Families:</span><br><code style="color:#F1F5F9;">{scripts_disp}</code></div>
+            <div><span style="color:#64748B;">Context Nature:</span><br><span style="color:{badge_color}; font-weight:700;">{adv_badge}</span></div>
+            <div><span style="color:#64748B;">Normalizations Applied:</span><br><span style="color:#A78BFA;">{norm_str}</span></div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    if score_res.matched_terms:
+        with st.expander(f"📖 Lexicon Matches & Canonical Concepts ({len(score_res.matched_terms)} hits)", expanded=False):
+            m_terms_df = pd.DataFrame([{
+                "Surface Term": t["term"],
+                "Category": t["category_label"],
+                "Lexicon Section": t["section"],
+                "Canonical Concept": t.get("canonical_concept", t["term"]),
+                "Weight": t["weight"],
+                "Context Only": "Yes (Zero Score)" if t.get("is_context_only") else "No"
+            } for t in score_res.matched_terms])
+            st.dataframe(m_terms_df, use_container_width=True, hide_index=True)
+
     # Extracted Forensic Identifiers Registry
     st.markdown("#### 🔍 Extracted Forensic Identifiers")
     post_idents = db.get_post_identifiers(alert["post_uid"])

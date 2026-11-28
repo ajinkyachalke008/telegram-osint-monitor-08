@@ -24,6 +24,23 @@ categories:
       - tramadol
       - alprazolam
       - ketamine
+    slang_hi:
+      - एमडीएमए
+      - मेफेड्रोन
+      - चरस
+      - गांजा
+      - अफीम
+      - भांग
+      - सफेद पाउडर
+      - नशीली गोली
+      - ब्राउन शुगर
+      - हेरोइन
+      - कोकीन
+      - नशा
+      - ट्रामाडोल
+      - अल्प्राजोलम
+      - केटामाइन
+      - एलएसडी
     slang_hinglish:
       - maal
       - chitta
@@ -82,6 +99,23 @@ categories:
       - silencer
       - magazine
       - cartridge
+    slang_hi:
+      - पिस्तौल
+      - रिवाल्वर
+      - कट्टा
+      - देसी कट्टा
+      - तमंचा
+      - बंदूक
+      - हथियार
+      - गोली
+      - कारतूस
+      - असला
+      - राइफल
+      - छुरी
+      - लोहा
+      - देसी पिस्टल
+      - चाकु
+      - तलवार
     slang_hinglish:
       - katta
       - desi katta
@@ -126,27 +160,60 @@ categories:
     default_weight: 2.5
     slang_en:
       - fake aadhar
+      - counterfeit aadhar
       - forged pan
       - counterfeit marksheet
       - fake passport
       - fake driving license
+      - driving license
       - fake voter id
       - cloned voter id
       - rto passing
       - duplicate rc
       - biometric bypass
       - rubber stamp
+      - marksheet
+      - fake degree
+      - degree certificate
+      - duplicate passport
+    slang_hi:
+      - नकली आधार
+      - फर्जी आधार
+      - नकली पैन कार्ड
+      - फर्जी मार्कशीट
+      - नकली पासपोर्ट
+      - डुप्लीकेट लाइसेंस
+      - बायोमेट्रिक बाईपास
+      - जाली दस्तावेज
+      - फर्जी दस्तावेज
+      - जाली अंकतालिका
+      - नकली पहचान पत्र
+      - पहचान पत्र
+      - ड्राइविंग लाइसेंस
+      - अंकतालिका
+      - नकली प्रमाण पत्र
+      - फर्जी प्रमाण पत्र
     slang_hinglish:
       - nakli aadhar
       - duplicate pan
+      - farzi pan
+      - farzi pan card
+      - nakli pan
+      - nakli pan card
+      - pan card
       - farzi marksheet
       - duplicate license
+      - nakli driving license
+      - pehchan patra
+      - nakli pehchan patra
       - aadhar biometric bypass
       - crack software
       - seal stamp
       - bina exam certificate
       - backdated marksheet
       - aadhar card print
+      - farzi dastavez
+      - duplicate marksheet
     slang_marathi:
       - nakli kagadpatra
       - khoti marksheet
@@ -187,6 +254,8 @@ categories:
       - rent account
       - corporate bank account
       - bank mule
+      - mule bank account
+      - mule bank accounts
       - ready bank kit
       - rented account
       - merchant account for rent
@@ -194,6 +263,16 @@ categories:
       - mule account
       - bank drop
       - dormant account
+    slang_hi:
+      - बैंक खाता
+      - खाता रेंट
+      - करंट खाता
+      - खाता किराए पर
+      - कमीशन पर खाता
+      - म्यूल खाता
+      - पेमेंट खाता
+      - खाता बिक्री
+      - करंट अकाउंट
     slang_hinglish:
       - khata
       - khata sale
@@ -247,6 +326,13 @@ categories:
       - pos carding
       - magstripe dump
       - platinum debit card
+    slang_hi:
+      - एटीएम कार्ड
+      - डेबिट कार्ड
+      - कार्ड क्लोनिंग
+      - पिन के साथ कार्ड
+      - एटीएम किट
+      - कार्ड स्वाइप
     slang_hinglish:
       - atm card deliver
       - debit card pin ke sath
@@ -285,6 +371,14 @@ categories:
       - otps sim
       - corporate sim for sale
       - anonymous sim
+    slang_hi:
+      - चालू सिम
+      - फर्जी सिम
+      - बिना आधार सिम
+      - प्री-एक्टिवेटेड सिम
+      - थोक सिम
+      - ओटीपी बाईपास सिम
+      - एक्टिवेटेड सिम
     slang_hinglish:
       - chalu sim
       - activated sim card
@@ -322,13 +416,31 @@ categories:
       - full net banking kit
       - netbanking kit
       - net banking kit
+      - full banking kit
+      - banking kit
       - internet banking kit with sim
       - corporate net banking
       - complete bank kit with cheque book
       - corporate login credentials
       - full kit account
+      - netbanking login credentials
+      - netbanking user id
+      - netbanking login
+    slang_hi:
+      - नेट बैंकिंग किट
+      - नेटबैंकिंग किट
+      - नेटबैंकिंग
+      - फुल किट
+      - इंटरनेट बैंकिंग किट
+      - फुल किट खाता
+      - चेक बुक और एटीएम
+      - यूजर आईडी पासवर्ड
+      - संपूर्ण बैंक किट
     slang_hinglish:
       - full kit khata
+      - full kit
+      - netbanking kit
+      - netbanking login
       - net banking user id password
       - cheque book passbook atm sim
       - complete kit available

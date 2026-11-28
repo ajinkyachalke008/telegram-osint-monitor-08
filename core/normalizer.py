@@ -156,6 +156,11 @@ def normalize_text(raw_text: str) -> str:
     # 2. Remove zero-width characters
     norm = RE_ZERO_WIDTH.sub("", norm)
 
+    # 2b. Devanagari Unicode Normalization (Nukta & Danda)
+    from core.multilingual import normalize_devanagari, normalize_hinglish_slang
+    if re.search(r"[\u0900-\u097F]", norm):
+        norm, _ = normalize_devanagari(norm)
+
     # 3. Homoglyph folding
     norm = fold_homoglyphs(norm)
 
@@ -168,6 +173,10 @@ def normalize_text(raw_text: str) -> str:
     # 6. Spaced letters
     norm = collapse_spaced_letters(norm)
 
+    # 6b. Hinglish slang phonetic and repeated-letter normalization
+    if re.search(r"[a-zA-Z]", norm):
+        norm, _ = normalize_hinglish_slang(norm)
+
     # 7. Map emojis
     norm = map_threat_emojis(norm)
 
@@ -175,3 +184,13 @@ def normalize_text(raw_text: str) -> str:
     norm = re.sub(r"[ \t]+", " ", norm).strip()
 
     return norm
+
+
+# Re-export multilingual definitions for clean imports across the application
+from core.multilingual import (
+    LanguageTag,
+    NormalizationResult,
+    detect_language_and_script,
+    normalize_multilingual,
+    check_awareness_context,
+)

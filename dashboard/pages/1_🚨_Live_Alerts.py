@@ -13,6 +13,7 @@ import pandas as pd
 
 from core.db import Database
 from core.models import now_utc_iso
+from core.multilingual import detect_language_and_script
 from dashboard.provenance_banner import render_provenance_banner
 from dashboard.demo_sidebar import render_demo_maintenance_sidebar
 from dashboard.theme import inject_theme
@@ -163,6 +164,14 @@ def render_live_feed(r_filter, s_filter, c_filter):
 
         # Fetch identifiers linked to this post
         idents = db.get_post_identifiers(post_uid)
+        
+        # Detect language and script for forensic badge
+        raw_msg = alert.get('raw_text') or ''
+        lang_tag, _ = detect_language_and_script(raw_msg)
+        lang_code = lang_tag.value
+        lang_display = "HI-LATN" if lang_code == "HI_LATN" else lang_code
+        lang_color = "#38BDF8" if lang_code == "EN" else ("#F59E0B" if lang_code == "HI" else ("#10B981" if lang_code == "HI_LATN" else "#A855F7"))
+        lang_badge = f'<span style="background-color:rgba(255,255,255,0.06); color:{lang_color}; border:1px solid {lang_color}; padding:2px 7px; border-radius:4px; font-weight:700; font-size:11px; margin-right:6px;">[{lang_display}]</span>'
 
         with st.container():
             cross_badge = ""
@@ -200,6 +209,7 @@ def render_live_feed(r_filter, s_filter, c_filter):
                         {cross_badge}
                     </div>
                     <div>
+                        {lang_badge}
                         <span class="badge-pill badge-source">{alert['ingestion_source']}</span>
                         <span style="background-color:rgba({255 if alert['risk_level']=='High' else 255 if alert['risk_level']=='Medium' else 0}, {51 if alert['risk_level']=='High' else 170 if alert['risk_level']=='Medium' else 173}, {102 if alert['risk_level']=='High' else 0 if alert['risk_level']=='Medium' else 181}, 0.16); color:{risk_color}; border:1px solid {risk_color}; padding:2px 8px; border-radius:4px; font-weight:700; font-size:11px; letter-spacing:0.04em;">
                             [{alert['risk_level'].upper()}]
