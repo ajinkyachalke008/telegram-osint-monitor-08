@@ -24,6 +24,19 @@ categories:
       - tramadol
       - alprazolam
       - ketamine
+    slang_hi:
+      - एमडीएमए
+      - मेफेड्रोन
+      - चरस
+      - गांजा
+      - अफीम
+      - भांग
+      - सफेद पाउडर
+      - नशीली गोली
+      - ब्राउन शुगर
+      - हेरोइन
+      - कोकीन
+      - नशा
     slang_hinglish:
       - maal
       - chitta
@@ -82,6 +95,23 @@ categories:
       - silencer
       - magazine
       - cartridge
+    slang_hi:
+      - पिस्तौल
+      - रिवाल्वर
+      - कट्टा
+      - देसी कट्टा
+      - तमंचा
+      - बंदूक
+      - हथियार
+      - गोली
+      - कारतूस
+      - असला
+      - राइफल
+      - छुरी
+      - लोहा
+      - देसी पिस्टल
+      - चाकु
+      - तलवार
     slang_hinglish:
       - katta
       - desi katta
@@ -136,6 +166,17 @@ categories:
       - duplicate rc
       - biometric bypass
       - rubber stamp
+    slang_hi:
+      - नकली आधार
+      - फर्जी आधार
+      - नकली पैन कार्ड
+      - फर्जी मार्कशीट
+      - नकली पासपोर्ट
+      - डुप्लीकेट लाइसेंस
+      - बायोमेट्रिक बाईपास
+      - जाली दस्तावेज
+      - नकली प्रमाण पत्र
+      - फर्जी प्रमाण पत्र
     slang_hinglish:
       - nakli aadhar
       - duplicate pan
@@ -194,6 +235,15 @@ categories:
       - mule account
       - bank drop
       - dormant account
+    slang_hi:
+      - बैंक खाता
+      - खाता रेंट
+      - करंट खाता
+      - खाता किराए पर
+      - कमीशन पर खाता
+      - म्यूल खाता
+      - पेमेंट खाता
+      - खाता बिक्री
     slang_hinglish:
       - khata
       - khata sale
@@ -247,6 +297,13 @@ categories:
       - pos carding
       - magstripe dump
       - platinum debit card
+    slang_hi:
+      - एटीएम कार्ड
+      - डेबिट कार्ड
+      - कार्ड क्लोनिंग
+      - पिन के साथ कार्ड
+      - एटीएम किट
+      - कार्ड स्वाइप
     slang_hinglish:
       - atm card deliver
       - debit card pin ke sath
@@ -285,6 +342,14 @@ categories:
       - otps sim
       - corporate sim for sale
       - anonymous sim
+    slang_hi:
+      - चालू सिम
+      - फर्जी सिम
+      - बिना आधार सिम
+      - प्री-एक्टिवेटेड सिम
+      - थोक सिम
+      - ओटीपी बाईपास सिम
+      - एक्टिवेटेड सिम
     slang_hinglish:
       - chalu sim
       - activated sim card
@@ -327,6 +392,13 @@ categories:
       - complete bank kit with cheque book
       - corporate login credentials
       - full kit account
+    slang_hi:
+      - नेट बैंकिंग किट
+      - इंटरनेट बैंकिंग किट
+      - फुल किट खाता
+      - चेक बुक और एटीएम
+      - यूजर आईडी पासवर्ड
+      - संपूर्ण बैंक किट
     slang_hinglish:
       - full kit khata
       - net banking user id password

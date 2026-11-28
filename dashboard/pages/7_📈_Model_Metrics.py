@@ -110,3 +110,50 @@ if data:
             })
 
     st.dataframe(pd.DataFrame(table_rows), use_container_width=True, hide_index=True)
+
+    # Multilingual Language Breakdown
+    multi_eval_path = PROJECT_ROOT / "data" / "multilingual_evaluation_results.json"
+    if multi_eval_path.exists():
+        st.markdown("---")
+        st.subheader("🌐 Multilingual Performance Breakdown (English, Hindi, Hinglish, Mixed)")
+        try:
+            with open(multi_eval_path, "r", encoding="utf-8") as f:
+                multi_data = json.load(f)
+            
+            # Display language metric cards
+            lang_summary = multi_data.get("summary_by_language", {})
+            if lang_summary:
+                cols = st.columns(len(lang_summary))
+                for idx, (lang, metrics) in enumerate(lang_summary.items()):
+                    with cols[idx]:
+                        st.metric(
+                            label=f"Language: {lang}",
+                            value=f"{metrics.get('accuracy_pct', 0.0):.1f}% Acc",
+                            delta=f"{metrics.get('total_samples', 0)} samples"
+                        )
+            
+            # Table of multilingual breakdown
+            rows = []
+            for lang, metrics in lang_summary.items():
+                rows.append({
+                    "Language": lang,
+                    "Total Samples": metrics.get("total_samples", 0),
+                    "Accuracy": f"{metrics.get('accuracy', 0.0):.3f}",
+                    "Precision": f"{metrics.get('precision', 0.0):.3f}",
+                    "Recall": f"{metrics.get('recall', 0.0):.3f}",
+                    "F1 Score": f"{metrics.get('f1', 0.0):.3f}",
+                    "FPR (False Alarm)": f"{metrics.get('fpr', 0.0):.3f}",
+                    "Avg Latency (ms)": f"{metrics.get('latency_ms', 0.0):.2f}"
+                })
+            st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
+            
+            # Benign Advisory Suppression Status
+            adv_supp = multi_data.get("advisory_suppression", {})
+            if adv_supp:
+                st.success(
+                    f"🛡️ **Public Advisory & Notice Suppression:** Tested {adv_supp.get('total_advisories', 0)} "
+                    f"English, Hindi & Hinglish police advisories. "
+                    f"False Positive Rate: **{adv_supp.get('false_positive_rate', 0.0):.1f}%** ({adv_supp.get('suppressed_clean', 0)}/{adv_supp.get('total_advisories', 0)} accurately suppressed)."
+                )
+        except Exception as e:
+            st.info(f"Multilingual benchmark summary loading: {e}")

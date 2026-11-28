@@ -15,12 +15,112 @@ import yaml
 LEXICON_PATH = Path(__file__).parent / "lexicon.yaml"
 FEEDBACK_PATH = Path(__file__).parent / "lexicon_feedback.yaml"
 
+# Canonical concepts for concept-level deduplication across multi-lingual aliases
+CANONICAL_CONCEPTS: Dict[str, str] = {
+    # arms
+    "katta": "country_pistol",
+    "desi katta": "country_pistol",
+    "gavti katta": "country_pistol",
+    "tamancha": "country_pistol",
+    "desi pistol": "country_pistol",
+    "कट्टा": "country_pistol",
+    "देसी कट्टा": "country_pistol",
+    "तमंचा": "country_pistol",
+    "देसी पिस्टल": "country_pistol",
+    "bandook": "firearm_rifle",
+    "banduk": "firearm_rifle",
+    "बंदूक": "firearm_rifle",
+    "rifle": "firearm_rifle",
+    "राइफल": "firearm_rifle",
+    "shotgun": "firearm_rifle",
+    "pistol": "handgun",
+    "पिस्तौल": "handgun",
+    "revolver": "handgun",
+    "रिवाल्वर": "handgun",
+    "glock": "handgun",
+    "hathiyar": "weapon_generic",
+    "हथियार": "weapon_generic",
+    "asla": "weapon_generic",
+    "असला": "weapon_generic",
+    "ammo": "ammunition",
+    "bullets": "ammunition",
+    "cartridge": "ammunition",
+    "goli": "ammunition",
+    "गोली": "ammunition",
+    "कारतूस": "ammunition",
+
+    # fake_documents
+    "aadhar": "fake_aadhar",
+    "nakli aadhar": "fake_aadhar",
+    "आधार": "fake_aadhar",
+    "नकली आधार": "fake_aadhar",
+    "farzi aadhar": "fake_aadhar",
+    "pan card": "fake_pan",
+    "पैन कार्ड": "fake_pan",
+    "nakli pan": "fake_pan",
+    "driving license": "fake_dl",
+    "ड्राइविंग लाइसेंस": "fake_dl",
+    "passport": "fake_passport",
+    "पासपोर्ट": "fake_passport",
+    "marksheet": "fake_marksheet",
+    "अंकतालिका": "fake_marksheet",
+    "voter id": "fake_voter_id",
+    "पहचान पत्र": "fake_voter_id",
+
+    # bank_account / net_banking_kit / atm_card
+    "mule account": "mule_account",
+    "mule khata": "mule_account",
+    "current account": "mule_account",
+    "khata": "mule_account",
+    "खाता": "mule_account",
+    "corporate account": "mule_account",
+    "atm card": "card_cloning",
+    "debit card": "card_cloning",
+    "clone card": "card_cloning",
+    "क्लोन कार्ड": "card_cloning",
+    "netbanking kit": "banking_kit",
+    "नेटबैंकिंग किट": "banking_kit",
+    "फुल किट": "banking_kit",
+    "full kit": "banking_kit",
+
+    # sim_card
+    "chalu sim": "mule_sim",
+    "चालू सिम": "mule_sim",
+    "fake kyc sim": "mule_sim",
+    "फर्जी सिम": "mule_sim",
+    "pre activated sim": "mule_sim",
+
+    # drugs
+    "mdma": "mdma",
+    "एमडीएमए": "mdma",
+    "charas": "cannabis_resin",
+    "चरस": "cannabis_resin",
+    "hashish": "cannabis_resin",
+    "ganja": "cannabis_herb",
+    "गांजा": "cannabis_herb",
+    "weed": "cannabis_herb",
+    "heroin": "opiate",
+    "हेरोइन": "opiate",
+    "chitta": "opiate",
+    "smack": "opiate",
+    "brown sugar": "opiate",
+    "ब्राउन शुगर": "opiate",
+    "cocaine": "cocaine",
+    "कोकीन": "cocaine",
+    "c0ke": "cocaine",
+    "afeem": "opium",
+    "अफीम": "opium",
+    "meow meow": "mephedrone",
+    "mephedrone": "mephedrone",
+    "मेफेड्रोन": "mephedrone",
+}
+
 
 @dataclass
 class MatchedTerm:
     term: str
     category: str
-    section: str  # slang_en, slang_hinglish, slang_marathi, coded_words, emojis
+    section: str  # slang_en, slang_hi, slang_hinglish, slang_marathi, coded_words, emojis
     weight: float
 
 
@@ -41,6 +141,9 @@ class ScoreResult:
     category_scores: Dict[str, CategoryScore]
     matched_terms: List[Dict[str, Any]]
     is_actionable: bool  # True if High or Medium risk
+    language: str = "EN"
+    is_awareness: bool = False
+    awareness_markers: List[str] = field(default_factory=list)
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -48,6 +151,9 @@ class ScoreResult:
             "total_score": round(self.total_score, 2),
             "primary_category": self.primary_category,
             "is_actionable": self.is_actionable,
+            "language": self.language,
+            "is_awareness": self.is_awareness,
+            "awareness_markers": self.awareness_markers,
             "matched_terms": self.matched_terms,
             "category_scores": {
                 cat: {
@@ -96,7 +202,7 @@ class RuleScorer:
             multiplier = float(cat_data.get("weight_multiplier", 1.0))
             def_weight = float(cat_data.get("default_weight", 2.0))
             
-            sections = ["slang_en", "slang_hinglish", "slang_marathi", "coded_words", "emojis"]
+            sections = ["slang_en", "slang_hi", "slang_hinglish", "slang_marathi", "coded_words", "emojis"]
             for sec in sections:
                 terms = cat_data.get(sec, [])
                 for item in terms:
@@ -109,20 +215,25 @@ class RuleScorer:
                     global_key = term_str.lower()
 
                     if lookup_key in self.feedback_weights:
-                        weight = float(self.feedback_weights[lookup_key].get("weight", def_weight))
+                        base_weight = float(self.feedback_weights[lookup_key].get("weight", def_weight))
                     elif global_key in self.feedback_weights:
-                        weight = float(self.feedback_weights[global_key].get("weight", def_weight))
+                        base_weight = float(self.feedback_weights[global_key].get("weight", def_weight))
                     else:
-                        # Baseline weight determination
+                        # Baseline weight determination (base weight, NOT multiplied by category multiplier here)
+                        # Multiplier is applied to cat_raw_score in score() to eliminate double-multiplication
                         if sec == "emojis":
-                            weight = 1.0 * multiplier
+                            base_weight = 1.0
                         elif sec == "coded_words":
-                            weight = (def_weight + 0.5) * multiplier
+                            base_weight = def_weight + 0.5
                         else:
-                            weight = def_weight * multiplier
+                            base_weight = def_weight
                         
-                    pattern = re.compile(re.escape(term_str)) if sec == "emojis" else re.compile(r"(?i)\b" + re.escape(term_str) + r"\b")
-                    compiled[cat_name].append((term_str, sec, weight, pattern))
+                    if sec == "emojis":
+                        pattern = re.compile(re.escape(term_str))
+                    else:
+                        # Unicode boundary matching supporting both Latin and Devanagari scripts accurately
+                        pattern = re.compile(rf"(?i)(?<![\u0900-\u097F\w]){re.escape(term_str)}(?![\u0900-\u097F\w])")
+                    compiled[cat_name].append((term_str, sec, base_weight, pattern))
         return compiled
 
     def adjust_term_weight(
@@ -210,6 +321,8 @@ class RuleScorer:
         """
         Evaluate text against lexicon categories and calculate composite risk score.
         Incorporates identifier presence (UPI, phone, crypto) to boost confidence.
+        Supports English, Hindi Devanagari, and Hinglish with concept-level deduplication
+        and public awareness suppression.
         """
         if not text:
             return ScoreResult(
@@ -218,8 +331,13 @@ class RuleScorer:
                 primary_category=None,
                 category_scores={},
                 matched_terms=[],
-                is_actionable=False
+                is_actionable=False,
+                language="UNKNOWN"
             )
+
+        from core.multilingual import detect_language_and_script, check_awareness_context
+        lang_tag, detected_scripts = detect_language_and_script(text)
+        is_awareness, awareness_markers = check_awareness_context(text)
 
         cat_scores: Dict[str, CategoryScore] = {}
         all_matched_terms: List[Dict[str, Any]] = []
@@ -230,19 +348,27 @@ class RuleScorer:
             multiplier = float(cat_data.get("weight_multiplier", 1.0))
             matched_for_cat: List[MatchedTerm] = []
             cat_raw_score = 0.0
+            seen_concepts_in_cat = set()
 
-            for term_str, sec, weight, pattern in self._compiled_patterns.get(cat_name, []):
+            for term_str, sec, base_weight, pattern in self._compiled_patterns.get(cat_name, []):
                 # Search pattern
                 if pattern.search(text):
-                    mt = MatchedTerm(term=term_str, category=cat_name, section=sec, weight=weight)
+                    mt = MatchedTerm(term=term_str, category=cat_name, section=sec, weight=base_weight)
                     matched_for_cat.append(mt)
-                    cat_raw_score += weight
+
+                    # Canonical concept for deduplication within the post
+                    canonical = CANONICAL_CONCEPTS.get(term_str.lower(), term_str.lower())
+                    if canonical not in seen_concepts_in_cat:
+                        seen_concepts_in_cat.add(canonical)
+                        cat_raw_score += base_weight
+
                     all_matched_terms.append({
                         "term": term_str,
                         "category": cat_name,
                         "category_label": label,
                         "section": sec,
-                        "weight": round(weight, 2)
+                        "weight": round(base_weight * multiplier, 2),
+                        "canonical_concept": canonical
                     })
 
             cat_weighted_score = cat_raw_score * multiplier
@@ -258,11 +384,15 @@ class RuleScorer:
         total_score = sum(cs.weighted_score for cs in cat_scores.values())
 
         # Presence of payment/contact identifiers amplifies risk if illegal terms matched
-        if identifiers and total_score > 0:
+        if identifiers and total_score > 0 and not is_awareness:
             if identifiers.get("upis") or identifiers.get("crypto_wallets"):
                 total_score += 1.5  # Direct payment channel present
             if identifiers.get("phones"):
                 total_score += 1.0  # Contact channel present
+
+        # Awareness / disclaimer suppression
+        if is_awareness and total_score > 0:
+            total_score = min(total_score * 0.1, 1.0)
 
         # Find primary category (highest weighted score)
         primary_category = None
@@ -273,7 +403,9 @@ class RuleScorer:
                 primary_category = cat_name
 
         # Risk level classification
-        if total_score >= 5.0 or (primary_category in ("arms", "net_banking_kit", "bank_account") and total_score >= 4.0):
+        if is_awareness:
+            risk_level = "Clean" if total_score < 0.5 else "Low"
+        elif total_score >= 5.0 or (primary_category in ("arms", "net_banking_kit", "bank_account") and total_score >= 4.0):
             risk_level = "High"
         elif total_score >= 2.0:
             risk_level = "Medium"
@@ -290,5 +422,8 @@ class RuleScorer:
             primary_category=primary_category,
             category_scores=cat_scores,
             matched_terms=all_matched_terms,
-            is_actionable=is_actionable
+            is_actionable=is_actionable,
+            language=lang_tag.value,
+            is_awareness=is_awareness,
+            awareness_markers=awareness_markers
         )

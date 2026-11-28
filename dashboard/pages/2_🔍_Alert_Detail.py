@@ -134,6 +134,42 @@ with col_left:
     st.markdown("#### Message Content")
     st.text_area("Content", alert.get("raw_text") or "", height=120, disabled=True, label_visibility="collapsed")
 
+    # Multilingual Forensic Intelligence & Script Analysis
+    from core.multilingual import normalize_multilingual
+    from addons.scorer import RuleScorer
+    
+    raw_content = alert.get("raw_text") or ""
+    multi_res = normalize_multilingual(raw_content)
+    scorer = RuleScorer()
+    score_res = scorer.score(multi_res.normalized_text)
+
+    st.markdown("#### 🌐 Multilingual Forensic Intelligence & Script Analysis")
+    lang_disp = "Hinglish (Romanised Hindi)" if multi_res.language == "HI_LATN" else ("Hindi (Devanagari)" if multi_res.language == "HI" else ("English" if multi_res.language == "EN" else "Mixed / Code-Switching"))
+    scripts_disp = ", ".join(multi_res.detected_scripts) if multi_res.detected_scripts else "LATIN"
+    adv_badge = "🛡️ Public Advisory / Warning Detected (Score Suppressed)" if multi_res.is_awareness_or_negation else "Active Broadcast Ad"
+
+    st.markdown(f"""
+    <div class="intel-card" style="padding:12px 16px; margin-bottom:12px; background:rgba(15, 23, 42, 0.6); border:1px solid #1E293B;">
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; font-size:12px;">
+            <div><span style="color:#64748B;">Detected Language:</span><br><b style="color:#38BDF8;">[{multi_res.language}] {lang_disp}</b></div>
+            <div><span style="color:#64748B;">Script Families:</span><br><code style="color:#F1F5F9;">{scripts_disp}</code></div>
+            <div><span style="color:#64748B;">Context Nature:</span><br><span style="color:{'#10B981' if multi_res.is_awareness_or_negation else '#F59E0B'}; font-weight:700;">{adv_badge}</span></div>
+            <div><span style="color:#64748B;">Normalizations Applied:</span><br><span style="color:#A78BFA;">{', '.join(multi_res.applied_normalizations) if multi_res.applied_normalizations else 'Standard NFKC'}</span></div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    if score_res.matched_terms:
+        with st.expander(f"📖 Lexicon Matches & Canonical Concepts ({len(score_res.matched_terms)} hits)", expanded=False):
+            m_terms_df = pd.DataFrame([{
+                "Surface Term": t["term"],
+                "Category": t["category_label"],
+                "Lexicon Section": t["section"],
+                "Canonical Concept": t.get("canonical_concept", t["term"]),
+                "Weight": t["weight"]
+            } for t in score_res.matched_terms])
+            st.dataframe(m_terms_df, use_container_width=True, hide_index=True)
+
     # Extracted Forensic Identifiers Registry
     st.markdown("#### 🔍 Extracted Forensic Identifiers")
     post_idents = db.get_post_identifiers(alert["post_uid"])

@@ -71,6 +71,8 @@ class ClassificationResult:
     lexicon_score: float
     normalizations_applied: List[str]
     model_architecture: str
+    language: str = "EN"
+    detected_scripts: List[str] = field(default_factory=list)
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -84,6 +86,8 @@ class ClassificationResult:
             "lexicon_score": round(self.lexicon_score, 2),
             "normalizations_applied": self.normalizations_applied,
             "model_architecture": self.model_architecture,
+            "language": self.language,
+            "detected_scripts": self.detected_scripts,
         }
 
 
@@ -108,6 +112,16 @@ class HybridClassifier:
         re.compile(r"(?i)\bzero liability\b"),
         re.compile(r"(?i)\bcybercrime helpline 1930\b"),
         re.compile(r"(?i)\bpunishable offense under pmla\b"),
+        # Hindi and Hinglish public awareness & advisory patterns
+        re.compile(r"(?i)\b(?:kabhi|kisi ko)\s+otp\s+(?:share\s+mat|na\s+de|mat\s+batao|kabhi\s+na)\b"),
+        re.compile(r"(?i)\b(?:savdhan|satark)\s+rahe\b"),
+        re.compile(r"(?i)\b(?:farzi|nakli)\s+(?:sandesh|message|call)\b"),
+        re.compile(r"(?i)\bdhokhadhadi\s+se\s+bache\b"),
+        re.compile(r"(?i)\bpolice\s+ne\s+(?:pakda|giraftar\s+kiya|baramad\s+kiya|raid\s+mari)\b"),
+        re.compile(r"(?i)\bcyber\s*(?:crime)?\s*helpline\b"),
+        re.compile(r"(?i)(?:कभी\s*किसी\s*को\s*शेयर\s*न\s*करें|ओटीपी\s*किसी\s*को\s*न\s*दें|सावधान\s*रहें|सतर्क\s*रहें)"),
+        re.compile(r"(?i)(?:साइबर\s*हेल्पलाइन|साइबर\s*क्राइम\s*1930|पुलिस\s*ने\s*पकड़ा|गिरफ्तार\s*किया|बरामद\s*किया)"),
+        re.compile(r"(?i)(?:फर्जी\s*संदेश|धोखाधड़ी\s*से\s*बचें|जनहित\s*में\s*जारी)"),
     ]
 
     def __init__(self, model_path: Optional[Path] = None, auto_load: bool = True):
@@ -236,8 +250,13 @@ class HybridClassifier:
                 ml_probabilities={},
                 lexicon_score=0.0,
                 normalizations_applied=[],
-                model_architecture=active_arch
+                model_architecture=active_arch,
+                language="UNKNOWN",
+                detected_scripts=[]
             )
+
+        from core.multilingual import detect_language_and_script
+        lang_tag, detected_scripts = detect_language_and_script(text)
 
         # 1. Normalize
         norm_text = normalize_text(text)
@@ -270,7 +289,7 @@ class HybridClassifier:
                     top_ml_category = cls_name
 
         # 4. Calibration & Hard-Negative Suppression
-        is_hard_neg = self._check_hard_negative(text) or self._check_hard_negative(norm_text)
+        is_hard_neg = self._check_hard_negative(text) or self._check_hard_negative(norm_text) or score_res.is_awareness
         
         # Calculate aggregate illegal probability vs benign probability
         total_illegal_prob = sum(prob for cls, prob in ml_probs.items() if cls != "benign")
@@ -358,5 +377,7 @@ class HybridClassifier:
             ml_probabilities=ml_probs,
             lexicon_score=score_res.total_score,
             normalizations_applied=["nfkc", "homoglyph_fold", "devanagari_fold", "emoji_map"] if norm_text != text else [],
-            model_architecture=self.model_name
+            model_architecture=self.model_name,
+            language=lang_tag.value,
+            detected_scripts=detected_scripts
         )

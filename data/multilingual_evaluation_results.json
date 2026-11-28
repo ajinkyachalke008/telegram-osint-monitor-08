@@ -1,0 +1,67 @@
+{
+  "timestamp_utc": "2026-11-28T08:22:48Z",
+  "total_test_samples": 120,
+  "overall_metrics": {
+    "accuracy": 0.975,
+    "accuracy_pct": 97.5,
+    "precision": 1.0,
+    "recall": 0.775,
+    "f1": 0.8732,
+    "false_positive_rate": 0.0,
+    "false_negative_rate": 0.225,
+    "avg_latency_ms": 1.08
+  },
+  "summary_by_language": {
+    "EN": {
+      "total_samples": 30,
+      "accuracy": 1.0,
+      "accuracy_pct": 100.0,
+      "precision": 1.0,
+      "recall": 0.75,
+      "f1": 0.8571,
+      "fpr": 0.0,
+      "fnr": 0.25,
+      "latency_ms": 1.45
+    },
+    "HI": {
+      "total_samples": 30,
+      "accuracy": 0.9,
+      "accuracy_pct": 90.0,
+      "precision": 1.0,
+      "recall": 0.55,
+      "f1": 0.7097,
+      "fpr": 0.0,
+      "fnr": 0.45,
+      "latency_ms": 0.95
+    },
+    "HI_LATN": {
+      "total_samples": 30,
+      "accuracy": 1.0,
+      "accuracy_pct": 100.0,
+      "precision": 1.0,
+      "recall": 0.95,
+      "f1": 0.9744,
+      "fpr": 0.0,
+      "fnr": 0.05,
+      "latency_ms": 0.96
+    },
+    "MIXED": {
+      "total_samples": 30,
+      "accuracy": 1.0,
+      "accuracy_pct": 100.0,
+      "precision": 1.0,
+      "recall": 0.85,
+      "f1": 0.9189,
+      "fpr": 0.0,
+      "fnr": 0.15,
+      "latency_ms": 0.96
+    }
+  },
+  "advisory_suppression": {
+    "total_advisories": 24,
+    "suppressed_clean": 24,
+    "false_positives": 0,
+    "false_positive_rate": 0.0,
+    "suppression_success_rate": 100.0
+  }
+}
