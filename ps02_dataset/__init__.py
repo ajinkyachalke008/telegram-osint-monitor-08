@@ -11,6 +11,7 @@ from ps02_dataset.preflight import audit, safe_zip, discover_root_prefix
 from ps02_dataset.parser import parse_participant_dataset
 from ps02_dataset.store import ParticipantDatasetStore, DEFAULT_PARTICIPANT_DB_PATH
 from ps02_dataset.importer import run_dry_run, run_import
+from ps02_dataset.catalog import SearchTermsCatalog, SearchMatch, CATALOG_JSON_PATH
 
 __all__ = [
     "audit",
@@ -21,4 +22,7 @@ __all__ = [
     "DEFAULT_PARTICIPANT_DB_PATH",
     "run_dry_run",
     "run_import",
+    "SearchTermsCatalog",
+    "SearchMatch",
+    "CATALOG_JSON_PATH",
 ]
