@@ -29,6 +29,10 @@ import streamlit as st
 from ps02_dataset.preflight import audit
 from ps02_dataset.importer import run_dry_run, run_import
 from ps02_dataset.store import ParticipantDatasetStore, DEFAULT_PARTICIPANT_DB_PATH
+import importlib
+import ps02_dataset.catalog
+importlib.reload(ps02_dataset.catalog)
+from ps02_dataset.catalog import SearchTermsCatalog, CATALOG_JSON_PATH, OFFICIAL_DISCLAIMER
 from dashboard.theme import inject_theme, apply_plotly_theme
 
 st.set_page_config(
@@ -70,6 +74,8 @@ store = ParticipantDatasetStore(DEFAULT_PARTICIPANT_DB_PATH)
 
 # Candidate local dataset paths
 DEFAULT_ZIP_PATHS = [
+    PROJECT_ROOT / "data/participant_input/PS02_demo_data-20261127T071007Z-1-001.zip",
+    PROJECT_ROOT / "data/participant_input/PS02_demo_data.zip",
     Path("data/participant_input/PS02_demo_data-20261127T071007Z-1-001.zip"),
     Path("data/participant_input/PS02_demo_data.zip"),
 ]
@@ -246,12 +252,13 @@ with k6:
 st.markdown("<div style='height: 16px;'></div>", unsafe_allow_html=True)
 
 # 3. Interactive Analytics Tabs
-tab1, tab2, tab3, tab4, tab5 = st.tabs([
+tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
     "📊 Cross-Platform Volume & Channels",
     "🕒 Chronological IST Timeline",
     "🖼️ Poster Manifest Integrity",
     "🔍 Quality Audit & Configured Lexicon",
-    "📜 Batch Provenance & Audit Trail"
+    "📜 Batch Provenance & Audit Trail",
+    "🔎 PS02 Keyword Explorer (10 Categories)"
 ])
 
 # ----------------- TAB 1: Platform Volume & Channels -----------------
@@ -466,3 +473,263 @@ with tab5:
             mime="application/json",
             type="primary"
         )
+
+# ----------------- TAB 6: PS02 Keyword Explorer (10 Categories) -----------------
+with tab6:
+    st.subheader("🔎 PS02 Multi-Lingual Keyword Explorer & Threat Vocabulary")
+    st.caption("Contextual multi-lingual threat phrase search across official committee Telegram and social media datasets.")
+
+    # Statutory Evidentiary & Privacy Guardrail Banner
+    st.markdown("""
+    <div style="background-color: rgba(245, 158, 11, 0.10); border-left: 4px solid #F59E0B; padding: 12px 18px; border-radius: 4px; margin-bottom: 18px; font-size: 12.5px; color: #FCD34D;">
+        ⚖️ <b>Statutory Notice &amp; Evidentiary Guardrail:</b> A keyword match is a search result, not proof of wrongdoing. Context, provenance, integrity and independent verification are necessary before any legal or operational reliance. No seller/buyer discovery system, individual citizen lookup, identity profile, or cross-platform identity graph is constructed. All PII (phone numbers, email addresses, payment IDs, bank accounts, and usernames) is strictly redacted in preview snippets.
+    </div>
+    """, unsafe_allow_html=True)
+
+    catalog = SearchTermsCatalog(CATALOG_JSON_PATH)
+    all_categories = catalog.get_categories()
+
+    # Category dropdown mapping
+    cat_display_map = {"All 10 Categories": None}
+    for c in all_categories:
+        cat_display_map[f"{c['label']} ({len(catalog.get_all_terms_for_category(c['id']))} terms)"] = c["id"]
+
+    # Session state for quick search
+    if "kw_search_term" not in st.session_state:
+        st.session_state.kw_search_term = ""
+    if "kw_selected_cat_idx" not in st.session_state:
+        st.session_state.kw_selected_cat_idx = 0
+    if "kw_exact_mode" not in st.session_state:
+        st.session_state.kw_exact_mode = "🔍 Broad Search (Word-Boundary Token Matching)"
+
+    # Filter Controls Row 1
+    col_f1, col_f2 = st.columns([1, 1])
+    with col_f1:
+        cat_labels = list(cat_display_map.keys())
+        selected_cat_label = st.selectbox(
+            "Select Threat Category Filter",
+            options=cat_labels,
+            index=st.session_state.kw_selected_cat_idx,
+            help="Filter search to one of the 10 official threat categories or search across all categories.",
+        )
+        selected_cat_id = cat_display_map[selected_cat_label]
+
+    with col_f2:
+        search_mode = st.radio(
+            "Search Matching Semantics",
+            [
+                "🔍 Broad Search (Word-Boundary Token Matching)",
+                "🎯 Exact Phrase Search (Contiguous Phrase Matching)"
+            ],
+            index=0 if "Broad" in st.session_state.kw_exact_mode else 1,
+            horizontal=True,
+            help="Broad mode matches individual word tokens with boundary protection. Exact Phrase mode requires words to appear consecutively in order."
+        )
+        is_exact = "Exact Phrase" in search_mode
+
+    # Filter Controls Row 2: Platform, Channel, and Media Filter
+    col_p1, col_p2, col_p3 = st.columns([1, 1, 1])
+    with col_p1:
+        platform_choice = st.selectbox(
+            "Filter Platform Scope",
+            options=["All Platforms", "Telegram", "Instagram", "Social Media"],
+            index=0,
+            help="Scope searches to Telegram channels, social platforms, or all records."
+        )
+    with col_p2:
+        channel_query = st.text_input(
+            "Filter Telegram Channel / Chat Title",
+            placeholder="e.g. PVC Print Hub, Students Chill...",
+            help="Optional substring filter for Telegram channel titles."
+        )
+    with col_p3:
+        st.markdown("<div style='height: 28px;'></div>", unsafe_allow_html=True)
+        has_media_only = st.checkbox("Only records with attached images", value=False)
+
+    # Quick Search Chips for Weapons & Firearm References (Context-Only)
+    st.markdown("<b style='font-size:12px; color:#00E5FF; text-transform:uppercase; letter-spacing:0.05em;'>⚡ Rapid Weapon Context Presets (CONTEXT ONLY &bull; English &bull; Hinglish &bull; Marathi)</b>", unsafe_allow_html=True)
+    weapon_terms = [
+        "gun", "firearm", "weapon", "pistol", "revolver", "rifle", "shotgun", "desi katta",
+        "katta", "tamancha", "bandook", "banduk", "hathiyar", "asla", "desi pistol", "gavti katta"
+    ]
+
+    chip_cols = st.columns(8)
+    for idx, term in enumerate(weapon_terms[:8]):
+        with chip_cols[idx]:
+            if st.button(term, key=f"chip_w1_{term}", use_container_width=True):
+                st.session_state.kw_search_term = term
+                weapons_cat_idx = next((i for i, k in enumerate(cat_labels) if "weapon" in k.lower()), 0)
+                st.session_state.kw_selected_cat_idx = weapons_cat_idx
+                st.session_state.kw_exact_mode = "🎯 Exact Phrase Search (Contiguous Phrase Matching)" if " " in term else "🔍 Broad Search (Word-Boundary Token Matching)"
+                st.session_state.kw_auto_run = True
+
+    chip_cols2 = st.columns(8)
+    for idx, term in enumerate(weapon_terms[8:]):
+        with chip_cols2[idx]:
+            if st.button(term, key=f"chip_w2_{term}", use_container_width=True):
+                st.session_state.kw_search_term = term
+                weapons_cat_idx = next((i for i, k in enumerate(cat_labels) if "weapon" in k.lower()), 0)
+                st.session_state.kw_selected_cat_idx = weapons_cat_idx
+                st.session_state.kw_exact_mode = "🎯 Exact Phrase Search (Contiguous Phrase Matching)" if " " in term else "🔍 Broad Search (Word-Boundary Token Matching)"
+                st.session_state.kw_auto_run = True
+
+    # Search Bar & Controls
+    col_q, col_lim, col_btn = st.columns([5, 2, 2])
+    with col_q:
+        query_val = st.text_input(
+            "Search Query or Threat Slang Phrase",
+            value=st.session_state.kw_search_term,
+            placeholder="e.g. fake aadhaar card, desi katta, tamancha, gavti katta, bandook, current account...",
+            help="Supports English, Hindi/Hinglish, and Marathi dialect terms. Leave blank to search all category terms."
+        )
+    with col_lim:
+        result_limit = st.slider("Result Limit", min_value=10, max_value=100, value=30, step=10)
+    with col_btn:
+        st.markdown("<div style='height: 28px;'></div>", unsafe_allow_html=True)
+        btn_execute_search = st.button("🔎 Run Search", type="primary", use_container_width=True)
+
+    # Determine target archive for search
+    target_zip = selected_source_path if selected_source_path and selected_source_path.exists() else detected_zip
+    if not target_zip or not target_zip.exists():
+        for c in DEFAULT_ZIP_PATHS:
+            if c.exists():
+                target_zip = c
+                break
+
+    # Run search if button clicked or if query was set
+    run_search = btn_execute_search or bool(st.session_state.get("kw_auto_run")) or (query_val and query_val != "")
+
+    if run_search:
+        if not target_zip or not target_zip.exists():
+            st.warning("⚠️ No dataset archive detected. Please select or upload a dataset ZIP in the sidebar to search live records.")
+        else:
+            with st.spinner(f"Scanning archive {target_zip.name} for '{query_val or selected_cat_label}' ({'Exact Phrase' if is_exact else 'Broad Token'})..."):
+                matches = catalog.search_committee_dataset(
+                    dataset_zip_path=target_zip,
+                    query_text=query_val if query_val.strip() else None,
+                    category_filter=selected_cat_id,
+                    exact_phrase_only=is_exact,
+                    platform_filter=platform_choice if platform_choice != "All Platforms" else None,
+                    channel_filter=channel_query if channel_query.strip() else None,
+                    has_image_only=has_media_only,
+                    limit=result_limit
+                )
+
+            st.markdown("---")
+            m_col1, m_col2, m_col3 = st.columns(3)
+            with m_col1:
+                st.metric("Matching Textual Mentions", f"{len(matches)} Records", delta=f"{'Exact Phrase' if is_exact else 'Broad Token'} Mode")
+            with m_col2:
+                media_count = sum(1 for m in matches if m.media_resolved)
+                st.metric("Verified Media Attachments", f"{media_count} Files", delta=f"{len(matches) - media_count} Text/Unresolved")
+            with m_col3:
+                tg_hits = sum(1 for m in matches if m.source_type == "Telegram")
+                soc_hits = len(matches) - tg_hits
+                st.metric("Source Breakdown", f"{tg_hits} TG &bull; {soc_hits} Social", delta="Section 63 BSA Ready")
+
+            st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
+
+            if matches:
+                for idx, match in enumerate(matches):
+                    badge_color = "#3B82F6" if match.source_type == "Telegram" else "#F59E0B"
+                    match_type_badge = (
+                        '<span style="background:rgba(245,158,11,0.2);color:#F59E0B;border:1px solid rgba(245,158,11,0.5);padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700;">🎯 EXACT PHRASE</span>'
+                        if match.match_type == "exact_phrase"
+                        else '<span style="background:rgba(0,173,181,0.2);color:#00E5FF;border:1px solid rgba(0,173,181,0.5);padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700;">🔍 BROAD TOKEN</span>'
+                    )
+                    context_badge = (
+                        '<span style="background:rgba(100,116,139,0.25);color:#94A3B8;border:1px solid #64748B;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700;">🛡️ CONTEXT ONLY (NO SUSPICION SCORE)</span>'
+                        if match.is_context_only else ''
+                    )
+                    media_badge = (
+                        f'<span style="background:rgba(16,185,129,0.15);color:#34D399;border:1px solid rgba(16,185,129,0.4);padding:2px 8px;border-radius:4px;font-size:11px;">✅ Media Present: <code>{match.media_file}</code></span>'
+                        if match.media_resolved
+                        else (
+                            f'<span style="background:rgba(239,68,68,0.15);color:#F87171;border:1px solid rgba(239,68,68,0.4);padding:2px 8px;border-radius:4px;font-size:11px;">⚠️ Media Unresolved: <code>{match.media_file}</code></span>'
+                            if match.media_file
+                            else '<span style="background:rgba(148,163,184,0.12);color:#94A3B8;border:1px solid rgba(148,163,184,0.3);padding:2px 8px;border-radius:4px;font-size:11px;">📄 Text Only (No Photo Attached)</span>'
+                        )
+                    )
+
+                    st.markdown(f"""
+                    <div style="background-color: #0E1628; border: 1px solid #1E2B45; border-radius: 8px; padding: 14px 18px; margin-bottom: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.25);">
+                        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom: 8px;">
+                            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                                <span style="background:{badge_color}; color:#080C14; font-weight:800; font-size:11px; padding:2px 7px; border-radius:4px;">{match.source_type.upper()}</span>
+                                <span style="font-size:13.5px; font-weight:700; color:#FFFFFF;">{match.channel_or_platform}</span>
+                                <span style="background:rgba(0,173,181,0.15); color:#00E5FF; padding:2px 8px; border-radius:4px; font-size:11px; font-weight:600;">🏷️ {match.category_label}</span>
+                                {match_type_badge}
+                                {context_badge}
+                            </div>
+                            <div style="font-size:11.5px; color:#94A3B8;">
+                                🕒 {match.timestamp_ist}
+                            </div>
+                        </div>
+                        <div style="margin: 10px 0; font-size:13px; color:#ECEFF1; line-height:1.55; background:rgba(0,0,0,0.3); padding:10px 14px; border-radius:6px; border-left:3.5px solid #00ADB5;">
+                            {match.highlighted_context}
+                        </div>
+                        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-top:8px; font-size:11px; color:#64748B;">
+                            <div>{media_badge}</div>
+                            <div style="font-style:italic; color:#94A3B8;">⚖️ A keyword match is a search result, not proof of wrongdoing.</div>
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
+
+                    # Render actual in-memory image preview if media is resolved
+                    if match.media_resolved and match.media_file and target_zip:
+                        img_bytes = catalog.get_attachment_bytes(target_zip, match.media_file)
+                        if img_bytes:
+                            st.image(img_bytes, caption=f"Archive Attachment: {match.media_file}", width=260)
+            else:
+                st.info(f"ℹ️ No matching textual mentions found for '{query_val or selected_cat_label}' with mode '{'Exact Phrase' if is_exact else 'Broad Token'}'. Try another dialect alias or switch to Broad Search.")
+
+    st.markdown("---")
+
+    # 10-Category Multi-Lingual Threat Vocabulary Reference
+    with st.expander("📖 Inspect All 10 Threat Categories & Multi-Lingual Dialect Vocabulary (630+ Patterns)", expanded=not run_search):
+        st.markdown("<p style='font-size:13px; color:#94A3B8;'>The PS02 catalog integrates official threat terminology across 10 distinct crime categories, spanning English, Hindi/Hinglish, Marathi regional dialects, and context-only safety terms.</p>", unsafe_allow_html=True)
+
+        for cat in all_categories:
+            high_phrases = cat.get("high_context_phrases", [])
+            broad_terms = cat.get("broad_terms", [])
+            regional = cat.get("regional_aliases", {})
+            hi_terms = regional.get("hi_hinglish", [])
+            mr_terms = regional.get("mr", [])
+
+            # Fallbacks for legacy schema if present
+            if not high_phrases and not broad_terms:
+                high_phrases = cat.get("coded_phrases", [])
+                broad_terms = cat.get("terms_en", [])
+                hi_terms = cat.get("terms_hinglish", [])
+                mr_terms = cat.get("terms_marathi", [])
+
+            st.markdown(f"""
+            <div style="background-color: #0E1628; border: 1px solid #1E2B45; border-radius: 8px; padding: 14px 18px; margin-bottom: 12px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px; margin-bottom: 6px;">
+                    <h4 style="margin:0; color:#00E5FF; font-size:1.05rem;">{cat['label']}</h4>
+                    <span style="font-size:11px; background:#1A2333; color:#94A3B8; padding:2px 8px; border-radius:4px;">ID: <code>{cat['id']}</code></span>
+                </div>
+                <p style="margin:0 0 10px 0; font-size:12.5px; color:#94A3B8;">{cat.get('description') or cat.get('purpose', '')}</p>
+                <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; font-size:12px;">
+                    <div style="background:rgba(0,0,0,0.2); padding:8px 12px; border-radius:4px;">
+                        <b style="color:#38BDF8;">🎯 High-Context Phrases ({len(high_phrases)}):</b><br/>
+                        <span style="color:#ECEFF1;">{', '.join(high_phrases[:6])}{'...' if len(high_phrases) > 6 else ''}</span>
+                    </div>
+                    <div style="background:rgba(0,0,0,0.2); padding:8px 12px; border-radius:4px;">
+                        <b style="color:#F59E0B;">🔍 Broad Terms ({len(broad_terms)}):</b><br/>
+                        <span style="color:#ECEFF1;">{', '.join(broad_terms[:8])}{'...' if len(broad_terms) > 8 else ''}</span>
+                    </div>
+                    <div style="background:rgba(0,0,0,0.2); padding:8px 12px; border-radius:4px;">
+                        <b style="color:#34D399;">🇮🇳 Hindi / Hinglish ({len(hi_terms)}):</b><br/>
+                        <span style="color:#ECEFF1;">{', '.join(hi_terms[:6])}{'...' if len(hi_terms) > 6 else ''}</span>
+                    </div>
+                    <div style="background:rgba(0,0,0,0.2); padding:8px 12px; border-radius:4px;">
+                        <b style="color:#EC4899;">🚩 Marathi ({len(mr_terms)}):</b><br/>
+                        <span style="color:#ECEFF1;">{', '.join(mr_terms) if mr_terms else 'None recorded'}</span>
+                    </div>
+                </div>
+                <div style="margin-top:8px; font-size:11.5px; color:#64748B;">
+                    <b>🛡️ Evidentiary Boundary:</b> {cat.get('interpretation', 'Search results require independent verification before operational reliance.')}
+                </div>
+            </div>
+            """, unsafe_allow_html=True)

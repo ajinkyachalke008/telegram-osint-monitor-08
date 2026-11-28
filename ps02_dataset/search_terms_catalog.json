@@ -1,6 +1,7 @@
 {
   "version": 1,
   "purpose": "Local PS02 demo keyword suggestions and explainable text matching only; not a classifier or attribution system.",
+  "disclaimer": "A keyword match is a search result, not proof of wrongdoing. Context, provenance, integrity and independent verification are necessary before any legal or operational reliance.",
   "provenance": {
     "starter_lexicon": "The supplied committee CSV contains 37 rows and must remain unchanged.",
     "additional_catalogue": "Public fraud-awareness typologies summarized in docs/PS02_SEARCH_TERMS_CATALOG.md."
