@@ -116,12 +116,29 @@ CANONICAL_CONCEPTS: Dict[str, str] = {
 }
 
 
+# Generic / Neutral Weapons Context Terms (Context-Only by default unless accompanied by active trade solicitation)
+GENERIC_WEAPONS_TERMS: Set[str] = {
+    # English
+    "gun", "guns", "firearm", "firearms", "weapon", "weapons", "arms", "pistol",
+    "revolver", "rifle", "shotgun", "handgun", "ammunition", "ammo", "bullet",
+    "bullets", "cartridge", "knife", "blade",
+    # Hinglish
+    "desi katta", "katta", "tamancha", "bandook", "banduk", "hathiyar", "asla", "desi pistol",
+    # Hindi Devanagari
+    "पिस्तौल", "रिवाल्वर", "कट्टा", "देसी कट्टा", "तमंचा", "बंदूक", "हथियार",
+    "गोली", "कारतूस", "असला", "राइफल", "छुरी", "लोहा", "देसी पिस्टल", "चाकु", "तलवार",
+    # Marathi
+    "gavti katta", "gavthi katta", "banduk", "chaku", "talwar"
+}
+
+
 @dataclass
 class MatchedTerm:
     term: str
     category: str
     section: str  # slang_en, slang_hi, slang_hinglish, slang_marathi, coded_words, emojis
     weight: float
+    is_context_only: bool = False
 
 
 @dataclass
@@ -144,6 +161,8 @@ class ScoreResult:
     language: str = "EN"
     is_awareness: bool = False
     awareness_markers: List[str] = field(default_factory=list)
+    advisory_context_type: str = "none"
+    advisory_explanation: str = ""
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -154,6 +173,8 @@ class ScoreResult:
             "language": self.language,
             "is_awareness": self.is_awareness,
             "awareness_markers": self.awareness_markers,
+            "advisory_context_type": self.advisory_context_type,
+            "advisory_explanation": self.advisory_explanation,
             "matched_terms": self.matched_terms,
             "category_scores": {
                 cat: {
@@ -321,8 +342,8 @@ class RuleScorer:
         """
         Evaluate text against lexicon categories and calculate composite risk score.
         Incorporates identifier presence (UPI, phone, crypto) to boost confidence.
-        Supports English, Hindi Devanagari, and Hinglish with concept-level deduplication
-        and public awareness suppression.
+        Supports English, Hindi Devanagari, and Hinglish with concept-level deduplication,
+        context-only neutral weapons boundary, and validated public awareness suppression.
         """
         if not text:
             return ScoreResult(
@@ -332,12 +353,34 @@ class RuleScorer:
                 category_scores={},
                 matched_terms=[],
                 is_actionable=False,
-                language="UNKNOWN"
+                language="UNKNOWN",
+                advisory_context_type="none",
+                advisory_explanation="Empty text."
             )
 
-        from core.multilingual import detect_language_and_script, check_awareness_context
-        lang_tag, detected_scripts = detect_language_and_script(text)
-        is_awareness, awareness_markers = check_awareness_context(text)
+        # 1. Ensure shared normalized text pipeline is used across all callers
+        from core.normalizer import normalize_text
+        norm_text = normalize_text(text)
+
+        # 2. Multilingual script detection and validated awareness context evaluation
+        from core.multilingual import detect_language_and_script, evaluate_awareness_context
+        lang_tag, detected_scripts = detect_language_and_script(norm_text)
+        awareness_res = evaluate_awareness_context(norm_text)
+
+        # 3. Detect active commercial trade / seller solicitation cues
+        has_contact_or_payment = bool(
+            identifiers and (
+                identifiers.get("phones") or identifiers.get("upis") or
+                identifiers.get("crypto_wallets") or identifiers.get("usernames")
+            )
+        )
+        trade_cues_pat = re.compile(
+            r"(?i)\b(?:in\s+stock|available|fresh\s+stock|deliver(?:y|ed)?|for\s+sale|price|rates?|piece|cash\s+on\s+delivery|cod|ping|dm|contact|order|payment|cash\s+payment|loaded|full\s+loaded|consignment|deal|dispatch|selling|ready\s+stock|ready)\b"
+        )
+        indic_trade_cues_pat = re.compile(
+            r"(?:स्टॉक|उपलब्ध|डिलीवरी|बिक्री|कीमत|भाव|कैश\s*ऑन\s*डिलीवरी|संपर्क|ऑर्डर|नकद|भुगतान|सौदा|तैयार)"
+        )
+        has_trade_cues = bool(trade_cues_pat.search(norm_text) or indic_trade_cues_pat.search(norm_text) or has_contact_or_payment)
 
         cat_scores: Dict[str, CategoryScore] = {}
         all_matched_terms: List[Dict[str, Any]] = []
@@ -351,24 +394,43 @@ class RuleScorer:
             seen_concepts_in_cat = set()
 
             for term_str, sec, base_weight, pattern in self._compiled_patterns.get(cat_name, []):
-                # Search pattern
-                if pattern.search(text):
-                    mt = MatchedTerm(term=term_str, category=cat_name, section=sec, weight=base_weight)
+                # Search pattern on normalized text
+                if pattern.search(norm_text):
+                    # Check context-only boundary for arms category
+                    is_context_only = False
+                    term_weight = base_weight
+
+                    if cat_name == "arms" and sec != "coded_words":
+                        clean_lower = term_str.lower()
+                        if clean_lower in GENERIC_WEAPONS_TERMS:
+                            if not has_trade_cues:
+                                # Isolated neutral mention: strictly context-only, zero score inflation
+                                is_context_only = True
+                                term_weight = 0.0
+
+                    mt = MatchedTerm(
+                        term=term_str,
+                        category=cat_name,
+                        section=sec,
+                        weight=term_weight,
+                        is_context_only=is_context_only
+                    )
                     matched_for_cat.append(mt)
 
                     # Canonical concept for deduplication within the post
                     canonical = CANONICAL_CONCEPTS.get(term_str.lower(), term_str.lower())
                     if canonical not in seen_concepts_in_cat:
                         seen_concepts_in_cat.add(canonical)
-                        cat_raw_score += base_weight
+                        cat_raw_score += term_weight
 
                     all_matched_terms.append({
                         "term": term_str,
                         "category": cat_name,
                         "category_label": label,
                         "section": sec,
-                        "weight": round(base_weight * multiplier, 2),
-                        "canonical_concept": canonical
+                        "weight": round(term_weight * multiplier, 2),
+                        "canonical_concept": canonical,
+                        "is_context_only": is_context_only
                     })
 
             cat_weighted_score = cat_raw_score * multiplier
@@ -383,16 +445,17 @@ class RuleScorer:
         # Total score
         total_score = sum(cs.weighted_score for cs in cat_scores.values())
 
-        # Presence of payment/contact identifiers amplifies risk if illegal terms matched
-        if identifiers and total_score > 0 and not is_awareness:
+        # Presence of payment/contact identifiers amplifies risk if non-context illegal terms matched
+        if identifiers and total_score > 0 and not awareness_res.is_confirmed_advisory:
             if identifiers.get("upis") or identifiers.get("crypto_wallets"):
                 total_score += 1.5  # Direct payment channel present
             if identifiers.get("phones"):
                 total_score += 1.0  # Contact channel present
 
-        # Awareness / disclaimer suppression
+        # Validated institutional advisory suppression (only when confirmed benign)
+        is_awareness = awareness_res.is_confirmed_advisory
         if is_awareness and total_score > 0:
-            total_score = min(total_score * 0.1, 1.0)
+            total_score = min(total_score * 0.1, 0.5)
 
         # Find primary category (highest weighted score)
         primary_category = None
@@ -425,5 +488,7 @@ class RuleScorer:
             is_actionable=is_actionable,
             language=lang_tag.value,
             is_awareness=is_awareness,
-            awareness_markers=awareness_markers
+            awareness_markers=awareness_res.markers,
+            advisory_context_type=awareness_res.context_type,
+            advisory_explanation=awareness_res.explanation
         )

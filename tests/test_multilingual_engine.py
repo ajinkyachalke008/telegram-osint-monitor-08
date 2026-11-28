@@ -79,10 +79,39 @@ def test_devanagari_danda_replacement():
 
 
 def test_repeated_characters_folding():
-    text = "kattaaaaa availableee brooo tamanchaaaa"
-    norm, applied = normalize_hinglish_slang(text)
-    assert "katta" in norm
-    assert "tamancha" in norm
+    # Exact equality checks as mandated by PR audit
+    norm_katta, _ = normalize_hinglish_slang("kattaaaaa")
+    assert norm_katta == "katta"
+
+    norm_farzi, _ = normalize_hinglish_slang("farziii")
+    assert norm_farzi == "farzi"
+
+    norm_orig_katta, _ = normalize_hinglish_slang("katta")
+    assert norm_orig_katta == "katta"
+
+    norm_chitta, _ = normalize_hinglish_slang("chitta")
+    assert norm_chitta == "chitta"
+
+    norm_tamancha, _ = normalize_hinglish_slang("tamanchaaaa")
+    assert norm_tamancha == "tamancha"
+
+    norm_bandook, _ = normalize_hinglish_slang("bandookkk")
+    assert norm_bandook == "bandook"
+
+
+def test_normalized_spelling_matches_lexicon():
+    scorer = RuleScorer()
+    # kattaaaaa normalized to katta should trigger arms lexicon term
+    res_katta = scorer.score("bhai kattaaaaa deliver karo fast")
+    assert res_katta.primary_category == "arms"
+    matched_katta = [t["term"] for t in res_katta.matched_terms]
+    assert "katta" in matched_katta
+
+    # farziiii normalized to farzi should trigger fake_documents
+    res_farzi = scorer.score("farziiii pan card ready for dispatch")
+    assert res_farzi.primary_category == "fake_documents"
+    matched_farzi = [t["term"] for t in res_farzi.matched_terms]
+    assert any("farzi" in t for t in matched_farzi)
 
 
 def test_phonetic_hinglish_aliases():
@@ -218,3 +247,76 @@ def test_classifier_multilingual_metadata_and_classification():
     res_notice = clf.classify(hi_notice)
     assert res_notice.risk_level in ("Clean", "Low")
     assert res_notice.is_actionable is False
+
+
+# ---------------------------------------------------------------------------
+# 6. Awareness Context & Evasion Hardening Regression Tests
+# ---------------------------------------------------------------------------
+
+def test_awareness_mixed_solicitation_not_suppressed():
+    """An adversary quoting a police warning while selling contraband MUST NOT be suppressed."""
+    scorer = RuleScorer()
+    clf = HybridClassifier(auto_load=True)
+    adversary_text = (
+        "Police advisory: Beware of fake lottery calls. "
+        "Meanwhile pure Afghan charas and chitta stock available DM @fast_dealer for delivery."
+    )
+    score_res = scorer.score(adversary_text)
+    assert score_res.advisory_context_type == "mixed_solicitation"
+    assert score_res.is_awareness is False
+    assert score_res.risk_level in ("High", "Medium")
+    assert score_res.is_actionable is True
+
+    clf_res = clf.classify(adversary_text)
+    assert clf_res.category == "drugs"
+    assert clf_res.risk_level in ("High", "Medium")
+    assert clf_res.is_actionable is True
+
+
+def test_generic_warning_without_institution_not_blindly_suppressed():
+    """A generic warning directive alone without institutional verification does not grant full suppression."""
+    from core.multilingual import evaluate_awareness_context
+    text = "Satark rahe dosto, fraud messages bahut badh gaye hain."
+    res = evaluate_awareness_context(text)
+    assert res.is_confirmed_advisory is False
+    assert res.context_type in ("generic_warning", "none")
+
+
+# ---------------------------------------------------------------------------
+# 7. Weapons Context-Only Boundary Regression Tests
+# ---------------------------------------------------------------------------
+
+def test_weapons_context_only_boundary_neutral():
+    """Isolated neutral weapon mentions (museum, historical, sports) have weight 0.0 and Clean risk."""
+    scorer = RuleScorer()
+    clf = HybridClassifier(auto_load=True)
+    neutral_text = "The city history museum displays an antique rifle and vintage pistol from the 19th century."
+    
+    score_res = scorer.score(neutral_text)
+    assert score_res.total_score == 0.0
+    assert score_res.risk_level == "Clean"
+    assert score_res.is_actionable is False
+    assert all(t["is_context_only"] is True for t in score_res.matched_terms)
+
+    clf_res = clf.classify(neutral_text)
+    assert clf_res.category == "benign"
+    assert clf_res.risk_level == "Clean"
+    assert clf_res.is_actionable is False
+
+
+def test_weapons_context_only_boundary_active_trade():
+    """Weapons mentions accompanied by commercial trade cues elevate to actionable High/Medium risk."""
+    scorer = RuleScorer()
+    clf = HybridClassifier(auto_load=True)
+    active_text = "Fresh stock of 315 bore desi katta and pistol available for sale, UP delivery cash on delivery."
+
+    score_res = scorer.score(active_text)
+    assert score_res.total_score > 3.0
+    assert score_res.risk_level in ("High", "Medium")
+    assert score_res.is_actionable is True
+    assert any(t["is_context_only"] is False for t in score_res.matched_terms)
+
+    clf_res = clf.classify(active_text)
+    assert clf_res.category == "arms"
+    assert clf_res.risk_level in ("High", "Medium")
+    assert clf_res.is_actionable is True

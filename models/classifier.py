@@ -72,7 +72,7 @@ class ClassificationResult:
     normalizations_applied: List[str]
     model_architecture: str
     language: str = "EN"
-    detected_scripts: List[str] = field(default_factory=list)
+    detected_scripts: Dict[str, float] = field(default_factory=dict)
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -216,10 +216,15 @@ class HybridClassifier:
         }
 
     def _check_hard_negative(self, text: str) -> bool:
-        """Returns True if text contains unmistakable legitimate/warning disclaimer markers."""
+        """Returns True ONLY if text contains confirmed public advisory / institutional warning markers."""
+        from core.multilingual import evaluate_awareness_context, ILLICIT_SOLICITATION_PATTERNS
+        res = evaluate_awareness_context(text)
+        if res.is_confirmed_advisory:
+            return True
         for pat in self.BENIGN_SUPPRESSION_PATTERNS:
             if pat.search(text):
-                return True
+                if not any(sp.search(text) for sp in ILLICIT_SOLICITATION_PATTERNS):
+                    return True
         return False
 
     def classify(
@@ -252,14 +257,16 @@ class HybridClassifier:
                 normalizations_applied=[],
                 model_architecture=active_arch,
                 language="UNKNOWN",
-                detected_scripts=[]
+                detected_scripts={}
             )
 
-        from core.multilingual import detect_language_and_script
-        lang_tag, detected_scripts = detect_language_and_script(text)
-
-        # 1. Normalize
-        norm_text = normalize_text(text)
+        # 1. Unified Multilingual Normalization and Script Analysis
+        from core.multilingual import normalize_multilingual
+        multi_res = normalize_multilingual(text)
+        norm_text = multi_res.normalized_text
+        lang_tag = multi_res.language
+        detected_scripts = multi_res.detected_scripts
+        actual_normalizations = multi_res.applied_normalizations
 
         # 2. Rule scoring on normalized text
         score_res: ScoreResult = self.scorer.score(norm_text, identifiers)
@@ -296,15 +303,29 @@ class HybridClassifier:
         benign_prob = ml_probs.get("benign", 0.0)
 
         # Determine dominant category
-        if score_res.primary_category and score_res.total_score >= 2.5:
+        # If all matched terms in arms were context-only (total_score == 0.0), do NOT flag as illegal arms
+        only_context_weapons = (
+            score_res.primary_category == "arms" and score_res.total_score == 0.0 and
+            all(t.get("is_context_only", False) for t in score_res.matched_terms)
+        )
+
+        cat_ml_prob = ml_probs.get(top_ml_category, 0.0) if top_ml_category != "benign" else 0.0
+
+        if is_hard_neg:
+            category = "benign"
+            cat_ml_prob = 0.0
+        elif only_context_weapons and cat_ml_prob < 0.40:
+            category = "benign"
+            cat_ml_prob = 0.0
+        elif score_res.primary_category and score_res.total_score >= 2.5:
             category = score_res.primary_category
             cat_ml_prob = max(ml_probs.get(category, 0.0), top_ml_prob if top_ml_category != "benign" else 0.0)
-        elif top_ml_prob >= 0.30 and total_illegal_prob > benign_prob:
-            category = top_ml_category
-            cat_ml_prob = top_ml_prob
         elif score_res.primary_category and score_res.total_score > 0:
             category = score_res.primary_category
             cat_ml_prob = max(ml_probs.get(category, 0.2), top_ml_prob if top_ml_category != "benign" else 0.2)
+        elif top_ml_prob >= 0.50 and total_illegal_prob > benign_prob:
+            category = top_ml_category
+            cat_ml_prob = top_ml_prob
         else:
             category = "benign"
             cat_ml_prob = 0.0
@@ -314,13 +335,15 @@ class HybridClassifier:
         if category == "benign":
             confidence = 0.0
         else:
-            confidence = 0.60 * cat_ml_prob + 0.40 * lex_norm
+            if cat_ml_prob >= 0.25:
+                confidence = 0.50 * cat_ml_prob + 0.50 * lex_norm
+            else:
+                confidence = max(0.45, lex_norm) if score_res.total_score >= 2.5 else lex_norm
 
         # Suppress if hard negative detected
         if is_hard_neg:
-            confidence = max(0.0, confidence * 0.15)
-            if confidence < 0.25:
-                category = "benign"
+            confidence = 0.0
+            category = "benign"
 
         # Identifier booster
         if identifiers and category != "benign" and not is_hard_neg:
@@ -332,11 +355,13 @@ class HybridClassifier:
                 confidence = min(0.99, confidence + 0.08)
 
         # Risk level determination
-        if confidence >= 0.65 or (category in ("arms", "net_banking_kit", "bank_account") and confidence >= 0.50):
+        if category == "benign" or is_hard_neg:
+            risk_level = "Clean"
+        elif score_res.risk_level == "High" or confidence >= 0.65 or (category in ("arms", "net_banking_kit", "bank_account") and confidence >= 0.50):
             risk_level = "High"
-        elif confidence >= 0.35:
+        elif score_res.risk_level == "Medium" or confidence >= 0.35:
             risk_level = "Medium"
-        elif confidence >= 0.15:
+        elif confidence >= 0.15 or score_res.risk_level == "Low":
             risk_level = "Low"
         else:
             risk_level = "Clean"
@@ -376,7 +401,7 @@ class HybridClassifier:
             matched_terms=score_res.matched_terms,
             ml_probabilities=ml_probs,
             lexicon_score=score_res.total_score,
-            normalizations_applied=["nfkc", "homoglyph_fold", "devanagari_fold", "emoji_map"] if norm_text != text else [],
+            normalizations_applied=actual_normalizations,
             model_architecture=self.model_name,
             language=lang_tag.value,
             detected_scripts=detected_scripts

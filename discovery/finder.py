@@ -24,6 +24,7 @@ from typing import List, Dict, Any, Set, Tuple, Optional
 sys.path.insert(0, str(Path(__file__).parent.parent))
 from addons.extractors import extract_all_entities
 from addons.scorer import RuleScorer
+from core.normalizer import normalize_text
 
 logging.basicConfig(
     level=logging.INFO,
@@ -140,7 +141,8 @@ def score_channel_posts(posts: List[Dict[str, Any]], scorer: RuleScorer) -> Dict
         if not text:
             continue
         entities = extract_all_entities(text)
-        res = scorer.score(text, identifiers=entities)
+        norm_text = normalize_text(text)
+        res = scorer.score(norm_text, identifiers=entities)
 
         if res.is_actionable:
             actionable_count += 1

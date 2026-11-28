@@ -21,8 +21,9 @@ render_provenance_banner(page_title="Model Metrics", active_stream="VERIFIED-SYN
 st.title("📈 Machine Learning Performance & Validation Benchmarks (R2)")
 st.caption("Empirical held-out benchmark evaluation metrics, hard-negative suppression rates, and statistical model risk declarations.")
 
-RESULTS_JSON = Path(__file__).resolve().parent.parent.parent / "data" / "model_evaluation_results.json"
-METRICS_MD = Path(__file__).resolve().parent.parent.parent / "docs" / "METRICS.md"
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+RESULTS_JSON = PROJECT_ROOT / "data" / "model_evaluation_results.json"
+METRICS_MD = PROJECT_ROOT / "docs" / "METRICS.md"
 
 if RESULTS_JSON.exists():
     try:

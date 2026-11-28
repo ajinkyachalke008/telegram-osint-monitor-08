@@ -4,8 +4,10 @@
 
 - **Project:** Telegram OSINT Monitor 08 (PS02 Hackathon Release)
 - **Mandate:** Complete English, Hindi (Devanagari), and Hinglish (Romanised Hindi) language & slang understanding throughout the entire existing application.
-- **Delivery Branch:** `feat/multilingual-hindi-hinglish-support`
-- **Verification Status:** **140/140 Tests Passing (100% Pass Rate)**
+- **Repository:** `ajinkyachalke008/telegram-osint-monitor-08`
+- **Target Branch:** `feat/multilingual-hindi-hinglish-support`
+- **Pull Request:** PR #19 (Target: `main`)
+- **Verification Status:** **128/128 Tests Passing (100% Pass Rate)**
 
 ---
 
@@ -16,8 +18,8 @@
   - `LanguageTag` enum (`EN`, `HI`, `HI_LATN`, `MIXED`, `UNKNOWN`).
   - `detect_language_and_script`: Accurate token- and character-level script/language classification.
   - `normalize_devanagari`: Unicode NFKC normalization, nukta folding (`क़`->`क`, `फ़`->`फ`, `ज़`->`ज`), danda punctuation replacement (`।`/`॥` -> `. `), and zero-width character (ZWJ/ZWNJ) removal.
-  - `normalize_hinglish_slang`: Repetition collapse (3+ identical characters) and phonetic alias resolution (`nakalee`->`nakli`, `farjee`->`farzi`, `dastavej`->`dastavez`).
-  - `check_awareness_context`: Detection and suppression of public advisories, cyber police warnings, and bank notices across EN, HI, and Hinglish.
+  - `normalize_hinglish_slang`: Repeated character normalization with exact string equality (`kattaaaaa` -> `katta`, `farziii` -> `farzi`, preserving legitimate double consonants like `chitta` and `katta`).
+  - `evaluate_awareness_context`: Distinguishes confirmed institutional public advisories from generic warning directives. Prevents bad actors from evading detection by quoting warnings in commercial ads (`mixed_solicitation`).
   - `normalize_multilingual`: Emits auditable `NormalizationResult` while preserving raw text.
 - `core/normalizer.py`:
   - Preserved backward compatibility for `normalize_text(raw_text)` while incorporating multilingual normalization.
@@ -27,36 +29,37 @@
   - Added comprehensive `slang_hi` (Devanagari) sections to all 7 operational categories: `drugs`, `arms`, `fake_documents`, `bank_account`, `atm_card`, `sim_card`, and `net_banking_kit`.
   - Preserved existing `slang_en`, `slang_hinglish`, `slang_marathi`, `coded_words`, and `emojis`.
 - `addons/scorer.py`:
-  - Included `slang_hi` in compiled lexicon sections.
-  - Fixed double multiplier calculation: Base weights are not multiplied by the category multiplier during pattern compilation; the multiplier is applied strictly once in `score()`.
-  - Implemented concept-level deduplication via canonical concept mappings (`CANONICAL_CONCEPTS`), preventing score inflation when multiple surface forms of the same concept (e.g. `katta`, `tamancha`, `कट्टा`) appear in one post.
-  - Incorporated `check_awareness_context` for public advisory suppression.
-  - Added Unicode-aware token boundaries (`(?<![\u0900-\u097F\w])` ... `(?![\u0900-\u097F\w])`).
+  - Normalized input guarantee: Evaluates `normalize_text(text)` internally so all callers receive normalized text safely.
+  - Context-only weapons boundary: Isolated neutral weapon mentions (e.g. historical museums, sports shooting trials, policy reporting) receive weight 0.0, marked `is_context_only = True`, and classified as Clean/Benign. Commercial advertisements with active trade solicitation elevate to actionable High/Medium risk.
+  - Single multiplier calculation: Base weights are not multiplied during pattern compilation; the category multiplier is applied strictly once in `score()`.
+  - Concept-level deduplication: Synonyms within a post (`desi katta`, `tamancha`, `कट्टा`) map to `country_pistol` and are scored once.
+  - Unicode token boundaries (`(?<![\u0900-\u097F\w])` ... `(?![\u0900-\u097F\w])`).
 
 ### 2.3 Hybrid ML Classifier
 - `models/classifier.py`:
-  - Added multilingual public awareness and police advisory patterns to `BENIGN_SUPPRESSION_PATTERNS`.
-  - Extended `ClassificationResult` with `language` tag and `detected_scripts`.
-  - Connected hard-negative suppression to `ScoreResult.is_awareness`.
+  - Hard-negative suppression: Suppresses confirmed institutional advisories without commercial trade to `benign` (confidence = 0.0, risk = Clean).
+  - High-confidence out-of-vocabulary calibration: When Indic text / slang yields low ML probability from the English-centric TF-IDF model, calibrated rule scorer weights ensure threats are classified accurately as High/Medium risk.
+  - Emits `detected_scripts: Dict[str, float]` and `normalizations_applied: List[str]`.
 
 ### 2.4 Discovery & Keywords
 - `discovery/keywords.txt`:
   - Expanded search query seeds with balanced English, Hindi Devanagari, and Hinglish terms.
-- `discovery/finder.py`:
-  - Fixed `Optional` type import and preserved discovery workflow.
+- `discovery/finder.py` & `discovery/monitor.py`:
+  - Passes normalized text to `RuleScorer.score()`.
 
 ### 2.5 Dashboard Multilingual Visuals
 - `dashboard/pages/1_🚨_Live_Alerts.py`:
-  - Added forensic language badge pills (`[EN]`, `[HI]`, `[HI-LATN]`, `[MIXED]`) to alert feed cards with color coding.
+  - Color-coded forensic language badge pills (`[EN]`, `[HI]`, `[HI-LATN]`, `[MIXED]`) on alert feed cards.
 - `dashboard/pages/2_🔍_Alert_Detail.py`:
-  - Added **🌐 Multilingual Forensic Intelligence & Script Analysis** dossier card.
-  - Added expander displaying matched surface terms vs canonical concept groups.
+  - **🌐 Multilingual Forensic Intelligence & Script Analysis** dossier card: Displays detected language name (including Hinglish), formatted script proportions (`HI: 80.0%, EN: 20.0%`), context nature badge, and applied normalizations.
+  - Matched terms expander displays canonical concept mappings and Context-Only status.
 - `dashboard/pages/7_📈_Model_Metrics.py`:
   - Added **🌐 Multilingual Performance Breakdown** section displaying live evaluation benchmark KPIs.
+  - Fixed `PROJECT_ROOT` resolution.
 
 ### 2.6 Test Suites & Benchmark
-- `tests/test_multilingual_engine.py`: 17 comprehensive unit tests for script detection, Unicode normalization, phonetic folding, deduplication, multiplier fix, awareness suppression, and HybridClassifier inference.
-- `eval/benchmark_multilingual.py`: Benchmark suite evaluating 120 multilingual records, outputting metrics to `data/multilingual_evaluation_results.json`.
+- `tests/test_multilingual_engine.py`: 22 comprehensive unit & regression tests (exact repeated character equality, lexicon term match verification, evasion hardening, context-only weapons boundary).
+- `eval/benchmark_multilingual.py`: Benchmark suite evaluating 120 multilingual records (30 EN, 30 HI, 30 HI-LATN, 30 MIXED), outputting metrics to `data/multilingual_evaluation_results.json`.
 
 ### 2.7 Documentation Deliverables
 - `docs/MULTILINGUAL_LANGUAGE_SUPPORT_ARCHITECTURE.md`
@@ -72,15 +75,15 @@
 ```bash
 # 1. Multilingual Test Suite
 .venv\Scripts\python.exe -m pytest tests/test_multilingual_engine.py -v
-# Result: 17 passed in 2.39s
+# Result: 22 passed in 1.96s
 
 # 2. Complete Repository Test Suite
 .venv\Scripts\python.exe -m pytest -q
-# Result: 123 passed in 23.19s (Total 140 tests with multilingual suite)
+# Result: 128 passed in 22.99s
 
 # 3. Multilingual Benchmark
 .venv\Scripts\python.exe eval/benchmark_multilingual.py
-# Result: Overall Accuracy: 97.5% | F1: 0.8732 | Advisory Suppression: 100.0% (FPR: 0.0%)
+# Result: Strict Multiclass Accuracy: 100.0% | Binary Threat Accuracy: 100.0% | Advisory Suppression: 100.0% (FPR: 0.0%)
 ```
 
 ---

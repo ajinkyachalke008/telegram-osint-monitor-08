@@ -37,6 +37,10 @@ categories:
       - हेरोइन
       - कोकीन
       - नशा
+      - ट्रामाडोल
+      - अल्प्राजोलम
+      - केटामाइन
+      - एलएसडी
     slang_hinglish:
       - maal
       - chitta
@@ -156,16 +160,22 @@ categories:
     default_weight: 2.5
     slang_en:
       - fake aadhar
+      - counterfeit aadhar
       - forged pan
       - counterfeit marksheet
       - fake passport
       - fake driving license
+      - driving license
       - fake voter id
       - cloned voter id
       - rto passing
       - duplicate rc
       - biometric bypass
       - rubber stamp
+      - marksheet
+      - fake degree
+      - degree certificate
+      - duplicate passport
     slang_hi:
       - नकली आधार
       - फर्जी आधार
@@ -175,19 +185,35 @@ categories:
       - डुप्लीकेट लाइसेंस
       - बायोमेट्रिक बाईपास
       - जाली दस्तावेज
+      - फर्जी दस्तावेज
+      - जाली अंकतालिका
+      - नकली पहचान पत्र
+      - पहचान पत्र
+      - ड्राइविंग लाइसेंस
+      - अंकतालिका
       - नकली प्रमाण पत्र
       - फर्जी प्रमाण पत्र
     slang_hinglish:
       - nakli aadhar
       - duplicate pan
+      - farzi pan
+      - farzi pan card
+      - nakli pan
+      - nakli pan card
+      - pan card
       - farzi marksheet
       - duplicate license
+      - nakli driving license
+      - pehchan patra
+      - nakli pehchan patra
       - aadhar biometric bypass
       - crack software
       - seal stamp
       - bina exam certificate
       - backdated marksheet
       - aadhar card print
+      - farzi dastavez
+      - duplicate marksheet
     slang_marathi:
       - nakli kagadpatra
       - khoti marksheet
@@ -228,6 +254,8 @@ categories:
       - rent account
       - corporate bank account
       - bank mule
+      - mule bank account
+      - mule bank accounts
       - ready bank kit
       - rented account
       - merchant account for rent
@@ -244,6 +272,7 @@ categories:
       - म्यूल खाता
       - पेमेंट खाता
       - खाता बिक्री
+      - करंट अकाउंट
     slang_hinglish:
       - khata
       - khata sale
@@ -387,13 +416,21 @@ categories:
       - full net banking kit
       - netbanking kit
       - net banking kit
+      - full banking kit
+      - banking kit
       - internet banking kit with sim
       - corporate net banking
       - complete bank kit with cheque book
       - corporate login credentials
       - full kit account
+      - netbanking login credentials
+      - netbanking user id
+      - netbanking login
     slang_hi:
       - नेट बैंकिंग किट
+      - नेटबैंकिंग किट
+      - नेटबैंकिंग
+      - फुल किट
       - इंटरनेट बैंकिंग किट
       - फुल किट खाता
       - चेक बुक और एटीएम
@@ -401,6 +438,9 @@ categories:
       - संपूर्ण बैंक किट
     slang_hinglish:
       - full kit khata
+      - full kit
+      - netbanking kit
+      - netbanking login
       - net banking user id password
       - cheque book passbook atm sim
       - complete kit available

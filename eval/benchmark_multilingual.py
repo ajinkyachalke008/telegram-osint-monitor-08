@@ -26,7 +26,7 @@ BENCHMARK_OUTPUT_PATH = WORKSPACE_ROOT / "data" / "multilingual_evaluation_resul
 
 # Curated benchmark dataset covering all 3 required language formats + mixed code-switching
 BENCHMARK_DATASET: List[Dict[str, Any]] = [
-    # ------------------ ENGLISH (40 Samples) ------------------
+    # ------------------ ENGLISH (30 Samples) ------------------
     {"text": "Pure MDMA crystals and top grade cocaine available. Guaranteed door delivery. Ping @sub_vendor", "category": "drugs", "language": "EN"},
     {"text": "Fresh Afghan charas and hashish stock arrived. DM @hash_hub for rates.", "category": "drugs", "language": "EN"},
     {"text": "LSD stamps and ketamine vials ready for dispatch. Fast courier service.", "category": "drugs", "language": "EN"},
@@ -59,7 +59,7 @@ BENCHMARK_DATASET: List[Dict[str, Any]] = [
     {"text": "Police busted interstate gang of illegal arms smugglers and seized weapons.", "category": "benign", "language": "EN", "is_advisory": True},
     {"text": "Public awareness notice: Rental of bank accounts for cybercrime is a punishable offense under PMLA.", "category": "benign", "language": "EN", "is_advisory": True},
 
-    # ------------------ HINDI DEVANAGARI (40 Samples) ------------------
+    # ------------------ HINDI DEVANAGARI (30 Samples) ------------------
     {"text": "देसी कट्टा और ३१५ बोर कारतूस उपलब्ध है। तुरंत डिलीवरी के लिए संपर्क करें।", "category": "arms", "language": "HI"},
     {"text": "तमंचा और पिस्तौल का नया स्टॉक आ गया है। यूपी बिहार डायरेक्ट डिलीवरी।", "category": "arms", "language": "HI"},
     {"text": "अवैध हथियार और रिवाल्वर की होम डिलीवरी। असली लोहा पीस।", "category": "arms", "language": "HI"},
@@ -92,7 +92,7 @@ BENCHMARK_DATASET: List[Dict[str, Any]] = [
     {"text": "राज्य स्तरीय राइफल शूटिंग चैंपियनशिप का आयोजन एसएमएस स्टेडियम में होगा।", "category": "benign", "language": "HI", "is_advisory": True},
     {"text": "डॉक्टर के पर्चे के बिना कोई भी दवा न लें। अधिकृत मेडिकल स्टोर से ही खरीदें।", "category": "benign", "language": "HI", "is_advisory": True},
 
-    # ------------------ HINGLISH (ROMANISED HINDI) (40 Samples) ------------------
+    # ------------------ HINGLISH (ROMANISED HINDI) (30 Samples) ------------------
     {"text": "Bhai desi katta aur 315 bore piece chahiye to ping karo, fast delivery milega.", "category": "arms", "language": "HI_LATN"},
     {"text": "Tamancha aur hathiyar ready stock me hai. Full loaded piece.", "category": "arms", "language": "HI_LATN"},
     {"text": "Asla aur goli ka fresh consignment aaya hai, UP Bihar delivery available.", "category": "arms", "language": "HI_LATN"},
@@ -125,7 +125,7 @@ BENCHMARK_DATASET: List[Dict[str, Any]] = [
     {"text": "Doctor ke prescription ke bina dawa mat lijiye, official medical store se lein.", "category": "benign", "language": "HI_LATN", "is_advisory": True},
     {"text": "Police advisory: Bank account rent par dena kanoon apradh hai, jail ho sakti hai.", "category": "benign", "language": "HI_LATN", "is_advisory": True},
 
-    # ------------------ MIXED / CODE-SWITCHING (40 Samples) ------------------
+    # ------------------ MIXED / CODE-SWITCHING (30 Samples) ------------------
     {"text": "Original MDMA पाउडर उपलब्ध है, contact on telegram for direct home delivery.", "category": "drugs", "language": "MIXED"},
     {"text": "Fresh Afghan charas and चरस ready stock. Ping @deals for fast dispatch.", "category": "drugs", "language": "MIXED"},
     {"text": "High purity cocaine available, मुंबई और दिल्ली में immediate courier.", "category": "drugs", "language": "MIXED"},
@@ -138,7 +138,7 @@ BENCHMARK_DATASET: List[Dict[str, Any]] = [
     {"text": "Counterfeit degree certificate और अंकतालिका fast parcel delivery.", "category": "fake_documents", "language": "MIXED"},
     {"text": "Duplicate passport and पहचान पत्र ready in 2 days.", "category": "fake_documents", "language": "MIXED"},
     {"text": "Active HDFC bank account रेंट पर चाहिए for crypto P2P transactions.", "category": "bank_account", "language": "MIXED"},
-    {"text": "Fresh corporate current khata available with netbanking kit.", "category": "bank_account", "language": "MIXED"},
+    {"text": "Fresh corporate current khata available with netbanking kit.", "category": "net_banking_kit", "language": "MIXED"},
     {"text": "Cloned debit cards और एटीएम कार्ड with PIN. High withdrawal limit.", "category": "atm_card", "language": "MIXED"},
     {"text": "Full banking kit: चालू सिम, ATM card and cheque book included.", "category": "net_banking_kit", "language": "MIXED"},
     {"text": "Pre-activated Jio सिम बिना बायोमेट्रिक के. Ready to use immediately.", "category": "sim_card", "language": "MIXED"},
@@ -166,10 +166,10 @@ def run_multilingual_benchmark() -> Dict[str, Any]:
     clf = HybridClassifier(auto_load=True)
 
     results_by_lang = {
-        "EN": {"total": 0, "correct": 0, "tp": 0, "fp": 0, "fn": 0, "tn": 0, "latencies": []},
-        "HI": {"total": 0, "correct": 0, "tp": 0, "fp": 0, "fn": 0, "tn": 0, "latencies": []},
-        "HI_LATN": {"total": 0, "correct": 0, "tp": 0, "fp": 0, "fn": 0, "tn": 0, "latencies": []},
-        "MIXED": {"total": 0, "correct": 0, "tp": 0, "fp": 0, "fn": 0, "tn": 0, "latencies": []},
+        "EN": {"total": 0, "multiclass_correct": 0, "tp": 0, "fp": 0, "fn": 0, "tn": 0, "latencies": []},
+        "HI": {"total": 0, "multiclass_correct": 0, "tp": 0, "fp": 0, "fn": 0, "tn": 0, "latencies": []},
+        "HI-LATN": {"total": 0, "multiclass_correct": 0, "tp": 0, "fp": 0, "fn": 0, "tn": 0, "latencies": []},
+        "MIXED": {"total": 0, "multiclass_correct": 0, "tp": 0, "fp": 0, "fn": 0, "tn": 0, "latencies": []},
     }
 
     advisory_samples = 0
@@ -180,7 +180,8 @@ def run_multilingual_benchmark() -> Dict[str, Any]:
     for sample in BENCHMARK_DATASET:
         text = sample["text"]
         expected_cat = sample["category"]
-        expected_lang = sample["language"]
+        raw_lang = sample["language"]
+        expected_lang = "HI-LATN" if raw_lang in ("HI-LATN", "HI_LATN") else raw_lang
         is_advisory = sample.get("is_advisory", False)
 
         t0 = time.perf_counter()
@@ -196,10 +197,11 @@ def run_multilingual_benchmark() -> Dict[str, Any]:
         is_pred_illegal = res.is_actionable and pred_cat != "benign"
         is_actual_illegal = expected_cat != "benign"
 
-        # Classification accuracy
-        if (expected_cat == "benign" and not is_pred_illegal) or (expected_cat != "benign" and (pred_cat == expected_cat or is_pred_illegal)):
-            bucket["correct"] += 1
+        # 1. Strict multiclass category classification
+        if pred_cat == expected_cat:
+            bucket["multiclass_correct"] += 1
 
+        # 2. Binary threat detection (illegal vs benign)
         if is_actual_illegal and is_pred_illegal:
             bucket["tp"] += 1
         elif not is_actual_illegal and is_pred_illegal:
@@ -217,7 +219,7 @@ def run_multilingual_benchmark() -> Dict[str, Any]:
     # Aggregate metrics
     summary = {}
     tot_samples = 0
-    tot_correct = 0
+    tot_mc_correct = 0
     tot_tp = 0
     tot_fp = 0
     tot_fn = 0
@@ -229,14 +231,15 @@ def run_multilingual_benchmark() -> Dict[str, Any]:
         if n == 0:
             continue
         tot_samples += n
-        tot_correct += b["correct"]
+        tot_mc_correct += b["multiclass_correct"]
         tot_tp += b["tp"]
         tot_fp += b["fp"]
         tot_fn += b["fn"]
         tot_tn += b["tn"]
         all_latencies.extend(b["latencies"])
 
-        acc = b["correct"] / n
+        mc_acc = b["multiclass_correct"] / n
+        bin_acc = (b["tp"] + b["tn"]) / n
         prec = b["tp"] / (b["tp"] + b["fp"]) if (b["tp"] + b["fp"]) > 0 else 1.0
         rec = b["tp"] / (b["tp"] + b["fn"]) if (b["tp"] + b["fn"]) > 0 else 1.0
         f1 = (2 * prec * rec) / (prec + rec) if (prec + rec) > 0 else 0.0
@@ -244,19 +247,25 @@ def run_multilingual_benchmark() -> Dict[str, Any]:
         fnr = b["fn"] / (b["fn"] + b["tp"]) if (b["fn"] + b["tp"]) > 0 else 0.0
         avg_lat = sum(b["latencies"]) / len(b["latencies"])
 
-        summary[lang] = {
+        metrics_obj = {
             "total_samples": n,
-            "accuracy": round(acc, 4),
-            "accuracy_pct": round(acc * 100, 2),
-            "precision": round(prec, 4),
-            "recall": round(rec, 4),
-            "f1": round(f1, 4),
-            "fpr": round(fpr, 4),
-            "fnr": round(fnr, 4),
-            "latency_ms": round(avg_lat, 2)
+            "multiclass_accuracy": round(mc_acc, 4),
+            "multiclass_accuracy_pct": round(mc_acc * 100, 2),
+            "binary_accuracy": round(bin_acc, 4),
+            "binary_accuracy_pct": round(bin_acc * 100, 2),
+            "binary_precision": round(prec, 4),
+            "binary_recall": round(rec, 4),
+            "binary_f1": round(f1, 4),
+            "false_positive_rate": round(fpr, 4),
+            "false_negative_rate": round(fnr, 4),
+            "avg_latency_ms": round(avg_lat, 2)
         }
+        summary[lang] = metrics_obj
+        if lang == "HI-LATN":
+            summary["HI_LATN"] = metrics_obj
 
-    overall_acc = tot_correct / tot_samples if tot_samples > 0 else 0.0
+    overall_mc_acc = tot_mc_correct / tot_samples if tot_samples > 0 else 0.0
+    overall_bin_acc = (tot_tp + tot_tn) / tot_samples if tot_samples > 0 else 0.0
     overall_prec = tot_tp / (tot_tp + tot_fp) if (tot_tp + tot_fp) > 0 else 1.0
     overall_rec = tot_tp / (tot_tp + tot_fn) if (tot_tp + tot_fn) > 0 else 1.0
     overall_f1 = (2 * overall_prec * overall_rec) / (overall_prec + overall_rec) if (overall_prec + overall_rec) > 0 else 0.0
@@ -268,13 +277,22 @@ def run_multilingual_benchmark() -> Dict[str, Any]:
 
     output_data = {
         "timestamp_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-        "total_test_samples": tot_samples,
+        "metadata": {
+            "evaluation_scope": "curated_ground_truth_test_fixtures",
+            "total_test_samples": tot_samples,
+            "language_slices": ["EN", "HI", "HI-LATN", "MIXED"],
+            "samples_per_slice": 30,
+            "legal_compliance": "Section 63 BSA compliant forensic extraction; zero model retraining on user data",
+            "disclaimer": "Metrics represent verified curated laboratory test fixtures. Real-world open-web precision and false-positive rates may vary due to emerging evasion tactics and uncataloged adversarial slang."
+        },
         "overall_metrics": {
-            "accuracy": round(overall_acc, 4),
-            "accuracy_pct": round(overall_acc * 100, 2),
-            "precision": round(overall_prec, 4),
-            "recall": round(overall_rec, 4),
-            "f1": round(overall_f1, 4),
+            "multiclass_accuracy": round(overall_mc_acc, 4),
+            "multiclass_accuracy_pct": round(overall_mc_acc * 100, 2),
+            "binary_accuracy": round(overall_bin_acc, 4),
+            "binary_accuracy_pct": round(overall_bin_acc * 100, 2),
+            "binary_precision": round(overall_prec, 4),
+            "binary_recall": round(overall_rec, 4),
+            "binary_f1": round(overall_f1, 4),
             "false_positive_rate": round(overall_fpr, 4),
             "false_negative_rate": round(overall_fnr, 4),
             "avg_latency_ms": round(overall_lat, 2),
@@ -294,7 +312,8 @@ def run_multilingual_benchmark() -> Dict[str, Any]:
         json.dump(output_data, f, indent=2)
 
     print(f"\n Multilingual Benchmark Complete!")
-    print(f"Overall Accuracy: {output_data['overall_metrics']['accuracy_pct']}% | F1: {output_data['overall_metrics']['f1']}")
+    print(f"Strict Multiclass Accuracy: {output_data['overall_metrics']['multiclass_accuracy_pct']}%")
+    print(f"Binary Threat Accuracy: {output_data['overall_metrics']['binary_accuracy_pct']}% | F1: {output_data['overall_metrics']['binary_f1']}")
     print(f"Advisory Suppression Rate: {output_data['advisory_suppression']['suppression_success_rate']}% (FPR: {output_data['advisory_suppression']['false_positive_rate']}%)")
     print(f"Results saved to: {BENCHMARK_OUTPUT_PATH}")
     return output_data

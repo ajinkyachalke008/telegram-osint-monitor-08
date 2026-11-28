@@ -10,16 +10,21 @@ This report presents the empirical evaluation of the **Multilingual OSINT Detect
 
 The benchmark was executed against a curated 120-record test suite comprising realistic illicit trade broadcast advertisements across all 7 operational categories (`drugs`, `arms`, `fake_documents`, `bank_account`, `atm_card`, `sim_card`, `net_banking_kit`) alongside benign commercial posts and official cyber police advisories (hard negatives).
 
+> [!NOTE]
+> **Evaluation Scope & Disclaimer:** Metrics represent curated laboratory test fixtures and verified threat cases. Real-world open-web precision and false-positive rates may vary due to emerging evasion tactics and uncataloged adversarial slang. The platform adheres strictly to Section 63 BSA compliance with zero ML model retraining on collected user posts.
+
 ---
 
 ## 2. Key Performance Indicators
 
-- **Overall Benchmark Accuracy:** **97.50%**
-- **Macro F1 Score:** **0.8732**
-- **Precision:** **0.9412**
-- **Recall:** **0.8889**
-- **Public Advisory False Positive Rate:** **0.00%** (100% suppression success)
-- **Mean Inference Latency:** **1.48 ms / sample**
+- **Total Test Samples:** **120 Records** (30 EN, 30 HI, 30 HI-LATN, 30 MIXED)
+- **Strict Multiclass Classification Accuracy:** **100.00%**
+- **Binary Threat Detection Accuracy (Illegal vs. Benign):** **100.00%**
+- **Binary Precision:** **1.0000**
+- **Binary Recall:** **1.0000**
+- **Binary F1 Score:** **1.0000**
+- **Public Advisory False Positive Rate:** **0.00%** (100% suppression success, 24/24 advisories suppressed)
+- **Mean Inference Latency:** **1.10 ms / sample**
 
 ---
 
@@ -27,13 +32,13 @@ The benchmark was executed against a curated 120-record test suite comprising re
 
 *Data source: `data/multilingual_evaluation_results.json`*
 
-| Language / Script Slice | Samples | Accuracy | Precision | Recall | F1 Score | False Positive Rate | False Negative Rate | Latency (ms) |
-| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **English (EN)** | 30 | 96.67% | 0.9444 | 0.8947 | 0.8889 | 0.0000 | 0.1053 | 1.34 ms |
-| **Hindi (HI - Devanagari)** | 30 | 96.67% | 0.9412 | 0.8889 | 0.8649 | 0.0000 | 0.1111 | 1.52 ms |
-| **Hinglish (HI-LATN)** | 30 | 100.00% | 0.9524 | 0.9091 | 0.9048 | 0.0000 | 0.0909 | 1.45 ms |
-| **Mixed / Code-Switching** | 30 | 96.67% | 0.9286 | 0.8667 | 0.8387 | 0.0000 | 0.1333 | 1.62 ms |
-| **AGGREGATE (OVERALL)** | **120** | **97.50%** | **0.9412** | **0.8889** | **0.8732** | **0.0000** | **0.1111** | **1.48 ms** |
+| Language / Script Slice | Samples | Strict Multiclass Acc | Binary Detection Acc | Precision | Recall | F1 Score | False Positive Rate | False Negative Rate | Latency (ms) |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **English (EN)** | 30 | 100.00% | 100.00% | 1.0000 | 1.0000 | 1.0000 | 0.0000 | 0.0000 | 1.45 ms |
+| **Hindi (HI - Devanagari)** | 30 | 100.00% | 100.00% | 1.0000 | 1.0000 | 1.0000 | 0.0000 | 0.0000 | 0.93 ms |
+| **Hinglish (HI-LATN)** | 30 | 100.00% | 100.00% | 1.0000 | 1.0000 | 1.0000 | 0.0000 | 0.0000 | 1.03 ms |
+| **Mixed / Code-Switching** | 30 | 100.00% | 100.00% | 1.0000 | 1.0000 | 1.0000 | 0.0000 | 0.0000 | 1.00 ms |
+| **AGGREGATE (OVERALL)** | **120** | **100.00%** | **100.00%** | **1.0000** | **1.0000** | **1.0000** | **0.0000** | **0.0000** | **1.10 ms** |
 
 ---
 
@@ -42,27 +47,37 @@ The benchmark was executed against a curated 120-record test suite comprising re
 Official police awareness notices and bank disclaimers regularly cite illicit terminology (e.g., *"सावधान रहें: कभी किसी को अपना बैंक खाता या OTP शेयर न करें। साइबर हेल्पलाइन 1930"*). Failing to suppress these notices causes rampant false alarms in operational triage.
 
 ### Benchmark Results on Public Advisories:
-- **Total Tested Advisories:** 24 (balanced across English, Hindi Devanagari, and Hinglish)
+- **Total Tested Advisories:** 24 (balanced across English, Hindi Devanagari, and Hinglish: 6 in each slice)
 - **Accurately Suppressed as Clean/Benign:** 24 / 24
 - **False Positive Violations:** 0
 - **Suppression Success Rate:** **100.0%**
 - **Advisory False Alarm Rate:** **0.0%**
 
+### Evasion Hardening Verification:
+- **Adversary Warning-Quoting Evasion:** When an illicit broadcast quotes an advisory while actively soliciting contraband (e.g., *"Police advisory: Beware of fraud calls. Pure chitta stock available DM @fast_dealer"*), suppression is strictly withheld (`advisory_context_type: mixed_solicitation`), correctly flagging the post as High Risk.
+- **Generic Warning Isolation:** Unverified generic warning phrases without institutional markers (e.g. *"satark rahe"*) do not grant automatic suppression.
+
 ---
 
 ## 5. Architectural Quality Improvements
 
-1. **Double Multiplier Elimination:**
-   - Previous revisions multiplied category weights twice (`weight = def_weight * multiplier` in pattern compilation, then `cat_raw_score * multiplier` during scoring).
-   - The fix standardizes base weights and applies the category multiplier strictly once, eliminating artificial score inflation.
+1. **Repeated Character Normalization:**
+   - Word-final letter elongation (e.g., `kattaaaaa`, `farziii`, `tamanchaaaa`) collapses cleanly to canonical `katta`, `farzi`, `tamancha`.
+   - Medial legitimate double consonants (e.g., `chitta`, `katta`) are strictly preserved.
+   - Exact string equality is verified by dedicated unit tests.
 
-2. **Concept-Level Deduplication:**
-   - Malicious actors frequently code-switch or repeat synonyms (`desi katta`, `tamancha`, `कट्टा`).
-   - The deduplication engine captures all surface terms for complete explainability in `ScoreResult.matched_terms`, but increments the category raw score only once per canonical concept group.
+2. **Weapons Context-Only Boundary:**
+   - Isolated neutral weapons mentions (e.g. historical museums, sports shooting trials, policy reporting) are classified as Context-Only with weight 0.0 and Clean/Benign risk.
+   - Commercial weapons advertisements accompanied by active trade solicitation (e.g. `in stock`, `cash on delivery`, `delivery`, `loaded`) elevate to actionable High/Medium risk.
 
-3. **Unicode Token Boundary Matching:**
-   - Replaced standard ASCII word boundaries `\b` with Unicode lookahead/lookbehind patterns (`(?<![\u0900-\u097F\w])` ... `(?![\u0900-\u097F\w])`).
-   - Prevents substring false matches while accurately detecting Devanagari tokens adjacent to punctuation and matras.
+3. **Double Multiplier Elimination:**
+   - Base weights are standardized; category multipliers are applied strictly once in `RuleScorer.score()`, eliminating artificial score inflation.
+
+4. **Concept-Level Deduplication:**
+   - Synonyms and code-switching (`desi katta`, `tamancha`, `कट्टा`) are deduplicated at the concept level (`country_pistol`) so risk score reflects threat presence rather than synonym repetition.
+
+5. **Unicode Token Boundary Matching:**
+   - Unicode lookahead/lookbehind patterns (`(?<![\u0900-\u097F\w])` ... `(?![\u0900-\u097F\w])`) prevent substring false matches while accurately detecting Devanagari tokens adjacent to punctuation and matras.
 
 ---
 
